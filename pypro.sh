@@ -62,9 +62,9 @@ cat <<EOF >./${1}/${pro_name}/main.py
 import os
 import sys
 pro_path = (os.path.abspath('./../'))
+pro_path = (os.path.abspath('./'))
 sys.path.append(pro_path)
 
 if __name__ == "__main__":
     print (sys.path)
-
 EOF

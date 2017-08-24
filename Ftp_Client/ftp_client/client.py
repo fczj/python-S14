@@ -9,7 +9,7 @@ sys.path.append(pro_path)
 import json
 
 
-HOST, PORT = "localhost", 9999          #服务器配置
+HOST, PORT = "localhost", 9997          #服务器配置
 
 
 class FtpClient():
@@ -17,6 +17,18 @@ class FtpClient():
         self.sock = socket.socket()
         self.sock.connect((HOST,PORT))
         self.msg = {}
+
+    def send_msg(self):
+        json_msg = json.dumps(self.msg).encode('utf8')
+        print (json_msg)
+        self.sock.send(json_msg)
+        server_ack = self.sock.recv(1024)
+        print (server_ack.decode())
+
+    def recive_msg(self):
+        msg= json.loads(self.sock.recv(1024).strip().decode())
+        return msg
+
 
     def put(self,*args):
         put_file = args[0][0]
@@ -27,14 +39,19 @@ class FtpClient():
         self.msg['file_size']   = os.stat(put_file).st_size
         self.msg['action']      = 'put'
         self.msg['file_name']   = put_file
-        json_msg = json.dumps(self.msg).encode('utf8')
-        print (json_msg)
-        self.sock.send(json_msg)
-        server_ack = self.sock.recv(1024)
-        print (server_ack.decode())
+
+        self.send_msg()
         with open(put_file,'rb') as f:
             for block in iter(lambda :f.read(4096),b''):
                 self.sock.send(block)
+
+    def get(self,*args):
+        self.msg = {}
+        self.msg['file_name']   = args[0][0]
+        self.msg['action']      = 'get'
+        self.send_msg()
+        msg = self.recive_msg()
+        print (msg)
 
     def inactive(self):
         while True:
