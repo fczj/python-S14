@@ -1,0 +1,87 @@
+define('modules/demo/btyh/module', function(require, exports, module) {
+
+  ;(function($,RC){
+  	var mdul = {
+  		name: 'demo.btyh',
+  		depend: 'demo',
+  		_is_first_update: true,
+  		_dom_root: '#container',
+  		_template_name: 'demo.btyh.index',
+  
+          init: function(){}
+  
+          , render: function () {
+              var _this = this;
+  
+              if (_this._gc_render_status) {
+                  return;
+              }
+  			
+  			_this._gc_render_status = true;
+  			
+              _this._elm_page_container = $(RC.template.get(_this._template_name))
+                  .appendTo(this._dom_root || '#container');
+  			
+              
+              _this.eventBind();
+          }
+  
+          , getContainer: function(){
+  			// for update afterload 跳转
+  			return [];
+  			return this._elm_page_container;
+  		}
+  
+          , update: function(hashs, afterload, is_refresh){
+  			// 标题优化 下线， 暂留地址，跳转到直通车选词， 增加统计
+  			RC.pages.replacePage('/demo/ztc/?hmsr=www.btyh');
+  			return;
+  
+  
+              var _this = this;
+  			window.scroll(0, 0);
+  			_this.render();
+              afterload && afterload();
+  			
+  			// 更新头部搜索框对应类型
+  			$('#header .search-nav .J_Tab').removeClass('current')
+  				.filter('[data-value="bt"]')
+  				.trigger('click');
+          }
+  
+          , eventBind: function () {
+              var _this = this;
+          }
+  
+          , eventUnbind: function () {
+              var _this = this;
+          }
+  
+  		, destroy: function(){
+  			var _this = this;
+  			
+              if (!_this._gc_render_status) {
+                  return;
+              }
+  
+              _this.eventUnbind();
+  
+              // 关闭所有弹框
+              $.each($.dialog.list, function (i, o) {o.close();});
+  
+              _this._elm_page_container.remove();
+  
+              $.each(_this, function (key, o) {
+                  if (_this.hasOwnProperty(key) && /^_elm_|^_gc_/.test(key)) {
+                      delete _this[key];
+                  }
+              });
+  			
+  			_this._is_first_update = true;
+          }
+  	};
+  
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery, window.RayCloud);
+
+});

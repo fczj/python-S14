@@ -1,0 +1,16 @@
+.modules-shop-title-optimize {
+  font-family: Helvetica, "PingFang SC", "Microsoft YaHei", Arial, "WenQuanYi Micro Hei", "tohoma,sans-serif";
+}
+.modules-shop-title-optimize .mt {
+  margin-top: 20px;
+}
+.modules-shop-title-optimize .con {
+  border: 1px solid #eee;
+}
+.modules-shop-title-optimize .index-info {
+  min-height: 200px;
+}
+.modules-shop-title-optimize .loading {
+  height: 100px;
+  background: url(//cdn.taosj.com/data-www-shop/modules/shop/detail/title/optimize/img/loading.gif) no-repeat 50px center;
+}

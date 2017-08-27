@@ -1,0 +1,914 @@
+define('modules/item/group/module.item.group', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  
+      var _API = function () {
+          var _default = {
+              name: ''
+              , params: {}
+              , success: function () {}
+              , fail: function () {}
+          };
+  
+          return function (config, is_dialog) {
+              config = $.extend(_default, config);
+  
+              if (!config.name) {
+                  return;
+              }
+  
+              if (is_dialog !== false) {
+                  is_dialog = true;
+              }
+              else {
+                  is_dialog = false;
+              }
+  
+              API[config.name](config.params, config.success, config.fail, is_dialog, is_dialog, is_dialog);
+          }
+      }();
+  
+  	var mdul = {
+  		name: 'item.group',
+  		depend: 'item',
+  		_elm_dom_root: '#container',
+  		_elm_template_name: 'item.group.mointor_group_page',
+  
+          init: function(){}
+  
+          , render: function () {
+              var _this = this;
+  
+              if (_this._gc_render_status) {
+                  return;
+              }
+  
+              _this._elm_page_container = $(RC.template.get(this._elm_template_name || 'item.group.mointor_group_page'))
+                  .appendTo(this._elm_dom_root || '#container');
+  
+              _this._elm_mointor_group_info = _this._elm_page_container.find('.J_mointor-group-info');
+              _this._elm_tab_navs = _this._elm_page_container.find('.ui-tab-nav');
+              _this._elm_tab_panels = _this._elm_page_container.find('.ui-tab-panel');
+              _this._elm_mointor_tbody = _this._elm_page_container.find('.J_mointor-list');
+              _this._elm_mointor_warning_tbody = _this._elm_page_container.find('.J_mointor-warning-list');
+              _this._elm_mointor_warn_lo_tbody = _this._elm_page_container.find('.J_mointor-warn-log-list');
+  
+              _this._gc_render_status = true;
+              _this.eventBind();
+          }
+  
+          , getContainer: function(){
+  			return this._elm_page_container;
+  		}
+  
+          , update: function(hashs, afterload, is_refresh){
+              var _this = this
+                  , oHash = _this._fn_act_format_hash(hashs);
+  
+              if (!oHash.id) {
+                  RC.showFail('不存在该监控组！');
+  				RC.pages.goPage('#/index/');
+                  return;
+              }
+  
+              _this.render();
+  
+              // 缓存当前 hash
+              _this._gc_hash_cache = oHash;
+              _this._fn_act_update_tab(oHash.type);
+  
+              // 更新监控组信息
+              _this._fn_act_update_mointor_group_info(oHash.id);
+  
+              // 存在监控组信息时, 才去加载列表
+              if (_this._gc_mointor_group_info && _this._gc_mointor_group_info.id) {
+                  RC.pub('item.group.update_mointor_list', oHash);
+              }
+  
+              afterload && afterload();
+          }
+  
+          , eventBind: function () {
+              var _this = this;
+  
+              RC.sub('item.group.update_mointor_list', function (oHash) {
+  
+                  // 报警的宝贝
+                  if (oHash.type == 'warning') {
+                      _this._fn_act_update_mointor_warning_list(oHash);
+                  }
+  
+                  // 报警列表
+                  else if (oHash.type == 'warnlog') {
+                      _this._fn_act_update_mointor_warn_log_list(oHash);
+                  }
+  
+                  // 监控中的宝贝
+                  else {
+                      _this._fn_act_update_mointor_list(oHash);
+                  }
+              });
+  
+  
+              _this._elm_page_container.on('click', function (e){
+                  var $target = $(e.target);
+  
+                  // 卡盘点击
+                  if ($target.hasClass('ui-tab-nav')) {
+                      _this._fn_evt_tab($target);
+                  }
+  				
+  				// 更改监控组名
+  				else if ($target.hasClass('J_modify-mointor-group-name')) {
+                      //return;
+  					_this._fn_evt_modify_mointor_group_name(_this._gc_mointor_group_info.id, _this._gc_mointor_group_info.name);
+  				}
+  
+                  // 更改监控信息
+                  else if ($target.hasClass('J_modify-mointor-item-info')) {
+                      _this._fn_evt_modify_mointor_item_info($target.attr('data-itemId'));
+                  }
+  
+                  // 取消监控
+                  else if ($target.hasClass('J_cancel-mointor-btn')) {
+                      _this._fn_evt_cancel_mointor_item(_this._gc_mointor_group_info.id, $target.attr('data-itemid'),$target.attr('data-id'));
+                  }
+  
+              });
+          }
+  
+          , eventUnbind: function () {
+              var _this = this;
+              _this._elm_page_container.off('click');
+              RC.removeSub('item.group.update_mointor_list');
+          }
+  
+  		, destroy: function(){
+  			var _this = this;
+  
+              if (!_this._gc_render_status) {
+                  return;
+              }
+  
+              _this.eventUnbind();
+  
+              // 关闭所有弹框
+              $.each($.dialog.list, function (i, o) {o.close();});
+  
+              _this._elm_page_container.remove();
+  
+              $.each(_this, function (key, o) {
+                  if (_this.hasOwnProperty(key) && /^_elm_|^_gc_/.test(key)) {
+                      delete _this[key];
+                  }
+              });
+          }
+  
+  
+  
+          // 格式化 hash, 返回正确的hash值
+          , _fn_act_format_hash: function (hashs) {
+              var _this = this
+                  , _default = {
+                      type: ['all', 'warning', 'warnlog']
+                  };
+  
+              var id = parseInt(hashs.id, 10) || ''
+                  , type = hashs.type
+                  , pageNo = parseInt(hashs.pageNo, 10) || 1
+                  , pageSize = parseInt(hashs.paseSize, 10) || 10;
+  
+              if ($.inArray(type, _default.type) == -1) {
+                  type = 'all';
+              }
+  
+              return  {
+                  id: id
+                  , type: type
+                  , pageNo: pageNo
+                  , pageSize: pageSize
+              }
+          }
+  
+  		
+  
+          // 卡盘切换
+          , _fn_act_update_tab: function (type) {
+              var _this = this;
+  
+              _this._elm_tab_navs.removeClass('current')
+                  .filter('[data-nav-type="' + type + '"]')
+                  .addClass('current')
+                  .attr('data-hash-cache', location.hash);
+  
+              _this._elm_tab_panels.css('display', 'none')
+                  .filter('[data-panel-type="' + type + '"]')
+                  .css('display', 'block');
+          }
+  
+          , _fn_evt_tab: function (ele) {
+              var _this = this
+                  , $ele = $(ele)
+                  , type = $ele.attr('data-nav-type')
+                  , hash_str = $ele.attr('data-hash-cache');
+  
+              if (!hash_str) {
+                  var oHash = RC.pages._fn_act_get_hashs();
+                  hash_str = '#/' + oHash.root + '/' + oHash.app
+                      + '/?id=' + oHash.id + '&type=' + type;
+              }
+  
+              location.hash = hash_str;
+          }
+  
+  
+  		
+          // 监控组基本信息
+          , _fn_act_update_mointor_group_info: function (id) {
+              var _this = this;
+              _this._gc_mointor_group_info = _this._gc_mointor_group_info || {}; 
+  
+              if (_this._gc_mointor_group_info.id == id) {
+                  return;
+              }
+              else {
+                  _this._gc_mointor_group_info.id = '';
+                  _this._gc_mointor_group_info.name = '';
+  
+                  // 移除卡盘上保持的 hash 信息
+                  _this._elm_tab_navs.attr('data-hash-cache', '');
+              }
+  
+              _this._fn_act_load_mointor_group_info(id);
+          }
+  
+          , _fn_act_load_mointor_group_info: function (id) {
+              var _this = this;
+  
+              _API({
+                  name: 'user_item_group_info'
+                  , params: {
+                      id: id
+                  }
+                  , success: function (json) {
+                      var data = json.data;
+  					if(!data.id){
+  						//RC.showFail('不存在该监控组！');
+  						RC.pages.goPage('#/index/');
+  						return;
+  					}
+                      data.id = id;
+                      _this._fn_ctrl_mointor_group_info(data);
+  			
+  					_this._fn_update_summary_thumb({
+  						pageNo: 1
+  						, pageSize: 4
+  						, groupId: id
+  						, type: 'all'
+  					});
+                  }
+                  , fail: function () {}
+              }, false);
+          }
+  
+          , _fn_ctrl_mointor_group_info: function (data) {
+              var _this = this;
+              data.modified = RC.util.date.getdate(data.modified,'YY-MM-DD HH:MM:SS');
+  			data.logo = data.logo || 'resources/css/build/images/logo.jpg';
+  			
+              _this._elm_mointor_group_info.html(RC.template.get('item.group.mointor_group_info', data));
+  			
+              // 缓存监控组信息
+              _this._gc_mointor_group_info = {
+                  id: data.id
+                  , name: data.name
+  				, warningCount: data.warningCount
+              };
+  
+              RC.pub('item.group.update_mointor_list', _this._gc_hash_cache);
+          }
+  
+  
+  
+          // 监控中的宝贝列表
+          , _fn_act_update_mointor_list: function (oHash) {
+              var _this = this
+                  , hash_cache = _this._gc_mointor_list_hash_cache || {};
+  
+              if (hash_cache.id == oHash.id
+                  && hash_cache.pageNo == oHash.pageNo
+                  && hash_cache.pageSize == oHash.pageSize) {
+                  return;
+              }
+  
+              _this._fn_act_load_mointor_list($.extend({}, oHash));
+              _this._gc_mointor_list_hash_cache = {
+                  id: oHash.id
+                  , pageNo: oHash.pageNo
+                  , pageSize: oHash.pageSize
+              };
+  			
+  			if (_this._gc_mointor_group_info.warningCount) {
+  				 _this._elm_page_container.filter('.J_warn-item-tip')
+  					.html('当前监控组已有<span class="fc-red">' + _this._gc_mointor_group_info.warningCount + '</span>个宝贝报警')
+  					.show();
+  			}
+  			else {
+  				 _this._elm_page_container.filter('.J_warn-item-tip')
+  					.html('')
+  					.hide();
+  			}
+          }
+  
+          , _fn_act_load_mointor_list: function (params) {
+              var _this = this;
+              params.groupId = params.id;
+              delete params.id;
+  
+              _API({
+                  name: 'user_item_all_list'
+                  , params: params
+                  , success: function (json) {
+                      var total = json.data.total
+                          , lists = json.data.list || [];
+  
+                      _this._fn_ctrl_mointor_list(lists,  params.pageNo);
+                      _this._fn_ctrl_mointor_list_paging(params.pageNo, total);
+                  }
+                  , fail: function () {}
+              });
+          }
+  
+          , _fn_ctrl_mointor_list: function (datas, pageNo) {
+              var _this = this
+                  , html = '';
+  
+              if (!datas.length) {
+                  var tips = '';
+  
+                  if (pageNo == 1) {
+                      tips = '该监控组下没有要被监控的宝贝！';//<a class="fc-orange" href="javascript: ;">去监控宝贝</a>';
+                  }
+                  else {
+                      tips = '该页面没有监控数据，您可以<a class="fc-orange J_goto-first-page" href="javascript: ;">回到第一页</a>';
+                  }
+                  html = '<tr><td colspan="10">' +
+                      '<div class="none-data pd_30 ft-center"><span>' + tips + '</span></div>' +
+                      '</td></tr>';
+              }
+              else {
+                  var lists = {};
+                  lists.id = _this._gc_mointor_group_info.id;
+                  lists.name = _this._gc_mointor_group_info.name;
+  
+                  $.each(datas, function (idx, item) {
+                      var warn_rule_txt = (item.warnRule + '元</div>').replace('lt-', '<div>小于')
+                              .replace('gt-', '<div>大于')
+                              .replace(',', '元</div>');
+  
+                      if (item.warning) {
+                          warn_rule_txt = warn_rule_txt.replace(/<div/g, '<div class="fc-red"');
+                      }
+  
+                      var warn_type_txt = ['短信', '邮件', '短信 + 邮件'][~~item.warnType];
+  
+                      var _mointor_params = ''
+                          , _params = {
+                              "itemId": item.itemId
+  							, "id" : item.id
+                              , "itemPrice": item.itemPrice || ''
+                              , "warnRule": item.warnRule
+                              , "warnType": item.warnType
+                              , "warnScope": item.warnScope
+                              , "warnScopeNames": item.warnScopeNames
+                          };
+  
+                      $.each(_params, function (key, val) {
+                          _mointor_params += '&' + key + '=' + val;
+                      });
+  
+                      item.warnItemCount = item.warnItemCount || 0;
+  
+                      item._warnRule = warn_rule_txt;
+                      item._warnType = warn_type_txt;
+                      item._created = RC.util.date.getdate(item.created,'YY-MM-DD HH:MM:SS');
+                      item._warn_html_tag = item.warning ? '<i class="icon icon-alarm"></i>' : '';
+                      item._mointor_params = _mointor_params.substr(1);
+  
+  					item.itemPrice = item.itemPrice || '-';
+  					item.itemTitle = item.itemTitle || '-';
+  					item.itemImage = item.itemImage || '';
+  					item.sellerNick = item.sellerNick || '-';
+  					
+                  });
+  
+                  lists.list = datas;
+                  html = RC.template.get('item.group.mointor_list', lists);
+              }
+  
+  
+              _this._elm_mointor_tbody.html(html);
+          }
+  
+          , _fn_ctrl_mointor_list_paging: function (pageNo, total) {
+              var _this = this
+                  , $panel = _this._elm_tab_panels.filter('[data-panel-type=all]')
+                  , $pagingWarp = $panel.find('.pagination-pages').parent()
+                  , $paging = $panel.find('.pagination-page')
+                  , paging = RC.controls.get('controls.calc_pages_html');
+  
+              if (total <= 10) {
+                  $pagingWarp.hide();
+              }
+              else {
+                  $pagingWarp.show();
+                  var href = (location.href + (/\?|&/.test(location.href) ? '&' : '?'))
+  					.replace(/pageNo=\d+/, '')
+                      .replace('&&', '&')
+  					.replace('?&', '?');
+  				
+                  var html = paging.get_html('', function (num) {
+                      return num == pageNo ? 'javascript:;' : href + 'pageNo=' + num;
+                  }, Math.ceil(total/10), pageNo);
+  
+                  $paging.html(html);
+              }
+          }
+  
+  
+  		
+          // 报警中的宝贝列表
+          // 和监控中的宝贝列表代码几乎一致
+          , _fn_act_update_mointor_warning_list: function (oHash) {
+              var _this = this
+                  , hash_cache = _this._gc_mointor_warning_list_hash_cache || {};
+  
+              if (hash_cache.id == oHash.id
+                  && hash_cache.pageNo == oHash.pageNo
+                  && hash_cache.pageSize == oHash.pageSize) {
+                  return;
+              }
+  
+              _this._fn_act_load_mointor_warning_list($.extend({}, oHash));
+              _this._gc_mointor_warning_list_hash_cache = {
+                  id: oHash.id
+                  , pageNo: oHash.pageNo
+                  , pageSize: oHash.pageSize
+              };
+          }
+  
+          , _fn_act_load_mointor_warning_list: function (params) {
+              var _this = this;
+              params.groupId = params.id;
+              delete params.id;
+  
+              _API({
+                  name: 'user_item_warning_list'
+                  , params: params
+                  , success: function (json) {
+                      var total = json.data.total
+                          , lists = json.data.list || [];
+  
+                      _this._fn_ctrl_mointor_warning_list(lists,  params.pageNo);
+                      _this._fn_ctrl_mointor_warning_list_paging(params.pageNo, total);
+                  }
+                  , fail: function () {}
+              });
+          }
+  
+          , _fn_ctrl_mointor_warning_list: function (datas, pageNo) {
+              var _this = this
+                  , html = '';
+  
+              if (!datas.length) {
+                  var tips = '';
+  
+                  if (pageNo == 1) {
+                      tips = '没有正在报警的宝贝！';
+                  }
+                  else {
+                      tips = '该页面没有报警的宝贝，您可以<a class="fc-orange J_goto-first-page" href="javascript: ;">回到第一页</a>';
+                  }
+                  html = '<tr><td colspan="10">' +
+                      '<div class="none-data pd_30 ft-center"><span>' + tips + '</span></div>' +
+                      '</td></tr>';
+              }
+              else {
+                  var lists = {};
+                  lists.id = _this._gc_mointor_group_info.id;
+                  lists.name = _this._gc_mointor_group_info.name;
+  
+                  $.each(datas, function (idx, item) {
+                      var warn_rule_txt = (item.warnRule + '元</div>').replace('lt-', '<div>小于')
+                          .replace('gt-', '<div>大于')
+                          .replace(',', '元</div>');
+  
+                      if (item.warning) {
+                          warn_rule_txt = warn_rule_txt.replace(/<div/g, '<div class="fc-red"');
+                      }
+  
+                      var warn_type_txt = ['短信', '邮件', '短信 + 邮件'][~~item.warnType];
+  
+                      var _mointor_params = ''
+                          , _params = {
+                              "itemId": item.itemId
+  							, "id": item.id
+                              , "itemPrice": item.itemPrice || ''
+                              , "warnRule": item.warnRule
+                              , "warnType": item.warnType
+                              , "warnScope": item.warnScope
+                              , "warnScopeNames": item.warnScopeNames
+                          };
+  
+                      $.each(_params, function (key, val) {
+                          _mointor_params += '&' + key + '=' + val;
+                      });
+  
+                      item._warnRule = warn_rule_txt;
+                      item._warnType = warn_type_txt;
+                      item._created = RC.util.date.getdate(item.created,'YY-MM-DD HH:MM:SS');
+                      item._warn_html_tag = '<i class="icon icon-alarm"></i>';
+                      item._mointor_params = _mointor_params.substr(1);
+  
+  					item.itemPrice = item.itemPrice || '-';
+  					item.itemTitle = item.itemTitle || '-';
+  					item.itemImage = item.itemImage || '-';
+  					item.sellerNick = item.sellerNick || '-';
+                  });
+  
+                  lists.list = datas;
+                  html = RC.template.get('item.group.mointor_warn_list', lists);
+              }
+  
+              _this._elm_mointor_warning_tbody.html(html);
+          }
+  
+          , _fn_ctrl_mointor_warning_list_paging: function (pageNo, total) {
+              var _this = this
+                  , $panel = _this._elm_tab_panels.filter('[data-panel-type=warning]')
+                  , $pagingWarp = $panel.find('.pagination-pages').parent()
+                  , $paging = $panel.find('.pagination-page')
+                  , paging = RC.controls.get('controls.calc_pages_html');
+  
+              if (total <= 10) {
+                  $pagingWarp.hide();
+              }
+              else {
+                  $pagingWarp.show();
+                  var href = (location.href + (/\?|&/.test(location.href) ? '&' : '?'))
+  					.replace(/pageNo=\d+/, '')
+                      .replace('&&', '&')
+  					.replace('?&', '?');
+  				
+                  var html = paging.get_html('', function (num) {
+                      return num == pageNo ? 'javascript:;' : href + 'pageNo=' + num;
+                  }, Math.ceil(total/10), pageNo);
+  
+                  $paging.html(html);
+              }
+          }
+  
+  
+  		
+          // 报警记录列表
+          , _fn_act_update_mointor_warn_log_list: function (oHash) {
+              var _this = this
+                  , hash_cache = _this._gc_mointor_warn_log_hash_cache || {};
+  
+              if (hash_cache.id == oHash.id
+                  && hash_cache.pageNo == oHash.pageNo
+                  && hash_cache.pageSize == oHash.pageSize) {
+                  return;
+              }
+  
+              _this._fn_act_load_mointor_warn_log_list($.extend({}, oHash));
+              _this._gc_mointor_warn_log_hash_cache = {
+                  id: oHash.id
+                  , pageNo: oHash.pageNo
+                  , pageSize: oHash.pageSize
+              };
+          }
+  
+          , _fn_act_load_mointor_warn_log_list: function (params) {
+              var _this = this;
+              params.groupId = params.id;
+              delete params.id;
+  
+              _API({
+                  name: 'user_item_warnlog_list'
+                  , params: params
+                  , success: function (json) {
+                      var total = json.data.total
+                          , lists = json.data.list || [];
+  
+                     // console.log(json);
+  
+                      _this._fn_ctrl_mointor_warn_log_list(lists,  params.pageNo, params.pageSize);
+                      _this._fn_ctrl_mointor_warn_log_list_paging(params.pageNo, total);
+                  }
+                  , fail: function () {}
+              });
+          }
+  
+          , _fn_ctrl_mointor_warn_log_list: function (datas, pageNo, pageSize) {
+              var _this = this
+                  , html = '';
+  
+              pageSize = pageSize || 10;
+  
+              if (!datas.length) {
+                  var tips = '';
+  
+                  if (pageNo == 1) {
+                      tips = '没有报警的宝贝！';
+                  }
+                  else {
+                      tips = '该页面报警的宝贝，您可以<a class="fc-orange J_goto-first-page" href="javascript: ;">回到第一页</a>';
+                  }
+                  html = '<tr><td colspan="8">' +
+                      '<div class="none-data pd_30 ft-center"><span>' + tips + '</span></div>' +
+                      '</td></tr>';
+              }
+              else {
+                  var lists = {};
+                  lists.id = _this._gc_mointor_group_info.id;
+                  lists.name = _this._gc_mointor_group_info.name;
+  
+                  $.each(datas, function (idx, item) {
+                      var warn_rule_txt = (item.warnRule + '元</div>').replace('lt-', '<div>小于')
+                          .replace('gt-', '<div>大于')
+                          .replace(',', '元</div>');
+  
+                      var warn_type_txt = ['短信', '邮件', '短信 + 邮件'][~~item.warnType];
+  
+                      item._no = idx + ((pageNo - 1) * pageSize + 1);
+                      item._warnRule = warn_rule_txt;
+                      item._warnType = warn_type_txt;
+                      item._warningDatetime = RC.util.date.getdate(item.created,'YY-MM-DD HH:MM:SS');
+  					item._warnScopeNames = item.warnScopeNames;
+                     //item._warnScopeNames = item.warnScopeNames.join(', ');
+  
+  					item.itemPrice = item.itemPrice || '-';
+  					item.itemTitle = item.itemTitle || '-';
+  					item.itemImage = item.itemImage || '-';
+  					item.sellerNick = item.sellerNick || '-';
+                  });
+  
+                  lists.list = datas;
+                  html = RC.template.get('item.group.mointor_warn_log_list', lists);
+              }
+  
+              _this._elm_mointor_warn_lo_tbody.html(html);
+          }
+  
+          , _fn_ctrl_mointor_warn_log_list_paging: function (pageNo, total) {
+              var _this = this
+                  , $panel = _this._elm_tab_panels.filter('[data-panel-type=warnlog]')
+                  , $pagingWarp = $panel.find('.pagination-pages').parent()
+                  , $paging = $panel.find('.pagination-page')
+                  , paging = RC.controls.get('controls.calc_pages_html');
+  
+              if (total <= 10) {
+                  $pagingWarp.hide();
+              }
+              else {
+                  $pagingWarp.show();
+                  var href = (location.href + (/\?|&/.test(location.href) ? '&' : '?'))
+  					.replace(/pageNo=\d+/, '')
+                      .replace('&&', '&')
+  					.replace('?&', '?');
+  				
+                  var html = paging.get_html('', function (num) {
+                      return num == pageNo ? 'javascript:;' : href + 'pageNo=' + num;
+                  }, Math.ceil(total/10), pageNo);
+  
+                  $paging.html(html);
+              }
+          }
+  
+  		
+  		
+  		// 更改监控组名称
+  		, _fn_evt_modify_mointor_group_name: function (groupId, groupName) {
+  			//J_modify-mointor-group-name
+  			var _this = this;
+  			if (!groupId || !groupName) {
+  				return;
+  			}
+  			
+  			var $pop = $('<div><label class="ft_14">监控组名：<input type="text" style="width: 230px;" value="' + groupName + '" /></label><div class="mt_5 fc-orange" style="margin-left: 70px;"></div></div>');
+  			
+  			$.dialog({
+  				title: '更改监控组名'
+  				, content: $pop
+  				, okVal: '保存'
+  				, cancelVal: '取消'
+  				, cancel: function () {}
+  				, ok: function () {
+  					var groupName = $pop.find('input').val();
+  					var tips = '';
+  					
+  					if (!groupName.replace(/\s/g, '').length) {
+  						tips = '监控组名称不可为空！';
+  					}else if(groupName.replace(/[^\x00-\xff]/g, "--").length>20){
+  						tips = '监控组名称长度超出限制！';
+  						
+  					}
+  					else if (/[^\w\u4e00-\u9fa5]/.test(groupName)) {
+  						tips = '监控组名含有非法字符';
+  					}
+  					
+  					if (tips) {
+  						$pop.find('div').html(tips);
+  						return false;
+  					}
+  					
+  					//_this._elm_page_container.find('.J_mointor-group-name').html(groupName);
+  					//_this._gc_mointor_group_info.name = groupName;
+  
+  					RC.showLoading('正在保存监控组名，请稍等....');
+  					_API({
+  						name: 'edit_mointor_group'
+  						, params: {
+  							id: groupId,
+  							name: groupName
+  						}
+  						, success: function () {
+  							RC.showSuccess('监控组名修改成功！');
+  							_this._gc_mointor_group_info = {};
+  							_this._gc_mointor_warning_list_hash_cache = {};
+  							_this._gc_mointor_list_hash_cache = {};
+  							_this._gc_mointor_warn_log_hash_cache = {};
+  							var hash = _this._gc_hash_cache || {};
+  							
+  							RC.pages.setCurHash($.extend({is_flash: true, _t: new Date().getTime()}, hash));
+  							
+  
+  						}
+  						, fail: function () {
+  							RC.showWarn('监控组名修改失败，请重试!');
+  						}
+  					});
+  					
+  				}
+  			});
+  		}
+  
+  
+  		
+          // 更改监控信息
+          , _fn_evt_modify_mointor_item_info: function (id) {
+              var _this = this
+                  , $tr = _this._elm_page_container.find('.mointor-item_' + id)
+                  , param_str = $tr.find('.item_' + id + '-params').eq(0).val();
+  
+              var reg = /(\w+)=([^&]+)/g
+                  , result = []
+                  , oParam = {
+                      type: 'modify'
+                      , groupId: _this._gc_mointor_group_info.id
+                      , success: function (params) {
+                          //_this._fn_ctrl_modify_mointor_item_info(params);
+  						_this._gc_mointor_group_info = {};
+  						_this._gc_mointor_warning_list_hash_cache = {};
+  						_this._gc_mointor_list_hash_cache = {};
+  						_this._gc_mointor_warn_log_hash_cache = {};
+  						var hash = _this._gc_hash_cache || {};
+  						
+  						RC.pages.setCurHash($.extend({is_flash: true, _t: new Date().getTime()}, hash));
+                      }
+                  };
+  
+              while (result = reg.exec(param_str)) {
+                  oParam[result[1]] = result[2];
+              }
+  
+              var rule_arr = oParam.warnRule.match(/(?:lt-([\d\.]+))*,*(?:gt-([\d\.]+))*/);
+              oParam.lt_price = rule_arr[1] === undefined ? '' : rule_arr[1];
+              oParam.gt_price = rule_arr[2] === undefined ? '' : rule_arr[2];
+  
+              oParam.type = 'modify';
+  // console.log('oParam:'+JSON.stringify(oParam));
+              var modifyPop = RayCloud.controls.get('controls.mointor_price_pop');
+              modifyPop.show(oParam);
+  			// 回调?? update list
+          }
+  
+          , _fn_ctrl_modify_mointor_item_info: function (params) {
+              var _this = this
+                  , $tr = _this._elm_page_container.find('.mointor-item_' + params.itemId);
+  
+              // 更改监控组
+              if (params.groupId != _this._gc_mointor_group_info.id) {
+                  $tr.remove();
+                  return;
+              }
+  
+             // console.log(params);
+  
+              // 一些列更改操作
+              var warnRule = params.warnRule
+                  , warnType = params.warnType
+                  , warnScope = params.warnScope
+                  , warnScopeNames = params.warnScopeNames;
+  
+              var warn_rule_txt = (warnRule + '元</div>').replace('lt-', '<div>小于')
+                  .replace('gt-', '<div>大于')
+                  .replace(',', '元</div>');
+              var warn_type_txt = ['短信', '邮件', '短信 + 邮件'][~~warnType];
+  
+              $tr.find('.J_mointor-warn-rule').html(warn_rule_txt);
+              $tr.find('.J_mointor-warn-type').html(warn_type_txt);
+              $tr.find('.J_mointor-warn-scope-names').html(warnScopeNames);
+  
+              //console.log(warnScopeNames);
+  
+              var params_str = $tr.find('.item_' + params.itemId + '-params').val();
+  
+              // 下面的替换方式太搓
+              // 替换 warnRule
+              params_str = params_str.replace(/(warnRule=)([^&]+)/, function (str, $1, $2) {
+                  return $1 + warnRule;
+              })
+  
+              // 替换 warnType
+              params_str = params_str.replace(/(warnType=)([^&]+)/, function (str, $1, $2) {
+                  return $1 + warnType;
+              });
+  
+              // 替换 warnScope
+              params_str = params_str.replace(/(warnScope=)([^&]+)/, function (str, $1, $2) {
+                  return $1 + warnScope;
+              });
+  
+              // 替换 warnScopeNames
+              params_str = params_str.replace(/(warnScopeNames=)([^&]+)/, function (str, $1, $2) {
+                  return $1 + warnScopeNames;
+              });
+  
+              $tr.find('.item_' + params.itemId + '-params').val(params_str);
+          }
+  
+          , _fn_evt_cancel_mointor_item: function (groupId, itemId,id) {
+              var _this = this
+                  , $tr = _this._elm_page_container.find('.mointor-item_' + itemId);
+  
+              RC.showLoading('正在取消监控，请稍等....');
+              _API({
+                  name: 'del_mointor_item'
+                  , params: {
+                      groupId: groupId
+                      , itemId: itemId
+                      ,id:id
+                  }
+                  , success: function () {
+                      $tr.remove();
+                      RC.showSuccess('取消监控成功!');
+  
+  					_this._gc_mointor_group_info = {};
+  					_this._gc_mointor_warning_list_hash_cache = {};
+  					_this._gc_mointor_list_hash_cache = {};
+  					_this._gc_mointor_warn_log_hash_cache = {};
+  					var hash = _this._gc_hash_cache || {};
+  					
+  					RC.pages.setCurHash($.extend({is_flash: true, _t: new Date().getTime()}, hash));
+                  }
+                  , fail: function () {
+                      RC.showFail('取消监控失败!')
+                  }
+              }, false);
+          }
+  
+  	
+  		
+  		// 获取基本信息四个图片
+  		// 开发未提供接口, 变相解决. 获取 “监控中的宝贝” 前四条数据
+  		, _fn_update_summary_thumb: function (params) {
+  			var _this = this;
+  			_API({
+                  name: 'user_item_all_list'
+                  , params: params
+                  , success: function (json) {
+                      var total = json.data.total
+                          , lists = json.data.list || []
+  						, html = '';
+  					
+  					lists.length = 4;
+  					$.each(lists, function (i, o) {
+  						html += '<span style="background-image:url(' + (o && o.itemImage) + '_60x60.jpg);"></span>';
+  					});
+  					
+  					_this._elm_mointor_group_info.find('.pics').html(html);
+                  }
+                  , fail: function () {}
+              });
+  		}
+  	};
+  
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+
+});

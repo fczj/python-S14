@@ -1,0 +1,59 @@
+define('controls/shop/controls.shop.shop_info', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var ShopInfo = {
+  		_callback_list: {},
+  		_data: null,
+  		_status_loading: false,
+  		_done: function(id){
+  			var data = this._data[id], list = this._callback_list[id] || [];
+  			for(var i=0,len=list.length; i<len; i++){
+  				list[i]($.extend(true,{},data));
+  			}
+  			this._callback_list[id] = [];
+  		},
+  		getInfo: function(id, callback){
+  			if(this._data && this._data[id]){
+  				callback($.extend(true, {}, this._data[id]));
+  				return;
+  			}
+  			this._callback_list[id] = this._callback_list[id] || [];
+  			this._callback_list[id].push(callback);
+  			if(this._status_loading === true){
+  				return;
+  			}
+  			this._status_loading = true;
+  			API.shop_get_info({id: id}, $.proxy(function(json){
+  				this._status_loading = false;
+  				this._data = this._data || {};
+  				this._data[id] = json.data;
+  				this._done(id);
+  			},this));
+  		},
+  		clearData: function(id){
+  			if(id && this._data && this._data[id]){
+  				delete this._data[id];
+  				if(this._callback_list[id]){
+  					delete this._callback_list[id];
+  				}
+  			}else{
+  				this._data = null;
+  			}
+  		},
+  		clear: function(){
+  			this._data = null;
+  			this._callback_list = {};
+  		}
+  	};
+  
+  	RC.controls.define('control.shop.shop_info',{
+  		init: function(){
+  			return ShopInfo;
+  		}
+  	});
+  })(jQuery,RayCloud);
+
+});

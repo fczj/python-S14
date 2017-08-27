@@ -1,0 +1,76 @@
+define('modules/shop/detail/title/optimize/result/index', function(require, exports, module) {
+
+  var $ = require('components/jquery/jquery'),
+      template = require('components/art-template/template'),
+      $html = template.compile("<div class=\"main\">\r\n    <h2>诊断结果</h2>\r\n    {{if scoreMsg=='A'}}\r\n        <h1 class=\"J_result_main high\">优</h1>\r\n    {{else}}\r\n        {{if scoreMsg=='B'}}\r\n            <h1 class=\"J_result_main middle\">良</h1>\r\n        {{else}}\r\n            <h1 class=\"J_result_main low\">差</h1>\r\n        {{/if}}\r\n    {{/if}}\r\n</div>\r\n<div class=\"detail\">\r\n    <ul>\r\n        <li>\r\n            <div class=\"title\">标题长度：</div>\r\n            <div class=\"icon {{if title.type==-1}}warn{{/if}}\"></div>\r\n            <div title=\"{{title.text}}\" class=\"context\">{{title.text}}</div>\r\n        </li>\r\n        <li>\r\n            <div class=\"title\">特殊符号：</div>\r\n            <div class=\"icon {{if specialChar.type==-1}}warn{{/if}}\"></div>\r\n            <div title=\"{{specialChar.text}}\" class=\"context\">{{specialChar.text}}</li>\r\n            <li>\r\n                <div class=\"title\">关键词：</div>\r\n                <div class=\"icon {{if keyword.type==-1}}warn{{/if}}\"></div>\r\n                <div title=\"{{keyword.text}}\" class=\"context\">{{keyword.text}}</li>\r\n                <li>\r\n                    <div class=\"title\">关键词重复：</div>\r\n                    <div class=\"icon {{if repeat.type==-1}}warn{{/if}}\"></div>\r\n                    <div title=\"{{repeat.text}}\" class=\"context\">{{repeat.text}}</li>\r\n                    <li>\r\n                        <div class=\"title\">营销词：</div>\r\n                        <div class=\"icon {{if marketWord.type==-1}}warn{{/if}}\"></div>\r\n                        <div title=\"{{marketWord.text}}\" class=\"context\">{{marketWord.text}}</li>\r\n                        <li>\r\n                            <div class=\"title\">违禁词：</div>\r\n                            <div class=\"icon {{if ruleWord.type==-1}}warn{{/if}}\"></div>\r\n                            <div title=\"{{ruleWord.text}}\" class=\"context\">{{ruleWord.text}}</li>\r\n                        </ul>\r\n                    </div>"),
+      $el = $("<div class=\"result J_con\">\r\n</div>\r\n<!-- @require 'modules/shop/detail/title/optimize/result/index.less' -->"),
+      $container = null,
+      id = null;
+  
+  function render(json){
+      $el.html($html(json));
+  }
+  
+  function dealResultData(list){
+      var resultList = {};
+      var parseOne = function parseOne(str){
+          var resultObj = {type:1};
+          if(!str){
+              return {type:1,text:''};
+          }
+          if(str.indexOf('error.png')!==-1){
+              resultObj.type = -1;
+          }
+          str = str.replace(/\<img[\w\W]*\/\>/,'');
+          var $h = $('<div>'+str+'</div>');
+          resultObj.text = $h.find('div').html();
+          return resultObj;
+      }
+  
+      resultList.title = parseOne(list[0]);
+      resultList.specialChar = parseOne(list[1]);
+      resultList.keyword = parseOne(list[2]);
+      resultList.repeat = parseOne(list[4]);
+      resultList.marketWord = parseOne(list[3]);
+      resultList.ruleWord = parseOne(list[5]);
+      return resultList;
+  }
+  
+  var conf = {
+      setData:function (data) {
+           id = data.id;
+      },
+      load:function(text){
+          if($container){
+              $el.html('<div class="loading"></div>')
+              $.ajax({
+                  url:'/data/shop/dgs/item/dgs',
+                  dataType: 'json',
+                  data: {
+                      itemId: id,
+                      title: text||''
+                  },
+                  success:function(json){
+                      if(json.result==1){
+                          var renderData = dealResultData(json.data.resultLists);
+                          renderData.scoreMsg = json.data.scoreMsg;
+                          render(renderData);
+                      }
+                  },
+                  error:function(json){
+  
+                  }
+              });
+          }
+      }
+  }
+  
+  //ajax在自己这里?
+  module.exports = function(container){
+      $container = $(container);
+      $container.html($el);
+      return conf;
+  }
+  
+
+});

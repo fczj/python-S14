@@ -1,0 +1,254 @@
+define('modules/shop/item/template.shop.item', function(require, exports, module) {
+
+  /**
+  	@author chenjiangming
+  */
+  ;(function($,RC){
+  	var temp = [
+  				'<div id="module-shop-item" class="module-shop-item-detail">',
+  					'<div>',
+  						'<div id="J_item_pin_bar" class="shop-item-pin-bar J_Item_Detail_Global" >',
+  							'<div act-if="_status_shop_nav == 1">',
+  								'<div class="item-name ft_14" style="background-color:#ff8939;">',
+  									'<span class="ellipsis inline-block" style="max-width: 450px;vertical-align:middle;">宝贝名称：{{title}}</span>',
+  									'<a act-if="isMonitor == false" href="javascript:;" class="J_Add_Monitor btn item-btn">添加价格监控</a>',
+  									'<a act-if="isMonitor == true" href="javascript:;" class=" btn item-btn disabled w90">已添加监控</a>',
+  									'<a href="#/shop/detail/?id={{shopId}}" class="return-shop f-rt"><i class="icon-return-shop"></i>返回宝贝所在店铺</a>',
+  								'</div>',
+  								'<div class="bar-bd">',
+  									'<a act-if="_classification == index" class="anchor index current" href="#/shop/item/index/?{{_hash}}">宝贝基础状况<b></b></a>',
+  									'<a act-if="_classification != index" class="anchor index" href="#/shop/item/index/?itemId={{_itemId}}&shopId={{_shopId}}">宝贝整体状况<b></b></a>',
+  									'<a act-if="_classification == item_analysis" class="anchor item_analysis current" href="#/shop/item/item_analysis/?id={{_hash}}">宝贝上下架调价明细<b></b></a>',
+  									'<a act-if="_classification != item_analysis" class="anchor item_analysis" href="#/shop/item/item_analysis/?itemId={{_itemId}}&shopId={{_shopId}}">宝贝上下架调价明细<b></b></a>',
+  									'<a act-if="_classification == marketing" class="anchor marketing current" href="#/shop/item/marketing/?{{_hash}}">宝贝营销推广<b></b></a>',
+  									'<a act-if="_classification != marketing" class="anchor marketing" href="#/shop/item/marketing/?itemId={{_itemId}}&shopId={{_shopId}}">宝贝营销推广<b></b></a>',
+  									'<a act-if="_classification == traffic_analysis" class="anchor traffic_analysis current" href="#/shop/item/traffic_analysis/?{{_hash}}">宝贝流量分析<b></b></a>',
+  									'<a act-if="_classification != traffic_analysis" class="anchor traffic_analysis" href="#/shop/item/traffic_analysis/?itemId={{_itemId}}&shopId={{_shopId}}">宝贝流量分析<b></b></a>',
+  									
+  								'</div>',
+  							'</div>',
+  							'<div act-if="_status_shop_nav == 0">',
+  								'<div class="item-name">',
+  									'宝贝名称：<span class="ellipsis"></span>',
+  								'</div>',
+  								'<div class="bar-bd">',
+  									'<a class="anchor index" href="javascript:;">宝贝整体状况<b></b></a>',
+  									'<a class="anchor item_analysis" href="javascript:;">宝贝上下架调价明细<b></b></a>',
+  									'<a class="anchor marketing" href="javascript:;">宝贝营销推广<b></b></a>',
+  									'<a class="anchor traffic_analysis" href="javascript:;">宝贝流量分析<b></b></a>',
+  								'</div>',
+  							'</div>',
+  						'</div>',	
+  					'</div>',
+  					'<div id="itemMain"></div>',
+  				'</div>'
+  	];
+  	
+  temp=[
+  '<div id="menu_item_panelall" style="position:relative;">',
+  '<style type="text/css">',
+  	'.menu_shop_item_t{'
+  , '   width:220px;'
+  ,    'background-color: #F9F9F9;'
+  ,    'font-family: "微软雅黑";'
+  ,   ' border:1px solid #EEEEEE;'
+  ,    'font-size: 16px;'
+  ,' }'
+  ,'.menu_shop_item_t.help{'
+  , '	margin-top: 10px;'
+  ,' }'
+  ,'.menu_shop_item.help{'
+  , '	margin-top: 10px;'
+  ,' }'
+  ,' .menu_shop_item_t p{'
+  ,' 	margin:15px 0px 15px 0px;'
+  ,' }'
+  ,'.menu_shop_item_t a:hover{'
+  ,'	color:#ff6600;'
+  ,'text-decoration: none;'
+  ,'}'
+  ,'.normalsub{'
+  ,'	border-left: 3px solid #F9F9F9;}'
+  ,'.menu_shop_item_t .nav{'
+  ,'	height: 15px;'
+  ,'	width:180px;'
+  ,'	line-height: 15px;' 
+  ,'	display: inline-block;'
+  ,'	position: relative;'
+  ,'	padding-left: 40px;'
+  ,'	cursor: pointer;'
+  ,'}'
+  ,'.menu_shop_item_t .nav:hover{'
+  ,'	color:#ff6600;'
+  ,'text-decoration: none;'
+  ,'}'
+  ,'.nav a{'
+  	,'color:inherit;'
+  	,'height:100%;'
+  	,'width:100%;'
+  	,'display:inline-block;'
+  ,'}'
+  ,'.menu_shop_item_t .sub{'
+  ,'	font-size: 14px;'
+  ,'	cursor: pointer;'
+  ,'color:#777777;'
+  ,'}'
+  ,'.menu_shop_item_t .sub p{'
+  ,'	height:30px;'
+  ,'	width: 100%;'
+  ,'display: inline-block;'
+  ,'	vertical-align: middle;'
+  ,'	margin: 0px;'
+  // ,'	padding:7px 0px 7px 0px;'
+  ,'}'
+  ,'.menu_shop_item_t .sub p a{'
+  ,'color:inherit;'
+  ,'	display: inline-block;'
+  ,'	margin-left: 37px;'
+  ,'line-height:30px;'
+  ,'height:100%;'
+  ,'width:198px;'
+  ,'text-decoration: none;'
+  ,'}'
+  ,'.menu_shop_item_t .sub p a:hover{'
+  ,'	color:#ff6600;'
+  ,'text-decoration: none;'
+  ,'}'
+  ,'.menu_shop_item_t .nav i{'
+  ,'	height:15px;'
+  ,'	display: inline-block;'
+  ,'	position: absolute;'
+  ,'	left:15px;'
+  ,'	width: 15px;'
+  ,'top: 1px;'
+  ,'	margin-right: 20px;'
+  ,'}'
+  ,'.menu_shop_item_t .nav .help-flash{'
+  ,'	height:20px;'
+  ,'	display: inline-block;'
+  ,'cursor:pointer;'
+  ,'	position: absolute;'
+  ,'	background-image: url(http://cdn.maijia.com/www/www-old/resources/css/build/images/flash_help.png);'
+  ,'	background-repeat: no-repeat;'
+  ,'	right:0px;'
+  ,'	width: 42px;'
+  // ,'	margin-right: 20px;'
+  ,'top:0px;'
+  ,'}'
+  ,'.current{'
+  ,'    color:#ff6600;'
+  ,'}'
+  ,'.currentsub{'
+  ,'	color:#ff6600;'
+  ,'	border-left: 3px solid #ff6600;'
+  ,'}',
+  ,'.up{',
+  '	background-image: url(http://cdn.maijia.com/www/www-old/resources/css/build/images/open_icon.png);',
+  '	background-repeat: no-repeat;',
+  '}',
+  '.down{',
+  '	background-image: url(http://cdn.maijia.com/www/www-old/resources/css/build/images/close_icon.png);',
+  '	background-repeat: no-repeat;',
+  '}',
+  '.nav .normal{'
+  ,'width:auto;'
+  ,'}',
+  '</style>',
+  	'<div style="width: 220px;float: left;">',
+  '<div act-if="_status_shop_nav == 1" id="menu_shop_item_panel" style="width:200px;margin-top:0px;display:inline-block;float: left;">',
+  //'<div class="J_show_help_flash" data-url="http://cloud.video.taobao.com//play/u/2111460930/p/2/e/1/t/1/33689444.swf" style="cursor:pointer;height:50px;width:220px;border:1px solid #eee;border-bottom:none;"><div style="float:left;margin-left:20px;margin-top:15px;height:20px;width:20px;background-image:url(http://cdn.maijia.com/www/www-old/resources/css/build/images/flash_play.png)"></div><div style="font-size:14px;color:#ff6600;float:left;height:50px;line-height:50px;margin-left:10px;font-family: \'微软雅黑\',arial;">宝贝监控视频教程</div></div>',
+  		'<div class="menu_shop_item_t">',
+  		'<div>',
+  			'<p class="nav index">',
+  			// '<a act-if="_classification == index" href="#/shop/detail/index/?{{_hash}}">店铺整体状况</a>',
+  			'<a href="#/shop/item/index/?itemId={{_itemId}}&shopId={{_shopId}}">宝贝整体状况</a><span class="help-flash J_show_help_flash" data-url="http://cloud.video.taobao.com//play/u/2111460930/p/2/e/1/t/1/34960980.swf"></span>',
+  			'</p>',
+  		'</div>',
+  	    '<div>',
+  	    	'<p class="nav"><a class="normal">宝贝上架调价明细</a><i class="up"></i><span class="help-flash J_show_help_flash" data-url="http://cloud.video.taobao.com//play/u/2111460930/p/2/e/1/t/1/35075883.swf"></span></p>',
+  	    	'<div class="sub">',
+  	    		'<p class="normalsub"><a href="/index.html#/shop/item/item_analysis/?type=onsale&shopId={{_shopId}}&itemId={{_itemId}}">宝贝上下架跟踪</a></p>',
+  	    		'<p class="normalsub"><a href="/index.html#/shop/item/item_analysis/?type=onname&shopId={{_shopId}}&itemId={{_itemId}}">宝贝改名跟踪</a></p>',
+  	    		'<p class="normalsub"><a href="/index.html#/shop/item/item_analysis/?type=onprice&shopId={{_shopId}}&itemId={{_itemId}}">宝贝调价跟踪</a></p>',
+  	    	'</div>',
+  	  '  </div>',
+  	    '<div class="parent">',
+  	    	'<p class="nav"><a class="normal">宝贝营销推广</a><i class="up"></i><span class="help-flash J_show_help_flash" data-url="http://cloud.video.taobao.com//play/u/2111460930/p/2/e/1/t/1/35109183.swf"></span></p>',
+  	        '<div class="sub">',
+  	        	'<p class="normalsub"><a href="/index.html#/shop/item/marketing/?type=ztc&shopId={{_shopId}}&itemId={{_itemId}}">直通车</a></p>',
+  	        	'<p class="normalsub"><a href="/index.html#/shop/item/marketing/?type=jhs&shopId={{_shopId}}&itemId={{_itemId}}">聚划算</a></p>',
+  	        	'<p class="normalsub"><a href="/index.html#/shop/item/marketing/?type=tbk&shopId={{_shopId}}&itemId={{_itemId}}">淘宝客</a></p>',
+  	        	'<p class="normalsub"><a href="/index.html#/shop/item/marketing/?type=innersite&shopId={{_shopId}}&itemId={{_itemId}}">站内活动</a ></p>',
+  	        	'<p class="normalsub"><a href="/index.html#/shop/item/marketing/?type=outersite&shopId={{_shopId}}&itemId={{_itemId}}">站外活动</a ></p>',
+  	    	'</div>',
+  	    '</div>',
+  	    '<div>',
+  	    	'<p class="nav buyer_analysis">',
+  	    	'<a href="#/shop/item/traffic_analysis/?itemId={{_itemId}}&shopId={{_shopId}}">宝贝流量分析</a><span class="help-flash J_show_help_flash" data-url="http://cloud.video.taobao.com//play/u/2111460930/p/2/e/1/t/1/35075832.swf"></span></p>',
+  	    '</div>',
+  	    '</div>',
+  //	    '<div class="menu_shop_item_t help">',
+  //		'<div>',
+  //			'<p class="nav"><a target="_blank" href="http://www.maijia.com/help/index.html">帮助中心</a></p>',
+  //		'</div>',
+  //	'</div>',
+  	'</div>',
+  	//这里是初始默认显示的
+  	'<div act-if="_status_shop_nav == 0" id="menu_item_panel" style="width:200px;margin-top:0px;display:inline-block;float: left;">',
+  	//'<div class="J_show_help_flash" data-url="http://cloud.video.taobao.com//play/u/2111460930/p/2/e/1/t/1/33689444.swf" style="cursor:pointer;height:50px;width:220px;border:1px solid #eee;border-bottom:none;"><div style="float:left;margin-left:20px;margin-top:15px;height:20px;width:20px;background-image:url(http://cdn.maijia.com/www/www-old/resources/css/build/images/flash_play.png)"></div><div style="font-size:14px;color:#ff6600;float:left;height:50px;line-height:50px;margin-left:10px;font-family: \'微软雅黑\',arial;">宝贝监控视频教程</div></div>',
+  '<div class="menu_shop_item_t">',
+  		'<div>',
+  		'<p class="nav index current"><a>宝贝整体状况</a><span class="help-flash J_show_help_flash" data-url="http://cloud.video.taobao.com//play/u/2111460930/p/2/e/1/t/1/34960980.swf"></span></p>',
+  		'</div>',
+  	    '<div>',
+  	    	'<p class="nav"><a class="normal">宝贝上架调价明细</a><i class="up"></i><span class="help-flash J_show_help_flash" data-url="http://cloud.video.taobao.com//play/u/2111460930/p/2/e/1/t/1/35075883.swf"></span></p>',
+  	    	'<div class="sub">',
+  	    		'<p><a href="javascript:;">宝贝上下架跟踪</a></p>',
+  	    		'<p><a href="javascript:;">宝贝改名跟踪</a></p>',
+  	    		'<p><a href="javascript:;">宝贝调价跟踪</a></p>',
+  	    	'</div>',
+  	  '  </div>',
+  	    '<div class="parent">',
+  	    	'<p class="nav"><a class="normal">宝贝营销推广</a><i class="up"></i><span class="help-flash J_show_help_flash" data-url="http://cloud.video.taobao.com//play/u/2111460930/p/2/e/1/t/1/35109183.swf"></span></p>',
+  	        '<div class="sub">',
+  	        	'<p><a href="javascript:;">直通车</a></p>',
+  	        	'<p><a href="javascript:;">聚划算</a></p>',
+  	        	'<p><a href="javascript:;">淘宝客</a></p>',
+  	        	'<p><a href="javascript:;">站内活动</a></p>',
+  	        	'<p><a href="javascript:;">站外活动</a></p>',
+  	    	'</div>',
+  	    '</div>',
+  	  '<div>',
+  	    	'<p class="nav buyer_analysis">',
+  	    	'宝贝流量分析<span class="help-flash J_show_help_flash" data-url="http://cloud.video.taobao.com//play/u/2111460930/p/2/e/1/t/1/35075832.swf"></span></p>',
+  	    '</div>',
+  	    '</div>',
+  //	    '<div class="menu_shop_item_t help">',
+  //		'<div>',
+  //			'<p class="nav"><a target="_blank" href="http://www.maijia.com/help/index.html">帮助中心</a></p>',
+  //		'</div>',
+  //	'</div>',
+  	'</div>',
+  	'</div>',
+  	'<div id="module-shop-item" class="module-shop-item-detail" style="width:80%;float:right;">',
+  					// '<div>',
+  						'<div id="J_item_pin_bar" class="shop-item-pin-bar J_Item_Detail_Global" >',
+  						'</div>',	
+  					// '</div>',
+  					'<div id="itemMain"></div>',
+  					'</div><div style="clear:both;"></div>'];
+  
+  var temptitle = ['<div act-if="_status_shop_nav == 1">',
+  								'<div class="item-name ft_14" style="background-color:#ff8939;">',
+  									'<span class="ellipsis inline-block" style="max-width: 450px;vertical-align:middle;">宝贝名称：{{title}}</span>',
+  									'<a act-if="isMonitor == false" href="javascript:;" class="J_Add_Monitor btn item-btn">添加价格监控</a>',
+  									'<a act-if="isMonitor == true" href="javascript:;" class=" btn item-btn disabled w90">已添加监控</a>',
+  									'<a href="#/shop/detail/?id={{shopId}}" class="return-shop f-rt"><i class="icon-return-shop"></i>返回宝贝所在店铺</a>',
+  									'</div>',
+  							'</div>'];
+  	RC.template.addTemp('template.shop.item',temp);
+  	RC.template.addTemp('template.shop.item_title',temptitle);
+  
+  })(jQuery,RayCloud);
+
+});

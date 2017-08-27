@@ -1,0 +1,61 @@
+define('modules/module.help_flash', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var TEMP = ['<div class="help_flash_container" style="display: none;"><div style="position: fixed;top: 0;left: 0; height: 100%;width: 100%;z-index: 9980;background-color: #000;background-color: rgba(0,0,0,.7);filter:alpha(opacity=70);"></div><style>.help_flash_container .flash-container{left:50%;top:50%;position: absolute;margin-top:-273px;margin-left: -413px;height: 546px;width: 826px;}.help_flash_container  .flash-close{z-index:9992;position: absolute;left: 50%;top: 50%;margin-top:-273px;cursor: pointer;margin-left:423px;background-image: url(http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/close.png);height: 60px;width: 60px;}.help_flash_container  .flash-close:hover{background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/close hover.png");}</style>',
+  	'<div style="position: fixed;top: 0;left: 0;z-index: 9991;height: 100%;width: 100%;"><div class="flash-container">',
+        '</div>',
+        '<div class="flash-close"></div></div></div>'];
+  	var mdul = {
+  		name: 'help_flash',
+  		type: 'basic',
+  		_elm_dom_root: '#help-flash-container',
+  		_fn_dom_render:function(){
+  			this.$el = $(TEMP.join('')).appendTo(this._elm_dom_root);
+  		},
+  		_fn_event_bind: function() {
+  			var _this = this;
+  			this.$el.off("click",".flash-close");
+  			this.$el.on("click",".flash-close",function(){
+  				_this.$el.hide();
+  				_this.$el.find("embed").remove();
+  			});
+  		},
+  		_show:function(url){
+  			if(!url){
+  				return;
+  			}
+  			// var $embed = this.$el.find('embed');
+  			// if($embed){
+  			// 	if($embed.attr("src")!=url){
+  			// 		$embed.attr("src",url);
+  			// 	}
+  			// }else{
+  				this.$el.find('.flash-container').html('<embed allowfullscreen="true" style="display: block;" wmode="opaque" src="'+url+'" type="" width="100%" height="100%" hidden="no">');
+  			// }
+  			this.$el.show();
+  			// console.log(this.$el);
+  		},
+  		init: function(){
+  			this._fn_dom_render();
+  			RC.sub('show.help.flash', this._show_proxy = $.proxy(this._show,this));
+  			this._fn_event_bind();
+  		},
+  		getContainer: function(){
+  			return this.$el;
+  		},
+  		update: function(){},
+  		destroy: function(){
+  			if(this.$el){
+  				this.$el.empty().remove();
+  				this.$el = null;
+  				RC.removeSub('show.help.flash', this._show_proxy);
+  			}
+  		}
+  	};
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+
+});

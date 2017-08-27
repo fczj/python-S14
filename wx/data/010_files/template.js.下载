@@ -1,0 +1,28 @@
+define('modules/about/index/template', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var page_template = [
+  		'<div class="site-about-page">',
+  			'<style>.site-about-page{margin:0 auto;padding: 20px 0;font-size:12px;line-height:1.8;font-size:14px;}.site-about-page h2{position:relative;height:54px;margin-bottom:15px;font-size:30px;font-family:microsoft yahei;border-bottom:1px solid #cfcfcf;}.site-about-page h2 span{position:absolute;padding:0 15px 0 5px;border-bottom:1px solid #ff6000;}.site-about-page p{margin:10px 0;}</style>',
+  			'<h2><span>淘数据是什么</span></h2>',
+  			'<div>',
+  				'<p>淘数据（http://www.maijia.com/）由杭州麦家科技有限公司创办，作为淘宝、天猫卖家数据分析工具型站点,可以为您提供如下功能：</p>',
+  				'<p>1、在淘数据可以通过宝贝价格功能关注卖家的宝贝价格变化，对于宝贝的价格变化进行短信、邮件通知，实时根据宝贝的价格调整营销策略。</p>',
+  				'<p>2、在淘数据可以通过宝贝统计功能关注宝贝的上下架时间，调整宝贝的上下架时间来优化的宝贝搜索排名，还可以关注单品成交、改名、调价明细，统计各等级用户购买占比，给予卖家针对性营销参考。</p>',
+  				'<p>3、在淘数据可以通过关注店铺功能比较多个店铺的收藏，评价，销量等，分析自己的店铺与其他店铺的差距，多维度分析店铺的销量等情况，做到知己知彼。</p>',
+  				'<p>4、在淘数据，您可以通过对关键词展现指数、点击指数、点击率、市场均价等多维度进行分析，为宝贝直通车标题提供优化建议，提升您的直通车效果。</p>',
+  			'</div>',
+  			'<h2 style="margin-top: 50px;"><span>淘数据的价值</span></h2>',
+  			'<div>淘数据是一款专为淘宝、天猫卖家打造的数据分析工具, 通过对各项店铺、宝贝数据的挖掘分析，帮助用户深度了解卖家数据，从而给卖家决策提供一定得帮助，让卖家生意做的更简单。  </div>',
+  		'</div>'
+  	];
+  
+  	
+  	RC.template.addTemp('about.index.page', page_template);
+  	
+  })(jQuery,RayCloud);
+
+});

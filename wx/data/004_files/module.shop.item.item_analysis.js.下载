@@ -1,0 +1,186 @@
+define('modules/shop/item/item_analysis/module.shop.item.item_analysis', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($, _, RC){
+  	var querystring  = RC.controls.get('control.querystring'),
+  		ItemModel    = RC.controls.get('control.item.model');//,
+  		//mdul_onsale  = RC.modules.get('shop.item.item_analysis.onsale'),
+  		//mdul_onname  = RC.modules.get('shop.item.item_analysis.onname'),
+  		//mdul_onprice = RC.modules.get('shop.item.item_analysis.onprice'),
+  		//mdul_traded  = RC.modules.get('shop.item.item_analysis.traded');
+  
+  	var mdul = {
+  		name: 'shop.item.item_analysis',
+  		depend: 'shop',
+  		_elem_root: '#itemMain',
+  		_elem_template_name: 'template.shop.item.item_analysis',
+  		_fn_dom_render: function(hashs){
+  			if(this.$el){
+  				return;
+  			}
+  			this.sub_modules = {
+  				'onsale' : RC.modules.get('shop.item.item_analysis.onsale'),
+  				'onname' : RC.modules.get('shop.item.item_analysis.onname'),
+  				'onprice': RC.modules.get('shop.item.item_analysis.onprice')//,
+  				//'traded' : RC.modules.get('shop.item.item_analysis.traded')
+  			}
+  			this.$el = $(RC.template.get(this._elem_template_name)).appendTo(this._elem_root);
+  			this._fn_dom_update_tabs(_.extend({}, hashs));
+  			this._fn_event_bind();
+  		},
+  		_fn_dom_update_tabs: function(data){
+  			data._status_tabs = 1;
+  			var type = data.type;
+  			_.each(['onsale', 'onname', 'onprice', 'traded'], function(value, key){
+  				data['current_'+value] = type === value ? 'current' : '';
+  			});
+  			this.$el.find('.J_mar-tabs').html(RC.template.get_node('if','_status_tabs',data,RC.template.get(this._elem_template_name),0));
+  		},
+  		_fn_dom_update_tabs_current: function(hashs, oldUrl){
+  			var $current = this.$el.find('.J_mar-tabs').find('.current');
+  			//$current.find('a').attr('href', oldUrl);
+  			$current.removeClass('current');
+  			this.$el.find('.J_mar-tabs').find('.J_tab_'+hashs.type).addClass('current');
+  		},
+  		_fn_event_bind: function(){
+  			// 权限变更(登录/等级变化)
+  			this.$el.on('click', '.dateRangePicker', $.proxy(function(e){
+  				var ItemModelData = ItemModel.getModel(this._status_hashs.itemId).toJSON();
+  				if(ItemModelData.__level=='normal'){
+  					$('.dateRangePicker').removeClass('J_level')
+  				}else{
+  					$('.dateRangePicker').addClass('J_level')
+  				}
+  			},this));
+  			RC.sub('control.item.model.permission_change', this._fn_event_handler_itemModelPermissionChange_proxy = $.proxy(this._fn_event_handler_itemModelPermissionChange,this));
+  		},
+  		_fn_event_unbind: function(){
+  			RC.removeSub('control.item.model.permission_change', this._fn_event_handler_itemModelPermissionChange_proxy);
+  		},
+  		_status_event_scrollFixed: false,
+  		_fn_event_bind_scrollFixed: function(){
+  			if(this._status_event_scrollFixed === true){
+  				return;
+  			}
+  			this.$el.find('.J_mar-tabs').scrollToFixed({marginTop:84});
+  			this._status_event_scrollFixed = true;
+  		},
+  		_fn_event_unbind_scrollFixed: function(){
+  			if(this._status_event_scrollFixed === false){
+  				return;
+  			}
+  			this.$el.find('.J_mar-tabs').trigger('detach.ScrollToFixed');
+  			this._status_event_scrollFixed = false;
+  		},
+  		_fn_event_handler_itemModelPermissionChange: function(e){
+  			if(e.id != this._status_hashs.itemId){
+  				return;
+  			}
+  			for(var p in this._status_permission){
+  				this._status_permission[p] = true;
+  			}
+  			if(this._status_module_active === true){
+  				this.update(this._status_hashs, null, true);
+  			}
+  		},
+  		init: function(){},
+  		getContainer: function(){return this.$el;},
+  		_status_module_active: false,
+  		disabled: function(){
+  			this._status_module_active = false;
+  			this._fn_event_unbind_scrollFixed();
+  		},
+  		_status_permission: {
+  			'onsale' : false,
+  			'onname' : false,
+  			'onprice': false//,
+  			//'traded' : false
+  		},
+  		sub_modules: {
+  			'onsale' : null,
+  			'onname' : null,
+  			'onprice': null//,
+  			//'traded' : null
+  		},
+  		_status_active_sub_module: null,
+  		_status_hashs: {},
+  		update: function(hashs, afterload, refresh){
+  			this._status_module_active = true;
+  			if(!hashs.shopId || !hashs.itemId){
+  				// throw error
+  			}
+  
+  			// load itemInfo
+  			ItemModel.getModel(hashs.itemId).getData(_.bind(function(data){
+  				this._update(hashs, afterload, refresh, data);
+  			},this));
+  		},
+  		_update: function(hashs, afterload, refresh, itemInfo){
+  			if(_.indexOf(['onsale','onname','onprice'/*,'traded'*/], hashs.type) === -1){
+  				//hashs.type = 'traded';
+  				hashs.type = 'onsale';
+  			}
+  
+  			var type      = hashs.type,
+  				oldType   = this._status_hashs.type,
+  				oldModule = this._status_active_sub_module,
+  				curModule = null;
+  
+  			// render 结构
+  			this._fn_dom_render(hashs);
+  			if(hashs.itemId != this._status_hashs.itemId || hashs.shopId != this._status_hashs.shopId){
+  				this._fn_dom_update_tabs(_.extend({},hashs));
+  			}else if(oldModule && oldType !== type){
+  				this._fn_dom_update_tabs_current(_.extend({},hashs), _.extend({},this._status_hashs));
+  			}
+  			this._fn_event_bind_scrollFixed();
+  			this._status_hashs = _.extend({},hashs);
+  
+  			refresh = refresh || this._status_permission[type];
+  			// 调用子模块
+  			if(oldModule){
+  				if(oldType === type){
+  					oldModule.update(hashs, afterload, refresh, itemInfo);
+  				}else{
+  					curModule = this._status_active_sub_module = this.sub_modules[type];
+  					curModule.update(hashs, function(){
+  						oldModule.getContainer().hide();
+  						curModule.getContainer().show();
+  						oldModule = null;
+  						curModule = null;
+  						afterload && afterload();
+  					}, refresh, itemInfo);
+  				}
+  			}else{
+  				curModule = this._status_active_sub_module = this.sub_modules[type];
+  				curModule.update(hashs, afterload, refresh, itemInfo);
+  			}
+  
+  			this._status_permission[type] = false;
+  		},
+  		destroy: function(){
+  			if(this.$el){
+  				this._fn_event_unbind_scrollFixed();
+  				this._fn_event_unbind();
+  				_.each(this.sub_modules, function(module, idx){
+  					module&&module.destroy&&module.destroy();
+  				});
+  
+  				this._status_permission = {
+  					'onsale' : false,'onname' : false,'onprice': false/*,'traded' : false*/
+  				};
+  				this._status_module_active = false;
+  				this._status_active_sub_module = null;
+  				this._status_hashs = {};
+  				this.$el.empty().remove();
+  				this.$el = null;
+  			}
+  		}
+  	};
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,_, RayCloud);
+  
+
+});

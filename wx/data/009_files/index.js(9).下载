@@ -1,0 +1,15 @@
+define('modules/shop/detail/title/optimize/table/help-tips/index', function(require, exports, module) {
+
+  var htmlTPL = "<div class=\"help-tip\"> <span class=\"help-icon\"></span>\r\n    <div class=\"help-tip_body\">\r\n        <div class=\"arrow-top\"></div>\r\n        <p style=\"{{left}}\">{{content}}</p>\r\n    </div>\r\n</div>\r\n<!-- @require 'modules/shop/detail/title/optimize/table/help-tips/index.less' -->";
+  var $ = require('components/jquery/jquery');
+  module.exports = {
+      appendTo:function(dom,opt){
+          if(!opt){
+              opt = {};
+          }
+          var html = htmlTPL.replace(/\{\{content\}\}/, opt.content||'').replace(/\{\{left\}\}/, 'left:-'+(opt.left||45)+'%');
+          $(dom).append(html);
+      }
+  }
+
+});

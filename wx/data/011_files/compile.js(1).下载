@@ -1,0 +1,98 @@
+define('modules/shop/detail/title/optimize/table/pagination/compile', function(require, exports, module) {
+
+  /*
+   * @return {Array} 页码列表，空列表表示...
+   */
+  var _getPages = function(data){
+  	var pageNo = data.pageNo, pageSize = data.pageSize, pageTotal = data.pageTotal;
+  	var r = [];
+  	if(pageTotal <= 0){
+  		return r;
+  	}
+  	//上一页
+  	if(pageNo > 1){
+  		r.push(pageNo-1);
+  	}
+  	//第一页, 当前页小于等于3的, 后面前后页会显示
+  	if(pageNo > 3){
+  		r.push(1);
+  		// ...
+  		if(pageNo > 4){
+  			r.push('');
+  		}
+  	}
+  	//前后两页
+  	for(var i=pageNo-2; i<=pageNo+2; i++){
+  		if(i>=1 && i<= pageTotal){
+  			r.push(i);
+  		}
+  	}
+  	//...
+  	if(pageNo + 2 + 1 < pageTotal){
+  		r.push('');
+  	}
+  	//尾页
+  	if(pageNo + 2 < pageTotal){
+  		r.push(pageTotal);
+  	}
+  	//next
+  	if(pageNo < pageTotal){
+  		r.push(pageNo + 1);
+  	}
+  	return r;
+  };
+  /**
+   * 渲染分页代码
+   * @param {Object} data 分页数据
+   * @config {Number|String} pageNo 当前页码
+   * @config {Number|String} pageSize 每页条数
+   * @config {Number} pageTotal 总页数 {optional} 可选，没有根据total计算
+   * @config {Number} total 总条数 {optional} 可选， 不传依据pageTotal
+   * @config {Function} url 生成url方法，参数页码 {optional}
+   * @config {Function} onpagechange 页码变化回调 {optional}
+   * @return {String} 页面字符串 
+   */
+  var compile = function(data){
+  	var pageNo = data.pageNo - 0,
+  		pageSize = data.pageSize - 0,
+  		pageTotal = data.pageTotal !== undefined ? data.pageTotal : Math.ceil(data.total/data.pageSize);
+  	var pageNoList = _getPages({pageNo: pageNo, pageSize: pageSize, pageTotal: pageTotal});
+  	var getPageUrl = data.url || function(no){return 'javascript:;'};
+  
+  	if(pageNoList.length === 0){
+  		return '';
+  	}
+  
+  	var html = ['<div class="ui-pagination ui-pagination-right"><div class="ui-pages">'],
+  		PREV = '<a href="{{url}}" class="ui-page-no ui-page-prev" data-page="{{no}}">&lt;</a>',
+  		NEXT = '<a href="{{url}}" class="ui-page-no ui-page-next" data-page="{{no}}">&gt;</a>',
+  		PAGE = '<a href="{{url}}" class="ui-page-no {{isCurClass}}" data-page="{{no}}">{{no}}</a>',
+  		MORE = '<span class="ui-page-more">...</span>';
+  	var replaceFn = function(temp, obj){
+  			return temp.replace(/{{(.+?)}}/g, function(match, $1){
+  				return obj[$1] || '';
+  			});
+  	}
+  	for(var i=0,no, temp, len=pageNoList.length;i<len;i++){
+  		no = pageNoList[i];
+  		//前一页
+  		if(i===0 && no === pageNo - 1){
+  			html.push(replaceFn(PREV,{url: getPageUrl(no), no: no}));
+  		}else if(i===len-1 && no === pageNo + 1){
+  			html.push(replaceFn(NEXT,{url: getPageUrl(no), no: no}));
+  		}else if(no === ''){
+  			html.push(MORE);
+  		}else{
+  			html.push(replaceFn(PAGE, {url: getPageUrl(no), no: no, isCurClass: pageNo === no ? 'ui-page-cur': ''}));
+  		}
+  	}
+  	html.push('</div></div>');
+  	return html.join('');
+  }
+  
+  module.exports = {
+  	compile: compile,
+  	_getPages: _getPages
+  }
+
+});

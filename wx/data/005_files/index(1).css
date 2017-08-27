@@ -1,0 +1,86 @@
+.modules-shop-title-optimize .item-info {
+  padding-top: 20px;
+  padding-left: 20px;
+}
+.modules-shop-title-optimize .item-info .info-con:after {
+  clear: both;
+  display: table;
+  content: "";
+}
+.modules-shop-title-optimize .item-info .img {
+  float: left;
+}
+.modules-shop-title-optimize .item-info .img img {
+  height: 90px;
+  width: 90px;
+  border: 1px solid #eee;
+}
+.modules-shop-title-optimize .item-info .info {
+  font-size: 14px;
+  line-height: 32px;
+  float: left;
+  padding-left: 20px;
+  width: 820px;
+  color: #333;
+}
+.modules-shop-title-optimize .item-info .info a {
+  color: #FE6900;
+  text-decoration: none;
+}
+.modules-shop-title-optimize .item-info .info a:hover {
+  color: #FE6900;
+  text-decoration: none;
+}
+.modules-shop-title-optimize .item-info .info .title:after {
+  clear: both;
+  display: table;
+  content: "";
+}
+.modules-shop-title-optimize .item-info .info .pro-con {
+  line-height: 21px;
+}
+.modules-shop-title-optimize .item-info .info .property {
+  width: 180px;
+  padding-right: 20px;
+  display: inline-block;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.modules-shop-title-optimize .item-info .info .property .name {
+  color: #999;
+}
+.modules-shop-title-optimize .item-info .info .value {
+  color: #333;
+}
+.modules-shop-title-optimize .item-info .info .th {
+  color: #999;
+  float: left;
+}
+.modules-shop-title-optimize .item-info .info .text {
+  float: left;
+}
+.modules-shop-title-optimize .item-info .optimize-tips {
+  width: 880px;
+  font-size: 14px;
+  padding: 10px 20px;
+  background: #fff4da;
+  margin-top: 20px;
+  margin-bottom: 40px;
+}
+.modules-shop-title-optimize .item-info .optimize-tips .title {
+  float: left;
+  color: #ff9248;
+  line-height: 48px;
+  margin-right: 20px;
+}
+.modules-shop-title-optimize .item-info .optimize-tips .text {
+  float: left;
+  color: #666;
+  line-height: 24px;
+}
+.modules-shop-title-optimize .item-info .optimize-tips:after {
+  display: table;
+  clear: both;
+  content: "";
+}

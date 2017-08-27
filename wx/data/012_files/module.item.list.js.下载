@@ -1,0 +1,593 @@
+define('modules/item/list/module.item.list', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var mdul = {
+  		name: 'item.list',
+  		depend: 'item',
+  		_elm_dom_root: '#container',
+  		_elm_template_name: 'template.item.list',
+  
+  		_fn_dom_render: function(){
+  			if(this._elm_dom_container){
+  				return;
+  			}
+  			var $el = this._elm_dom_container = $(RC.template.get(this._elm_template_name)).appendTo(this._elm_dom_root);
+  			this._elm_dom_tabNavs = $el.find('.ui-tab-nav');
+  			//this._elm_dom_total = $el.find('.J_Total');
+  			//this._elm_dom_keyword = $el.find('.J_Keyword');
+  			this._elm_dom_listContainer = $el.find('.J_List_Container');
+  			this._elm_dom_pagesContainer = $el.find('.J_Pages_Container');
+  
+  			this._fn_event_bind();
+  		},
+  		_fn_dom_update: function(data){
+  
+  			this._fn_dom_update_list(data);
+  			this._fn_dom_update_pagination(data);
+  		},
+  		_fn_dom_update_tab: function(type){
+  			this._elm_dom_tabNavs.removeClass('current').filter(function(idx,item){ return $(item).attr('data-type') === type}).addClass('current');
+  		},
+  		_fn_dom_update_monitorStatus: function(id, status){
+  			this._elm_dom_listContainer.find('.J_Monitor_Status_'+id).html('<i class="icon icon-check-circle-red"></i>');
+  		},
+  		_fn_dom_escapeHtml: function(string){
+  			var _ = (function(){
+  				var _ = {};
+  				_.keys = function(obj){
+  					var r = [];
+  					for(var p in obj){
+  						r.push(p);
+  					}
+  					return r;
+  				};
+  
+  				// List of HTML entities for escaping.
+  				var entityMap = {
+  					escape: {
+  						'&': '&amp;',
+  						'<': '&lt;',
+  						'>': '&gt;',
+  						'"': '&quot;',
+  						"'": '&#x27;'
+  					}
+  				};
+  				//entityMap.unescape = _.invert(entityMap.escape);
+  
+  				// Regexes containing the keys and values listed immediately above.
+  				var entityRegexes = {
+  					escape: new RegExp('[' + _.keys(entityMap.escape).join('') + ']', 'g')//,
+  					//unescape: new RegExp('(' + _.keys(entityMap.unescape).join('|') + ')', 'g')
+  				};
+  
+  
+  				_.escape = function(string){
+  						if (string === null){
+  							return '';
+  						}
+  						return ('' + string).replace(entityRegexes['escape'], function (match) {
+  							return entityMap['escape'][match];
+  						});
+  				};
+  				return _;
+  			})();
+  			return _.escape(string);
+  
+  		},
+  		_fn_dom_update_list: function(data){
+  			$('.input-xlarge').val("");
+  			// 简单处理一下啦，直接引用hashs了
+  			data.hashs = $.extend({}, this._status_lastHash);
+  
+  
+  			var total = data.total
+  				, keyword = this._fn_dom_escapeHtml(data.keyword);
+  			//console.log(data)
+  			console.log('keyword:'+keyword);
+  			// 搜索结果展示
+  			var $schTips = this._elm_dom_container.find('.J_search-result-tip');
+  			$schTips.html('');
+  			this._elm_dom_container.find('.J_search-result-tip_2').html('');
+  
+  			// 无关键词时 提示
+  			if (!keyword) {
+  				$schTips.html('热门宝贝推荐');
+  			}
+  			// 搜索列表为空时 提示
+  			else if (!total) {
+  				var temp = [
+  					'<form class="J_Add_Shop_Form" style="background-color: #fff3db;">',
+  						'<div class="pl_20 ft_14 pt_20 pb_20">',
+  							'<span>没有找到与 “<em class="fc-red" style="display:inline-block;overflow: hidden; max-width: 100px; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;">{keyword}</em>” 相关的宝贝，可能该宝贝所属的店铺暂未收录。请输入掌框旺旺ID，一键添加店铺</span>',
+  							'<input type="text" name="shopField" class="input-xlarge ml_10 ui-tag-group" placeholder="请输入掌柜旺旺ID">',
+  							'<button type="submit" class="btn btn-success ui-tag-group ml_10">提交</button>',
+  						'</div>',
+  					'</form>',
+  					'<div style="line-height:24px;padding-left:1em;">以下是我们为您推荐的热门宝贝：</div>'
+  				].join('');
+  				$schTips.html(temp.replace('{keyword}',keyword));
+  				//$schTips.html('未找到与 “<em class="fc-red">' + keyword + '</em>” 相关的宝贝，我们为您推荐以下热门宝贝');
+  			// fuck 这里简单处理， keyword是宝贝ID的情况下， 不显示少于5个提示
+  			}else if(total <= 5 && !keyword.match(/^\d+$/)){
+  				var temp = [
+  					'<form class="J_Add_Shop_Form" style="background-color: #fff3db;">',
+  						'<div class="pl_20 ft_14 pt_20 pb_20">',
+  							'<span>与 “<em class="fc-red" style="display:inline-block;overflow: hidden; max-width: 100px; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;">{keyword}</em>” 相关的宝贝较少，可能该宝贝所属的店铺暂未收录。请输入掌框旺旺ID，一键添加店铺</span>',
+  							'<input type="text" name="shopField" class="input-xlarge ml_10 ui-tag-group" placeholder="请输入掌柜旺旺ID">',
+  							'<button type="submit" class="btn btn-success ui-tag-group  ml_10">提交</button>',
+  						'</div>',
+  					'</form>'
+  				].join('');
+  				this._elm_dom_container.find('.J_search-result-tip_2').html(temp.replace('{keyword}',keyword));
+  
+  			}
+  			//正常
+  			else {
+  				$schTips.html('共找到<em class="fc-red">' + total + '</em>个与 “<em class="fc-red" style="display:inline-block;overflow: hidden; max-width: 100px; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;">' + keyword + '</em>” 相关的宝贝');
+  			}
+  
+  			// 分页显示与隐藏
+  			if (total <= 10) {
+  				this._elm_dom_container.find('.J_pagination-wrap').hide();
+  			}
+  			else {
+  				this._elm_dom_container.find('.J_pagination-wrap').show();
+  			}
+  
+  
+  			var opt = {
+  				"name": "— —",
+  				"sellerNick": "— —",
+  				"price": "— —"
+  			};
+  			$.each(data.list, function(idx, item){
+  				data.list[idx] = $.extend({},opt,item);
+  			});
+  			
+  
+  			// format data
+  			var list = data.list, isLogin = data.isLogin ? 1 : 0;
+  			this._status_isLogin = isLogin;
+  			for(var i=0,len=list.length;i<len; i++){
+  				//list[i]._idx = data.pageSize*(data.pageNo-1) + (i +1);
+  				//isMonitor
+  				//if(isLogin){
+  					//FIXME, 目前只需要跳到查看详情即可
+  					//list[i]._isMonitor = list[i].isMonitor ? '<i class="icon icon-check-circle-red"></i>' : '<span class="btn btn-success J_Add_Monitor" data-id="'+list[i].id+'" data-price="' + list[i].price + '" data-image="'+ list[i].image+ '" data-isLogin="'+isLogin+'">添加监控</span>';
+  				//}
+  				list[i]._isMonitor = '<div class="pt_10"><a href="#/shop/item/?shopId=' + list[i].shopId + '&itemId=' + list[i].id + '" class="btn">查看详情</a></div>';
+  			}
+  			//
+  			var html = '';
+  			if(!data.list.length){
+  				html = RC.template.get('template.item.list.list_empty');
+  			}else{
+  				var tempName = data.isLogin === true ? 'template.item.list.list' : 'template.item.list.list_unLogin';
+  				html = RC.template.get(tempName, data, true);
+  
+  			}
+  
+  			this._elm_dom_listContainer.html(html);
+  		},
+  		_fn_dom_update_pagination:function(data){
+  			var html = this._fn_dom_render_pagination({
+  						page_size: data.pageSize,
+  						total: data.total,
+  						page_num: data.pageNo
+  				});
+  
+  			this._elm_dom_pagesContainer.empty().html(html);
+  		},
+  		//////////////
+  		/**
+  		 * 组装页码链接方法
+  		 * @param page_num 当前页码
+  		 */
+  		_fn_act_dom_get_page_url: function(page_num){
+  			return '#/item/list/?' + $.param($.extend({},this._status_lastHash, {pageNo: page_num})).replace(/\+/g,'%20');
+  			//return page_num;
+  		},
+  		/**
+  		 * 取得分页html string
+  		 * @param page_size 每页条数
+  		 * @param page_total 总页数
+  		 * @param page_no 当前页码
+  		 */
+  		_fn_dom_render_pagination: function(data){
+  			if(!data.total){
+  				return '';
+  			}
+  			var page_size = data.page_size - 0,
+  				page_total = Math.ceil((data.total-0)/page_size),
+  				page_no = data.page_num - 0,
+  				list = this._fn_act_dom_cal_page_links(page_total, page_no),
+  				html = this._fn_ctrl_dom_page_links_html_render(list, page_total, page_no);
+  
+  			return html;
+  		},
+  		_fn_act_dom_cal_page_links: function(total, page_no) {
+  			var pages = [], index = 0;
+  			/**
+  			 * 来自 @ 刘明剑
+  			 *
+  			 * 计算页数的展现形式，算法如下：
+  			 * <pre>
+  			 * 如果页数小于等于3，那么页码全部显示；
+  			 * 如果页数大于3并且小于等于10，那么前三页码显示，然后再显示第10页；
+  			 * 如果页数大于10，那么算法是保留前3页，和最后两页，中间显示一页
+  			 * </pre>
+  			 */
+  			if (total <= 5) {
+  				for (var i = 1; i <= total; i++) {
+  					pages[index++] = i;
+  				}
+  				return pages;
+  			}
+  			if (page_no <= 3) {
+  				for (var i = 1; i <= page_no + 1; i++) {
+  					pages[index++] = i;
+  				}
+  				pages[index++] = '...';
+  			} else if (page_no > 3 && page_no < (total - 2)) {
+  				pages[index++] = 1;
+  				pages[index++] = '...';
+  				pages[index++] = page_no - 1;
+  				pages[index++] = page_no;
+  				pages[index++] = page_no + 1;
+  				pages[index++] = '...';
+  			} else {
+  				pages[index++] = 1;
+  				pages[index++] = '...';
+  				if (page_no == total - 2) {
+  					for (var i = page_no - 1; i <= total - 1; i++) {
+  						pages[index++] = i;
+  					}
+  				} else if (page_no == total - 1) {
+  					for (var i = total - 2; i <= total - 1; i++) {
+  						pages[index++] = i;
+  					}
+  				} else {
+  					pages[index++] = total - 1;
+  				}
+  			}
+  			pages[index++] = total;
+  			return pages;
+  		},
+  		_fn_ctrl_dom_page_links_html_render: function(list, page_total, page_no) {
+  
+  			var html = ['<span class="page-prev">'],
+  				//url = this._fn_act_dom_get_page_url(),
+  				_this = this,
+  				fill_url = function(page) {
+  					//return url + '&page_no=' + page;
+  					return _this._fn_act_dom_get_page_url(page);
+  				};
+  			if (page_no == 1) {
+  				html.push('<a class="disable" >上一页<b></b></a>');
+  			} else {
+  				html.push('<a href="' + fill_url(page_no - 1) + '">上一页<b></b></a></span>');
+  			}
+  			html.push('</span>');
+  
+  			var i = 0, ni = list.length;
+  			for (; i < ni; i++) {
+  				if (list[i] == '...') {
+  					html.push('<span class="page-split">...</span>');
+  					continue;
+  				}
+  				if (list[i] == page_no) {
+  					html.push('<a class="page-no page-cur" href="' + fill_url(list[i]) + '">' + page_no + '</a>');
+  					continue;
+  				}
+  				html.push('<a class="page-no" href="' + fill_url(list[i]) + '">' + list[i] + '</a>');
+  			}
+  
+  			html.push('<span class="page-next">');
+  			if (page_no == page_total) {
+  				html.push('<a class="disable" >下一页<b></b></a>');
+  			} else {
+  				html.push('<a href="' + fill_url(page_no + 1) + '">下一页<b></b></a>');
+  			}
+  			html.push('</span>');
+  			return html.join('');
+  		},
+  		//////////////
+  
+  		_fn_event_bind: function(){
+  			this._elm_dom_tabNavs.on('click', this._fn_event_handler_click_nav_proxy = $.proxy(this._fn_event_handler_click_nav, this));
+  			this._elm_dom_listContainer.on('click', '.J_Add_Monitor', this._fn_event_handler_click_monitor_proxy = $.proxy(this._fn_event_handler_click_monitor, this));
+     			RC.sub('socket.user.warnconfig.info.update.warnType', this._fn_event_handler_socket_update_warnType_proxy = $.proxy(this._fn_event_handler_socket_update_warnType,this));
+  			this._elm_dom_container.on('submit', '.J_Add_Shop_Form', this._fn_event_handler_submit_addShop_proxy = $.proxy(this._fn_event_handler_submit_addShop,this));
+  			this._elm_dom_listContainer.on('click', '.J_Sort', function(e){
+  				var $target = $(e.currentTarget);
+  				var sortField = $target.attr('data-sortField');
+  				var sortType  = $target.attr('data-sortType');
+  
+  				if(sortType !== 'desc'){
+  					sortField = '';
+  				}
+  				RC.pages.modifyCurHash({
+  					sortField: sortField,
+  					sortType: sortType,
+  					pageNo: '1'
+  				});
+  			});
+  		},
+  		_fn_event_unbind: function(){
+  			this._elm_dom_tabNavs.off('click', this._fn_event_handler_click_nav_proxy);
+  			this._elm_dom_listContainer.off('click', '.J_Add_Monitor', this._fn_event_handler_click_monitor_proxy);
+  			RC.removeSub('socket.user.warnconfig.info.update.warnType', this._fn_event_handler_socket_update_warnType_proxy);
+  			this._elm_dom_container.off('submit', '.J_Add_Shop_Form', this._fn_event_handler_submit_addShop_proxy);
+  			this._elm_dom_listContainer.off('click', '.J_Sort');
+  		},
+  		_fn_event_handler_click_nav: function(e){
+  			var $target = $(e.currentTarget);
+  			if($target.hasClass('current')){
+  				return false;
+  			}
+  			var params = $.extend({}, this._status_lastHash, {
+  				type: $target.attr('data-type'),
+  				pageNo: 1
+  			});
+  			RC.pages.setCurHash(params);
+  		},
+  		_shop_name_black_list:['音像','点卡','书','话费','移动','充值','联通','数卡','药房','出版','外卖','旅游','旅行','国旅','青旅','商旅','旅业','保险','数卡','电信','电子','卡牌','芯片','考研','考试','教材','壁纸','戏币','生态农业','汇吃','游戏','电子书'],
+  		_fn_event_handler_submit_addShop: function(e){
+  			var _this = this;
+  			e.preventDefault();
+  			if(!this._status_isLogin){
+  				RC.pub('global.login.pop');
+  				return;
+  			}
+  			var value = $.trim($(e.currentTarget).find('input[name="shopField"]').val());
+  			if(value === ''){
+  				RC.showWarn('请输入店铺id或全名或链接！', 0.8);
+  				return;
+  			}
+  			if(value.replace(/[^\x00-\xff]/g, "— —").length>200){
+  				RC.showWarn('店铺id或全名或链接超出长度限制！', 0.8);
+  				return;
+  			}
+  
+  
+  			API.user_shop_add({shopField: value}, $.proxy(function(json){
+                  if(json.data && json.data.isFound){
+                      var data = json.data.shop,
+                          image = json.data.shop && data.image || '',
+                          sellerNick = json.data.shop && data.sellerNick || '',
+                          name = data.name,
+                          url = 'http://shop' + data.id + '.taobao.com';
+  					var isgoon = true;
+  					// for(var i=0,length=_this._shop_name_black_list.length;i<length;i++){
+       //                  	if(name.indexOf(_this._shop_name_black_list[i])!=-1){
+       //                  		var html_dialog = '<div>您提交的店铺，因类目不在卖家网的收录范围中，暂不能提供服务，请见谅。</div><div style="color:#C0BBBB;">(旅游、酒店、电子、音像、点卡、书、药、游戏、话费、保险等类目，暂不提供数据支持)</div>'
+       //                  		$.dialog({
+  		   //                      title:"提醒",
+  		   //                      content:html_dialog,
+  		   //                      okVal:"确认并返回",
+  		   //                      ok:function(){
+  		   //                      }
+  	    //                		});
+       //                  		 return false;
+       //                  	}
+       //                  }
+       				// if (json.data.needCheck) {
+           //              	var html_dialog = '<div>店铺已完成提交，48小时内完成审核，审核通过后可查看数据。</div>'
+           //              		$.dialog({
+  		       //                  title:"提醒",
+  		       //                  content:html_dialog,
+  		       //                  okVal:"确认并返回",
+  		       //                  ok:function(){
+  		       //                  }
+  	        //            		});
+  	        //            		return false;
+           //              };
+                      var tmp_arr = [
+                          '<div class="pd_15 clearfix ft_14">',
+                          '<div class="f-lt">',
+                              '<img src="'+image+'_80x80.jpg" alt="#">',
+                          '</div>',
+                          '<div class="pl_15" style="overflow:hidden;">',
+                          '<div class="ellipsis pt_5">',
+                              '<label class="mr_5">店铺:</label>'+name,
+                          '</div>',
+                          '<div class="ellipsis pt_5">',
+                              '<label class="mr_5">掌柜:</label>'+sellerNick,
+                          '</div>',
+                          '<div class="ellipsis pt_5">',
+                          '<label class="mr_5">店铺地址:</label>' + url,
+                          '</div>',
+                          '</div>',
+                          '</div>'
+                      ]
+                      $.dialog({
+                          title:"店铺收录校验",
+                          content:tmp_arr.join(' '),
+                          okVal:"确认并查看结果",
+                          ok:function(){
+                              window.location.href=encodeURI("#/shop/temp_detail/?temp_detail_param="+value);
+                          }
+                      });
+                  }else{
+                  	var mesg = json.data.msg||'很遗憾，你提交的旺旺ID没有匹配到店铺,请确认后重新提交。';
+                      $.dialog({
+                          title:"店铺收录校验",
+                          // json.data && '<div class="ft_14 pd_20">'+ json.data.msg+'</div>' ||
+                          content: '<div class="ft_14 pd_20">'+mesg+'</div>',
+                          okVal:"我知道了",
+                          width:"400px",
+                          ok:function(){},
+  						drag: false
+                      });
+                  }
+  			},this), $.proxy(function(json){
+  				RC.clearShow();
+  				RC.showFail(json&&json.message || '提交失败，请重试！', 0.5);
+  			},this));
+  
+  		},
+  		_fn_event_handler_socket_update_warnType: function(warnType){
+  			this._status_default_warnType = warnType+'';
+  		},
+  		_status_default_warnType: null,
+  		_fn_event_handler_click_monitor: function(e){
+  			/*
+  			 * 提示信息， 下回用户权限设计好后，可以从用户信息中读取
+  			*/
+  			/*
+  			this._elm_dom_dialog_alert = $.dialog.alert('公测阶段，可免费监控5个店铺，一个月后才可取消，请大家谨慎添加！', $.proxy(function(){
+  				var id = $(e.currentTarget).attr('data-id');
+  				API.shop_monitor_add({id: id}, $.proxy(function(){
+  					this._fn_dom_update_monitorStatus(id);
+  				},this));
+  			},this));
+  			*/
+  
+  			var _this = this
+  				, $target = $(e.target)
+  				, itemId = $target.attr('data-id')
+  				, itemPrice = $target.attr('data-price')
+  				, itemImage = $target.attr('data-image');
+  
+  			if($target.attr('data-islogin') == '0'){
+  				$.dialog.alert('登录添加监控');
+  				return;
+  			}
+  
+  			var _mointor = RC.controls.get('controls.mointor_price_pop');
+  
+  			if(this._status_default_warnType){
+  
+  				_mointor.show({
+  					itemId: itemId
+  					, itemPrice: itemPrice
+  					, itemImage: itemImage
+  					, warnType : this._status_default_warnType
+  					, success: function () {
+  						_this._fn_dom_update_monitorStatus(itemId);
+  					}
+  				})
+  			}else{
+  
+  				API.user_get_warnconfig_info({}, function(json){
+  					_this._fn_event_handler_socket_update_warnType(json.data.warnType);
+  					_mointor.show({
+  						itemId: itemId
+  						, itemPrice: itemPrice
+  						, itemImage: itemImage
+  						, warnType : _this._status_default_warnType
+  						, success: function () {
+  							_this._fn_dom_update_monitorStatus(itemId);
+  						}
+  					})
+  				});
+  			}
+  		},
+  
+  
+  		_fn_ctrl_load: function(params, success, fail){
+  			var pageSize = params.pageSize - 0,
+  				pageNo = params.pageNo - 0;
+  
+  			// 匹配宝贝地址
+  			// var item_reg = /^([1-9](?:\d){5,12})$|^(?:http:\/\/)?(?:(?:item\.taobao)|(?:detail\.tmall))\.com\/item.htm\?.*id=([1-9](?:\d){5,12})/
+  			// var item_reg =	/^([1-9](?:\d){5,12})$|^(?:http:\/\/)?(?:(?:item\.taobao)|(?:detail\.tmall))\.com\/item.htm\?(?:(?:.*&id=)|(?:id=))([1-9](?:\d){5,12})/
+  			// 	, match = item_reg.exec(params.keyword);
+  
+  			var query_id = null;
+  			if(params.keyword.indexOf("?")!=-1&&(params.keyword.indexOf("taobao")!=-1||params.keyword.indexOf("tmall")!=-1)){
+  				var params = params.keyword.split("?")[1].split("&");
+  				for(var i=0;i<params.length;i++){
+  					var param = params[i].split("=");
+  					if(param[0]=='id'){
+  						query_id=param[1];
+  						break;
+  					}
+  				}
+  			}
+  			if(query_id){
+  				params.keyword = query_id;
+  			}
+  			// if (match) {
+  			// 	params.keyword = match[1] || match[2];
+  			// }
+  			// console.log('params.keyword:'+params.keyword);
+  			API.item_get_list(params, function(json){
+  				var data = json.data;
+  				data.keyword = params.keyword||'';
+  				data.pageSize = data.pageSize || pageSize;
+  				data.pageNo = data.pageNo || pageNo;
+  				success(data);
+  			}, fail);
+  		},
+  
+  
+  		_status_lastHash:{},
+  		_fn_data_filter_hash: function(hashs){
+  			var o = {
+  				type: hashs.type || '',
+  				pageNo: hashs.pageNo || '',
+  				pageSize: hashs.pageSize || '',
+  				keyword: hashs.keyword || '',
+  				sortField: hashs.sortField || 'amount30',
+  				sortType: hashs.sortType || 'desc'
+  			};
+  			//不要升序
+  			if(o.sortType !== 'desc'){
+  				o.sortType = '';
+  				o.sortField = '';
+  			}
+  			// keyword 为空
+  
+  			if($.inArray(o.type,['ALL','B','C']) === -1){
+  				o.type = 'ALL';
+  			}
+  			if(!o.pageNo.match(/^[0-9]\d*$/)){
+  				o.pageNo = '1';
+  			}
+  			if(!o.pageSize.match(/^[0-9]\d*$/)){
+  				o.pageSize = '10';
+  			}
+  
+  			o.keyword = decodeURIComponent(o.keyword);
+  
+  			this._status_lastHash = $.extend({},o);
+  
+  			return o;
+  		},
+  		_status_isLogin: 0,
+  		init: function(){},
+  		getContainer: function(){
+  			return this._elm_dom_container;
+  		},
+  		_update: function(hashs, afterload, is_refresh){
+  			this._fn_dom_render();
+  			this._fn_dom_update_tab(this._status_lastHash.type);
+  
+  			this._fn_ctrl_load(hashs, $.proxy(this._fn_dom_update,this));
+  			afterload && afterload();
+  		},
+  		update: function(hashs, afterload, is_refresh){
+  			hashs = this._fn_data_filter_hash(hashs);
+  			this._update(hashs, afterload, is_refresh);
+  		},
+  		disabled: function(){},
+  		destroy: function(){
+  			if(this._elm_dom_container){
+  				this._status_isLogin = 0;
+  				this._elm_dom_tabNavs = null;
+  				this._elm_dom_container.empty().remove();
+  				this._elm_dom_container = null;
+  				this._status_default_warnType = null;
+  			}
+  		}
+  
+  	};
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+  
+
+});

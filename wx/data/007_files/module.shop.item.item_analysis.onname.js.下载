@@ -1,0 +1,314 @@
+define('modules/shop/item/item_analysis/module.shop.item.item_analysis.onname', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,_,RC){
+  	var querystring = RC.controls.get('control.querystring'),
+  		ItemModel   = RC.controls.get('control.item.model');
+  
+  	var mdul = {
+  		name: 'shop.item.item_analysis.onname',
+  		depend: 'shop',
+  		_elem_root: '#main_item_analysis',
+  		_elem_template_name: 'template.shop.item.item_analysis.onname',
+  		_fn_dom_render: function(data){
+  			if(this.$el){
+  				return;
+  			}
+  			this.$el = $(RC.template.get(this._elem_template_name, data || {})).appendTo(this._elem_root);
+  			this._fn_event_bind();
+  		},
+  		_fn_data_compare_name: function(str1, str2,p){
+  			var i, j,
+  				len1 = str1.length,
+  				len2 = str2.length,
+  				r = [];
+  
+  			for (i = 0; i < len1+1; i++) {
+  				r.push(new Array(len2));
+  				r[i][0] = i;
+  			}
+  			for (j = 0; j < len2+1; j++) {
+  				r[0][j] = j;
+  			}
+  
+  
+  			for (i = 1; i < len1+1; i++) {
+  				for (j = 1; j < len2+1; j++) {
+  					if (str1.charAt(i-1) === str2.charAt(j-1)) {
+  						r[i][j] = r[i - 1][j - 1];
+  					} else {
+  						r[i][j] = Math.min(r[i - 1][j - 1], r[i - 1][j], r[i][j - 1]) + 1;
+  					}
+  				}
+  			}
+  
+  
+  			for (i = 0; i < r.length; i++) {
+  				//console.log(r[i]);
+  			}
+  
+  
+  			i = len1;
+  			j = len2;
+  			var A = [], B = [], ii,jj,w,
+  				charA, charB;
+  			//0 左上角 ,1上方,-1左边 
+  			function way(i_t, j_t, i, j){ 
+  			  if (i-i_t==1&&j-j_t==1) { 
+  				return 0; 
+  			  }  
+  			  if (i-i_t==1&&j-j_t==0) { 
+  				return 1; 
+  			  } 
+  			  if (i-i_t==0&&j-j_t==1) { 
+  				return -1; 
+  			  } 
+  			}
+  		   
+  			while (i > 0 && j > 0) {
+  				charA = str1.charAt(i-1);
+  				charB = str2.charAt(j-1);
+  				//console.log(i, j, charA, charB)
+  				if (charA === charB) {
+  					A.push(charA);
+  					B.push(charB);
+  					i--;
+  					j--;
+  				} else {
+  					if(r[i][j-1] >= r[i-1][j]){
+  						ii = i-1;
+  						jj = j;
+  					}else{
+  						ii = i;
+  						jj = j-1;
+  					}
+  
+  					if(r[ii][jj] >= r[i-1][j-1]){
+  						ii = i-1;
+  						jj = j-1;
+  					}
+  
+  					w = way(ii, jj, i, j);
+  					if(w == 0){
+  						A.push(charA);
+  						B.push(charB);
+  					}else if(w == -1){
+  						A.push('');
+  						B.push(charB);
+  					}else{
+  						A.push(charA);
+  						B.push('');
+  					}
+  					i = ii;
+  					j = jj;
+  				}
+  			}
+  			//console.log('i,j:',i,j);
+  			if(i == 0){
+  			while(j>0){
+  			  A.push('');
+  			  B.push(str2.charAt(j-1));
+  			  j--;
+  			}
+  			}else{
+  				while(i>0){
+  			  A.push(str1.charAt(i-1));
+  			  B.push('');
+  			  i--;
+  			}
+  			}
+  
+  		   
+  			A.reverse();
+  			B.reverse();
+  			//console.log(A);
+  			//console.log(B);
+  
+  
+  			if (A.join('') !== str1 || B.join('') !== str2) {
+  				if(p === true){
+  					//return [str1, str2];
+  				}
+  			   
+  				//return this._fn_data_compare_name(str2, str1, true).reverse();
+  				//console.log(A);
+  			   //console.log(B);
+  				//console.log('!!!!!!');
+  				//console.log(A.join(''));
+  				//console.log(str1);
+  				//console.log(B.join(''));
+  				//console.log(str2);
+  				return [str1, str2];
+  			}
+  
+  
+  			for (i = 0; i < A.length; i++) {
+  				if (A[i] !== B[i]) {
+  					A[i] = '<span style="color:#3bac8a;">' + A[i] + '</span>';
+  					B[i] = '<span style="color:#e6283e;">' + B[i] + '</span>';
+  				}
+  			}
+  
+  			A = A.join('').replace(new RegExp('</span><span style="color:#3bac8a;">', 'g'), '').replace(new RegExp('<span style="color:#3bac8a;"></span>', 'g'), '');
+  			B = B.join('').replace(new RegExp('</span><span style="color:#e6283e;">', 'g'), '').replace(new RegExp('<span style="color:#e6283e;"></span>', 'g'), '');
+  
+  			//console.log(A);
+  			//console.log(B);
+  		   
+  			return [A,B];
+  		},
+  		_fn_dom_update_list: function(data, hashs, mixHashs){
+  			// translate for template
+  			data._stauts_view = 1;
+  			data.list = data.list || [];
+  			var dateUtil = RC.util.date,
+  				compare  = _.bind(this._fn_data_compare_name,this);
+  			_.each(data.list, function(item){
+  				// translate
+  				item.changeDate = item.changeDate ? dateUtil.getdate(item.changeDate, 'YY-MM-DD') : '-';
+  				if(item.oldTitle && item.newTitle){
+  					var r = compare(item.oldTitle, item.newTitle);
+  					item.oldTitle = r[0];
+  					item.newTitle = r[1];
+  				}
+  				_.each({changeDate: '-', id: '', oldTitle: '-', newTitle: '-'}, function(value,key){
+  					item[key] = item[key] !== undefined ? item[key] : value;
+  				});
+  			});
+  			data._list_length = data.list.length;
+  			// date
+  			data._minDate          = mixHashs._minDate ? mixHashs._minDate.replace(/-/g,'/') : '';
+  			data._maxDate          = mixHashs._maxDate ? mixHashs._maxDate.replace(/-/g,'/') : '';
+  			data.hashs_startDate_  = hashs.startDate.replace(/-/g,'/');
+  			data.hashs_endDate_    = hashs.endDate.replace(/-/g,'/');
+  			data._hashs_startDate_ = dateUtil.tojsdate(hashs.startDate).getTime();
+  			data._hashs_endDate_   = dateUtil.tojsdate(hashs.endDate).getTime();
+  			data.hashs_pageNo     = hashs.pageNo;
+  			data.hashs_pageSize   = hashs.pageSize;
+  			data.hashs_shopId     = hashs.shopId;
+  			data.hashs_itemId     = hashs.itemId;
+  			// render
+  			this.$el.html(RC.template.get_node('if','_stauts_view',data,RC.template.get(this._elem_template_name),0));
+  			// render pages
+  			var pages = this.$el.find('.J_Pages');
+  			if(pages && pages.length){
+  				if(hashs.root){delete hashs.root;}
+  				if(hashs.app){delete hashs.app;}
+  				if(hashs.classification){delete hashs.classification;}
+  				var pagesHtml = RC.controls.get('controls.shop.pagination').getHtml({
+  					lk: function(pageNo){ 
+  						hashs.pageNo = pageNo;
+  						return '#/shop/item/item_analysis/?'+ querystring.stringify(hashs);
+  					},
+  					pageSize: hashs.pageSize -0,
+  					pageNo: hashs.pageNo - 0,
+  					maxNo: data.total,
+  					hasTotal: true,
+  					isEnd: true,
+  					goPage: false
+  				});
+  				pages.html(pagesHtml);
+  			}
+  		},
+  		_fn_event_bind: function(){
+  			this.$el.on('change', '.dateRangePicker', function(e){
+  				var value = $.trim($(e.currentTarget).val()).split(/\s*-\s*/);
+  				RC.pages.modifyCurHash({
+  					startDate: value[0].replace(/\//g,'-'),
+  					endDate  : value[1].replace(/\//g,'-'),
+  					pageNo   : '1'
+  				});
+  			});
+  			this.$el.on('change', '.pageSize', function(e){
+  				RC.pages.modifyCurHash({
+  					pageSize : $(e.currentTarget).val(),
+  					pageNo   : '1'
+  				});
+  			});
+  		},
+  		_fn_event_unbind: function(){
+  			this.$el.off('change', '.dateRangePicker');
+  			this.$el.off('change', '.pageSize');
+  		},
+  		init: function(){},
+  		getContainer: function(){return this.$el;},
+  		disabled: function(){},
+  		_status_hashs: {},
+  		update: function(hashs, afterload, refresh, itemInfo){
+  			// normalize hashs
+  			var dateUtil   = RC.util.date,
+  				updateTime = itemInfo.__updateTime,
+  				minDate,
+  				maxDate    = dateUtil.getdate(updateTime,'YY-MM-DD');
+  			// 一个月以31天计算
+  			switch(itemInfo.__level){
+  				case 'senior': 
+  					minDate = '2000-01-01';
+  					break;
+  				case 'primary': 
+  					minDate = dateUtil.getdiffdate(maxDate, '-182d', 'YY-MM-DD');
+  					break;
+  				default:
+  					minDate = dateUtil.getdiffdate(maxDate, '-30d', 'YY-MM-DD');
+  			}
+  			if(!hashs.startDate || !hashs.endDate || !dateUtil.is_date(hashs.startDate) || !dateUtil.is_date(hashs.endDate) || hashs.startDate - minDate < 0 || hashs.endDate - maxDate > 0){
+  				hashs.startDate = dateUtil.getdiffdate(updateTime, '-29d', 'YY-MM-DD');
+  				hashs.endDate   = dateUtil.getdate(updateTime, 'YY-MM-DD');
+  			}
+  			if(!hashs.pageNo || !String(hashs.pageNo).match(/^\d+$/)){
+  				hashs.pageNo = '1';
+  			}
+  			if(!hashs.pageSize || !String(hashs.pageSize).match(/^\d+$/) || _.indexOf(['10','20','30'], String(hashs.pageSize)) === -1){
+  				hashs.pageSize = '10';
+  			}
+  			// 只保存，有效的，正确的参数
+  			var require_params  = ['shopId', 'itemId', 'type', 'startDate', 'endDate', 'pageNo', 'pageSize'],
+  				oldHashs        = this._status_hashs,
+  				hashsChanged    = false;
+  			_.each(require_params, function(name, idx){
+  				if(oldHashs[name] != hashs[name]){
+  					hashsChanged = true;
+  					oldHashs[name] = hashs[name];
+  				}
+  			});
+  			if(refresh !== true && hashsChanged === false){
+  				afterload && afterload();
+  				return;
+  			}
+  			// cache hashs
+  			this._status_hashs = _.extend({},oldHashs);
+  			// render 基本结构
+  			this._fn_dom_render({_stauts_view: 0});
+  
+  			// load data then update dom
+  			ItemModel.getModel(hashs.itemId).data_shop_item_onname_list({
+  				shopId   : hashs.shopId,
+  				itemId   : hashs.itemId,
+  				startDate: hashs.startDate,
+  				endDate  : hashs.endDate,
+  				pageNo   : hashs.pageNo,
+  				pageSize : hashs.pageSize
+  			}, _.bind(function(data){ 
+  				this._fn_dom_update_list(data, oldHashs, {_minDate: minDate, _maxDate: maxDate});
+  				oldHashs = null;
+  				minDate  = null;
+  				maxDate  = null;
+  			},this));
+  
+  			afterload && afterload();
+  		},
+  		destroy: function(){
+  			if(this.$el){
+  				this._fn_event_unbind();
+  				this._status_hashs = {};
+  				this.$el.empty().remove();
+  				this.$el = null;
+  			}
+  		}
+  	};
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,_,RayCloud);
+
+});

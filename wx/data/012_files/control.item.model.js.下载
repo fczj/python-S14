@@ -1,0 +1,1430 @@
+define('controls/control.item.model', function(require, exports, module) {
+
+  /**
+    * @author chenjiangming
+    * @name contorl.item.model
+   
+  
+  */
+  ;(function(_,RC){
+      var deepClone = function(data){
+          if(!_.isArray(data) && !_.isObject(data)){
+              return data;
+          }
+          var o = _.isArray(data) ? [] : {};
+          _.each(data, function(value, key){
+              if(_.isArray(value) || _.isObject(value)){
+                  o[key] = deepClone(value);
+              }else{
+                  o[key] = value;
+              }
+          });
+          return o;
+      };
+      var DateUtil = RC.util.date,
+          DataTime = RC.controls.get('control.data_time'); 
+          var Shop        = RC.controls.get('control.shop.model');
+      // 缓存类
+      function Cache(id){
+          /**
+           * @property id
+           * @private
+           * @todo: manager cache
+           */
+          this.id = id;
+          /**
+           * @property data
+           * @private
+           */
+          this.data = {};
+      }
+  
+      Cache.prototype = {
+          /**
+           * @method remove
+           * @param {String} key
+           */
+          remove: function(key){
+              if(!this.data.hasOwnProperty(key)){
+                  return;
+              }
+              delete this.data[id][key];
+          },
+          /**
+           * @method add
+           * @param {String} key
+           * @param {Any} data
+           */
+          add: function(key, data){
+              this.data[key] = deepClone(data);
+          },
+          /**
+           * @method get
+           * @param {String} key
+           */
+          get: function(key){
+              if(!this.data.hasOwnProperty(key)){
+                  return null;
+              }
+              return  deepClone(this.data[key]);
+          },
+          /**
+           * clear all of this cache
+           * @method clear
+           */
+          clear: function(){
+              this.data = {};
+          },
+          /**
+           * Least Recently Used算法
+           * @method lru
+           * @private
+           * @param {String} key
+           * @param {String<'get','add','remove','clear'>} method
+           */
+          lru: function(key, method){
+              // todo: LRU 链表实现
+              // todo: 内存控制. chrome新版支持used memory/total memory. (http content-length/sizeof javascript/local storage)
+          }
+      };
+      
+      /**
+       * @class Item
+       * @param {String} id
+       */
+      function Item(itemId, shopId,name){ 
+          if(!itemId || !String(itemId).match(/^\d+$/)){
+              throw new Error('init error: control.shop.model');
+          }  
+          /**
+           * @property itemId
+           * @private
+           */
+          this.itemId = itemId;
+          this.name = name||'';
+          /**
+           * @property shopId
+           * @private
+           */
+          this.shopId = shopId || '';
+          /**
+           * @property data
+           * @private
+           */
+          this.data = null;
+          /**
+           * @property cache
+           * @private
+           */
+          this.cache = new Cache(itemId);
+          //初始化加载数据相关
+          this.loading = false;
+          this.loading_callback_list = [];
+  
+          Item.add(this.itemId, this);
+      }
+      /**
+       * @property map
+       * @static
+       * @private
+       */
+      Item.map = {};
+      /**
+       * @method add 
+       * @static
+       * @private
+       * @param {String} id
+       * @param {Item} model
+       */
+      Item.add = function(id, model){
+          if(!id || !(model instanceof Item)){
+              throw new Error('add Error:: control.item.model');
+          }
+          this.map[id] = model;
+      };
+      /**
+       * @method add 
+       * @static
+       * @private
+       * @param {String} id
+       */
+      Item.remove = function(id){
+          if(this.map.hasOwnProperty(id)){
+              delete this.map[id];
+          }
+      };
+  
+      /**
+       * 获取item model
+       * @method getModel
+       * @param {String}  id 店铺ID
+       * @return {Item}
+       */
+      Item.getModel = function(id){
+          return this.map[id] || null;
+      };
+      
+      Item.prototype = {
+          /**
+           * 初始化数据
+           * @method init_data
+           * @private
+           * @param {Object} data
+           */
+          init_data: function(data, user_info){
+              this.data = data;
+              
+          },
+          /**
+           * 获取店铺JSON基本信息
+           * @method toJSON
+           * @return {JSON|null}
+           */
+          toJSON: function(){
+              // todo: _.extend只支持浅拷贝. 目前shop info中，只是单层结构， 后期再处理深copy
+              return this.data ? _.extend({},this.data) : null;
+          },
+          /**
+           * 更新基本信息
+           * @method save
+           * @protect
+           * @param {JSON Object} obj
+           * @event valuechange.*, valuechange.name
+           */
+          save: function(obj, user_info){
+              // 附加属性
+              if(user_info){
+                  obj.__level = user_info.level || '';
+                  obj.result = user_info.result;
+              }
+  
+              //initialization data
+              if(this.data === null){
+                  this.init_data(obj, user_info);
+                  return;
+              }
+              // todo: 目前只处理单层结构
+              var keys = [], data = this.toJSON();
+              // 目前只处理权限变化
+              var permission_changed = false;
+              for(var p in obj){
+                  if(obj[p] !== data[p]){
+                      // 服务器端， 最近同步时间变化， 简单处理， 只是派发权限变化事件， 让页面更新了。
+                      // 可能8点钟， 服务器最新数据还是 大前天， 9点钟数据导入了， 最新数据变前天了。
+                      if(p === '__level' ||  p === '__updateTime'){
+                          permission_changed = true;
+                      }
+                      keys.push(p);
+                      this.data[p] = obj[p];
+                  }
+              }
+              
+              // 只派发权限变化事件
+              if(permission_changed === true){
+                  // 权限变化，直接清空当前店铺缓存
+                  // todo: 遍历一次api权限列表，清除相应的缓存
+                  this.cache.clear();
+                  RC.pub('control.item.model.permission_change', {
+                      id: this.itemId
+                  });
+                  RC.pub('socket.user.user_info.update.nick');
+              }
+  
+              // todo: 加入对比/取消对比
+          },
+          /**
+           * 获取数据
+           * @method getData
+           * @param {Function} success
+           * @param {Function} fail
+           */
+          getData: function(success, fail){
+              // this.__leave = this.__leave?this.__leave:false;
+              if(this.data && this.loading !== true){
+                  success(this.toJSON());
+                  return;
+              }
+              this.load(success, fail);
+          },
+          /**
+           * 从服务器获取店铺基本信息
+           * @method load
+           * @param {Function} success
+           * @param {Function} fail
+           */
+          load: function(success, fail){
+              if(this.loading === true){
+                  this.loading_callback_list.push([success, fail]);
+                  return;
+              }
+              var expect = 3,
+                  user_info = null,
+                  updateTime = null,
+                  data = null,
+                  done = _.bind(function(){
+                      expect--;
+                      if(expect > 0){
+                          return;
+                      }
+                      this.loading = false;
+                      data.__updateTime = updateTime;
+                      this.save(data, user_info);
+  
+                      _.each(this.loading_callback_list, function(value, key){
+                          value[0] && value[0](this.toJSON());
+                      }, this);
+                      this.loading_callback_list = [];
+                  },this);
+  
+              this.loading = true;
+              this.loading_callback_list.push([success, fail]);
+  
+              API.get_user_info({}, function(json){
+                  user_info = json.data;
+                  done();
+              }, function(json){
+                  if( json && json.result && /^8/.test(json.result)){
+                      user_info = json;
+                      done();
+                  }
+              });
+              API.data_shop_item_exist({id:this.itemId,type:2}, _.bind(function(dataJson){
+                  if(dataJson.data.exist==false){
+                      var sellerNick,shopId;
+                      var params = window.location.href.split("?")[1];
+                      if(params){
+                          var _params_arr = params.split("&");
+                          for(var __i = 0;__i<_params_arr.length;__i++){
+                              if(_params_arr[__i]){
+                                  var _key_values = _params_arr[__i].split('=');
+                                  if(_key_values[0]=='sellerNick'){
+                                      sellerNick = _key_values[1];
+                                  }else if(_key_values[0]=='shopId'){
+                                      shopId = _key_values[1];
+                                  }
+                              }
+                          }
+                      }
+                      if(shopId){
+                           API.data_shop_item_exist({id:shopId,type:1}, _.bind(function(dataJson){
+                              if(dataJson.data.exist==false){
+                                  window.location.href="/index.html#/shop/list/?keyword="+(sellerNick||'')+"&t_s=1";;
+                                           return;
+                              }else{
+                                  RC.showLoading('宝贝已下架,即将跳到宝贝所属店铺页面',5000);
+                                  setTimeout(function(){
+                                      RC.clearShow();
+                                      window.location.href="/index.html#/shop/detail/?id="+(shopId||'');
+                                           return;
+                                  }, 2000);
+                              }
+                           },this));
+                       }else{
+                          window.location.href="/index.html#/shop/list/?keyword="+(sellerNick||'')+"&t_s=1";;
+                                       return;
+                       }
+                      // window.location.href="/index.html#/item/list/?keyword=";
+                      return;
+                  }
+                  var _this = this;
+                   API.get_item_info({id: this.itemId, shopId: this.shopId}, _.bind(function(json){
+                      data = json.data;
+                      data.__right = !!dataJson.data.right;
+                      // if(data.__right){
+                      //     data.__right_html = "<div>true</div>";
+                      // }else{
+                      //     data.__right_html = "<div>false</div>";
+                      // }
+                      if(!_this.shopId){
+                          _this.shopId = json.data.shopId;
+                      }
+                      for(var i=0,length=_this.open_shop_list.length;i<length;i++){
+                          if (_this.shopId == _this.open_shop_list[i].id) {
+                              data.__right = true;
+                          }
+                      }
+                      done();
+                  },this), _.bind(function(e){
+                      this._loading = false;
+                      _.each(this.loading_callback_list, function(value, key){
+                          value[1] && value[1](e);
+                      });
+                      this.loading_callback_list = [];
+                  },this));
+                  //服务器端数据更新日期
+                  DataTime.load(function(date){
+                      updateTime = date;
+                      done();
+                  }, function(){
+                      // 接口出错系统就挂了， 不处理
+                  });
+               },this));
+          },
+          /**
+           * 从服务器刷新店铺基本信息
+           * @method reload
+           */
+          reload: function(success, fail){
+              this.load(success, fail);
+          },
+          /**
+           * 从给定的数据中查询排序数据
+           * @method limit_data 
+           * @param {Array} list
+           * @param {Object} config 
+           * @config {Number} pageNo
+           * @config {Number} pageSize
+           * @config {String} sort 待排序字段 {optional} 可选， 不传入不排序
+           * @config {String<'asc','desc'>} desc 排序方式
+           * @return {Array}
+           */
+          limit_data: function(list, config){
+              if(config.sort){
+                  var asc = config.order === 'asc' ? true : false,
+                      sort = config.sort;
+                  list.sort(function(a,b){
+                      //属性不存在， 排序都靠后
+                      if(!b.hasOwnProperty(sort)){
+                          return -1;
+                      }
+                      if(!a.hasOwnProperty(sort)){
+                          return 1;
+                      }
+                      return asc ? a[sort] - b[sort] : b[sort] - a[sort];
+                  });
+              }
+              
+  			config.pageNo = config.pageNo - 0;
+  			config.pageSize = config.pageSize - 0;
+              var start;
+              if (config.queryPageNo) {
+                  start = config.pageSize * (config.pageNo - 1) - (config.queryPageNo - 1) * config.queryPageSize
+              } else {
+                  start = config.pageSize * (config.pageNo - 1);
+              }
+              return list.slice(start, start + config.pageSize);
+              //return deepClone(list.slice(start, start + config.pageSize));
+          },
+          /*
+           * ***********************************************************************************************************************************
+           * API
+           * success回调函数， API同称为后台API路径'/'转换为'_'. 返回值为原有json的json.data部分(部分接口改变json.data结构，具体见相应API). 
+           * params参数中id/shopId， 可省略, 时间格式统一'YY-MM-DD'
+           * 并且会在json.data上附加如下一些属性
+           * __status // 显示等级 -1: 未登录, 0: 未监控, 1: 权限不足, 2: 降权 3: 有权限(包括部分权限)
+           * __level  // 用户等级
+           * __cahce  // 是否从缓存中读取
+           * __message // 暂时为空字符串
+           * __isEnd   // 数据是否结束，true表示，当前数据已结否， 没有更多的数据要请求了.
+           * __hasTotal // API接口， 是否返回total属性。 data为[{},...]的情况为true.
+           * 
+           * ************************************************************************************************************************************
+           */
+          /**
+           * 返回请求响应
+           * @method response_send
+           * @param {Function} success
+           * @param {Object} data
+           * @param {Object} data2
+           */
+          response_send: function(success, data, data2){
+              var _this = this;
+              if(!this.itemId){
+                  return;
+              }
+              if(typeof data.__status != 'undefined'){
+                  data.__status_html = _this.data_shop_status_map(data.__status+"p",this.data.shopId);
+               }
+              success(_.extend({__level: this.data.__level, __updateTime: this.data.__updateTime}, data, data2||{}));
+          },
+          /**
+           * @method _translate_response
+           * @private
+           */
+          _translate_response: function(data, resp){ ///====
+              return _.extend({
+                  //__status: 0, 
+                  __message : '',
+                  __level   : this.data.__level,
+                  __hasTotal: true,
+                  __isEnd   : true
+              },data, resp);
+          },
+          /**
+           * 每次API查询条数
+           * @property QUERY_LENGTH
+           * @private
+           */
+          QUERY_LENGTH: 60,
+          /**
+           * @method _translate_pageNo
+           * @private
+           */
+          _translate_pageNo: function(params, length){
+              length = length || this.QUERY_LENGTH;
+              var pageNo = params.pageNo - 0,
+                  pageSize = params.pageSize - 0;
+              return Math.ceil(pageSize * pageNo / length);
+          },
+          /**
+           * 查看数据的最小权限
+           * @property API_PERMISSION
+           * @private
+           * @static
+           */
+          API_PERMISSION: 3, 
+          data_shop_status_map:function(type,shopId){
+              return {"0p":'<span style="color: #666;font-size: 14px;font-family: \'Microsoft YaHei\',tahoma,arial,sans-serif;"><a class="J_AddMonitor fc-orange"  href="javascript:;">添加监控</a> 查看更多信息</span>',
+              "2p":'<span style="color: #666;font-size: 14px;font-family: \'Microsoft YaHei\',tahoma,arial,sans-serif;"><span class="fc-gray">受账户权限变更影响，暂时无法查看详细信息。',
+              "-1p":'<span style="color: #666;font-size: 14px;font-family: \'Microsoft YaHei\',tahoma,arial,sans-serif;"><a href="javascript:;" onclick="javascript:RayCloud.pub(\'global.login.pop\');" class="fc-orange">登录</a> 查看更多信息</span>',
+               "-3p":'<span style="color: #666;font-size: 14px;font-family: \'Microsoft YaHei\',tahoma,arial,sans-serif;"><a href="javascript:;" class="fc-orange J_add_monitor_item_event_target" shop_id="'+shopId+'">[监控该宝贝所属的店铺]</a>， 查看更多信息</span>',
+              "-2p":'<span class="fc-gray" style="color: #666;font-size: 14px;font-family: \'Microsoft YaHei\',tahoma,arial,sans-serif;">当前账户7天免费数据查看已到期，您可以选择<a target="_blank" href="/events/meal.html" style="color: #ff6600;">定购/升级监控套餐</a></span>',
+              "1p":'<span class="fc-gray" style="color: #666;font-size: 14px;font-family: \'Microsoft YaHei\',tahoma,arial,sans-serif;">该功能仅针对 <em>高级版和豪华版</em> 付费用户开放，您可以选择<a target="_blank" href="/events/meal.html" style="color: #ff6600;">定购/升级监控套餐</a>。</span>',
+              "12p":'<span class="fc-gray" style="color: #666;font-size: 14px;font-family: \'Microsoft YaHei\',tahoma,arial,sans-serif;">该功能仅针对定购 <em>高级版和豪华版监控套餐</em> 的用户开放，当前为免费版用户，您可以选择<a target="_blank" href="/events/meal.html" style="color: #ff6600;">定购/升级监控套餐</a>。</span>',
+              "11p":'<span class="fc-gray" style="color: #666;font-size: 14px;font-family: \'Microsoft YaHei\',tahoma,arial,sans-serif;">该功能仅针对定购 <em>高级版和豪华版监控套餐</em> 的用户开放，当前为标准版用户，您可以选择<a target="_blank" href="/events/meal.html" style="color: #ff6600;">定购/升级监控套餐</a>。</span>'}[type];
+          },
+          open_shop_list:[{name:"德芙官方旗舰店",id:"71644724"},
+                              {name:"鸿星尔克官方旗舰店",id:"59915065"},
+                              {name:"opus旗舰店",id:"104597454"}],
+          get_api_status_normal: function() {
+              var data = this.data;
+              for(var i=0,length=this.open_shop_list.length;i<length;i++){
+                  if (data.shopId == this.open_shop_list[i].id) {
+                      return 3;
+                  }
+              }
+              if(!data.__level){
+                  return -1;
+              }
+              if(!data.__right){
+                  return -3;
+              }
+              return 3;
+          },
+          get_api_status_html:function(status){
+              return this.data_shop_status_map(status+"p",this.data.shopId);
+          },
+          get_api_status_senior_status:function(){
+              var status = {};
+              var data = this.data;
+              for(var i=0,length=this.open_shop_list.length;i<length;i++){
+                  if (data.shopId == this.open_shop_list[i].id) {
+                      return {__status:3};
+                  }
+              }
+              if(!data.__level){
+                  return {__status:-1,__status_html:this.data_shop_status_map(-1+"p",this.data.shopId)};
+              }
+              if(!data.__right){
+                  return {__status:-3};
+              }
+              if(data.__level !== 'senior'){
+                 return {__status:1,__status_html:this.data_shop_status_map(1+"p",this.data.shopId)};
+              }
+              return {__status:3};
+          },
+          get_api_status_senior: function() {
+              var data = this.data;
+              for(var i=0,length=this.open_shop_list.length;i<length;i++){
+                  if (data.shopId == this.open_shop_list[i].id) {
+                      return 3;
+                  }
+              }
+              if(!data.__level){
+                  return -1;
+              }
+              if(!data.__right){
+                  return -3;
+              }
+              if(data.__level !== 'senior'){
+                  return 1;
+              }
+              return 3;
+          },
+          /**
+           * 店铺基本信息
+           * @method data_shop_info
+           */
+          data_item_info: function(params, success, fail){
+              var api_name = 'data_item_info',
+                  status   = this.get_api_status_normal();
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+              var callback = _.bind(function(data){
+                  success && this.response_send(success, data,{
+                      __status: status
+                  });
+              },this);
+              // 从本地取
+              if(this.data && this._loading !== true){
+                  callback(this.data, true);
+                  return;
+              }
+              if(this._loading === true){
+                  this.loading_callback_list.push([callback, fail]);
+                  return;
+              }
+              
+              API.get_item_info({id: this.itemId, shopId: this.shopId}, function(json){
+                  // todo: save this.data
+                  callback(json.data);
+              }, fail);
+          },
+          /**
+           * 宝贝上下架跟踪
+           * @param  {object} params  api参数
+           * @param  {function} success 
+           * @param  {function} fail    
+           */
+          data_shop_item_onsale_list: function(params, success, fail) {
+              var api_name = 'shop_get_item_onsale_list',
+                  status   = this.get_api_status_normal();
+  
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+              var pageNo      = params.pageNo - 0,
+                  pageSize    = params.pageSize - 0,
+                  startDate   = DateUtil.tojsdate(params.startDate).getTime(),
+                  endDate     = DateUtil.tojsdate(params.endDate).getTime(),
+                  sort        = params.sort || 'date',
+                  order       = params.order || 'desc';
+  
+              //权限
+              if(this.data.__level !== 'senior'){
+                  sort  = 'date';
+                  order = 'desc';
+              }
+  
+              API.shop_get_item_onsale_list({
+                  shopId: this.shopId,
+                  itemId: this.itemId,
+                  pageNo: pageNo,
+                  pageSize: pageSize,
+                  startDate: startDate,
+                  endDate: endDate
+              }, _.bind(function(json){
+                  var data         = json.data;
+  
+                  this.response_send(success, data,{
+                      __status: status
+                  });
+              },this), fail);
+          },
+          /**
+           * 宝贝改名跟踪
+           * @param  {object} params  api参数
+           * @param  {function} success 
+           * @param  {function} fail    
+           */
+          data_shop_item_onname_list: function(params, success, fail) {
+              var api_name = 'shop_get_item_onname_list',
+                  status   = this.get_api_status_normal();
+  
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+              var size        = this.QUERY_LENGTH,
+                  pageNo      = params.pageNo ? params.pageNo - 0 : 1,
+                  pageSize    = params.pageSize ? params.pageSize - 0 : size,
+                  queryPageNo = this._translate_pageNo(params),
+                  startDate   = DateUtil.tojsdate(params.startDate).getTime(),
+                  endDate     = DateUtil.tojsdate(params.endDate).getTime(),
+                  sort        = params.sort || 'date',
+                  order       = params.order || 'desc',
+                  key         = [api_name, startDate, endDate].join('.'),
+                  cacheData;
+              if(pageSize > size){
+                  throw new Error('parameters error: '+api_name);
+              }
+              //权限
+              if(this.data.__level !== 'senior'){
+                  sort  = 'date';
+                  order = 'desc';
+              }
+  
+              API.shop_get_item_onname_list({
+                  shopId: this.shopId,
+                  itemId: this.itemId,
+                  pageNo: pageNo,
+                  pageSize: pageSize,
+                  startDate: startDate,
+                  endDate: endDate
+              }, _.bind(function(json){
+                  var data = json.data;
+                  this.response_send(success, data,{
+                      __status: status
+                  });
+              },this), fail);
+          },
+          /**
+           * 宝贝调价跟踪
+           * @param  {object} params  api参数
+           * @param  {function} success 
+           * @param  {function} fail    
+           */
+          data_shop_item_onprice_list: function(params, success, fail) {
+              var api_name = 'shop_get_item_onprice_list',
+                  status   = this.get_api_status_normal();
+  
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+              var pageNo      = params.pageNo - 0,
+                  pageSize    = params.pageSize - 0,
+                  startDate   = DateUtil.tojsdate(params.startDate).getTime(),
+                  endDate     = DateUtil.tojsdate(params.endDate).getTime(),
+                  sort        = params.sort || 'date',
+                  order       = params.order || 'desc';
+  
+              //权限
+              if(this.data.__level !== 'senior'){
+                  sort  = 'date';
+                  order = 'desc';
+              }
+  
+              API.shop_get_item_onprice_list({
+                  shopId: this.shopId,
+                  itemId: this.itemId,
+                  pageNo: pageNo,
+                  pageSize: pageSize,
+                  startDate: startDate,
+                  endDate: endDate
+              }, _.bind(function(json){
+                  var data = json.data;
+                  this.response_send(success, data,{
+                      __status: status
+                  });
+              },this), fail);
+          },
+          /**
+           * 宝贝成交跟踪
+           * @param  {object} params  api参数
+           * @param  {function} success 
+           * @param  {function} fail    
+           */
+          data_shop_item_ontxn_list: function(params, success, fail) {
+              var api_name = 'shop_get_item_ontxn_list',
+                  status   = this.get_api_status_normal();
+  
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+              var pageNo      = params.pageNo - 0,
+                  pageSize    = params.pageSize - 0,
+                  startDate   = DateUtil.tojsdate(params.startDate).getTime(),
+                  endDate     = DateUtil.tojsdate(params.endDate).getTime(),
+                  sort        = params.sort || 'date',
+                  order       = params.order || 'desc';
+  
+              //权限
+              if(this.data.__level !== 'senior'){
+                  sort  = 'date';
+                  order = 'desc';
+              }
+  
+              API.shop_get_item_ontxn_list({
+                  shopId: this.shopId,
+                  itemId: this.itemId,
+                  pageNo: pageNo,
+                  pageSize: pageSize,
+                  startDate: startDate,
+                  endDate: endDate
+              }, _.bind(function(json){
+                  var data = json.data;
+                  this.response_send(success, data,{
+                      __status: status
+                  });
+              },this), fail);
+          },
+  
+          /**
+           * 宝贝营销推广-直通车明细
+           * @param  {object} params  api参数
+           * @param  {function} success 
+           * @param  {function} fail    
+           */
+          data_item_market_p4p: function(params, success, fail) {
+              var api_name = 'shop_item_get_market_p4p_list',
+                  status   = this.get_api_status_normal();
+  
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+              var pageNo      = params.pageNo - 0,
+                  pageSize    = params.pageSize - 0,
+                  startDate   = DateUtil.tojsdate(params.startDate).getTime(),
+                  endDate     = DateUtil.tojsdate(params.endDate).getTime(),
+                  orderField        = params.orderField || 'date',
+                  orderType       = params.orderType || 'desc';
+  
+              //权限
+              if(this.data.__level !== 'senior'){
+                  orderField  = 'date';
+                  orderType = 'desc';
+              }
+  
+              API.shop_item_get_market_p4p_list({
+                  shopId: this.shopId,
+                  id: this.itemId,
+                  pageNo: pageNo,
+                  pageSize: pageSize,
+                  startDate: startDate,
+                  endDate: endDate,
+                  orderField: orderField,
+                  orderType: orderType
+              }, _.bind(function(json){
+                  var data = json.data;
+                  this.response_send(success, data,{
+                      __status: status
+                  });
+              },this), fail);
+          },
+          data_item_np4p_list: function(params, success, fail) {
+              var api_name = 'data_item_np4p_list',
+                  status   = this.get_api_status_senior();
+  
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+              var pageNo      = params.pageNo - 0,
+                  pageSize    = params.pageSize - 0,
+                  startDate   = DateUtil.tojsdate(params.startDate).getTime(),
+                  endDate     = DateUtil.tojsdate(params.endDate).getTime(),
+                  orderField        = params.orderField || 'date',
+                  orderType       = params.orderType || 'desc';
+  
+              //权限
+              if(this.data.__level !== 'senior'){
+                  orderField  = 'date';
+                  orderType = 'desc';
+              }
+  
+              API.data_item_np4p_list({
+                  shopId: params.shopId,
+                  itemId: params.itemId,
+                  pageNo: pageNo,
+                  pageSize: pageSize,
+                  startDate: startDate,
+                  type:params.type||"taobao",
+                  endDate: endDate,
+              }, _.bind(function(json){
+                  var data = json.data;
+                  this.response_send(success, data,{
+                      __status: status
+                  });
+              },this), fail);
+          },
+  
+          /**
+           * 宝贝营销推广-直通车投放数据图
+           * @param  {object} params  api参数
+           * @param  {function} success 
+           * @param  {function} fail    
+           */
+          data_item_p4p_chart_list: function(params, success, fail) {
+              var api_name = 'data_item_p4p_chart_list',
+                  status   = this.get_api_status_senior();
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+  
+              var startDate   = DateUtil.tojsdate(params.startDate).getTime(),
+                  endDate     = DateUtil.tojsdate(params.endDate).getTime();
+  
+              API.data_item_p4p_chart_list({
+                  itemId    : this.itemId, 
+                  startDate : startDate,
+                  endDate   : endDate
+              }, _.bind(function(json){
+                  var data = json.data;
+                  this.response_send(success, {list: data},{
+                      __status: status
+                  });
+              },this), fail);
+          },
+          /**
+           * 宝贝营销推广-最近30天直通车投放来源关键词  -------暂无
+           * @param  {object} params  api参数
+           * @param  {function} success 
+           * @param  {function} fail    
+           */
+           /**
+           * 宝贝营销推广-站内活动
+           * @param  {object} params  api参数
+           * @param  {function} success 
+           * @param  {function} fail    
+           */
+          data_item_market_innersite: function(params, success, fail) {
+              var api_name = 'data_item_market_innersite',
+                  status   = this.get_api_status_normal();
+  
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+              var pageNo      = params.pageNo - 0,
+                  pageSize    = params.pageSize - 0,
+                  startDate = DateUtil.tojsdate(params.startDate).getTime(),
+                  endDate   = DateUtil.tojsdate(params.endDate).getTime(),
+                  orderField  = params.orderField || 'date',
+                  orderType   = params.orderType || 'desc';
+              //权限
+              if(this.data.__level !== 'senior'){
+                  orderField  = 'date';
+                  orderType  = 'desc';
+              }
+                  // position:可选值：
+                  // （ 淘金币     tjb
+                  // 天天特价  tejia
+                  // 淘宝清仓  qingcang
+                  // 夜抢购     ye
+                  // 限时大促  xsdc
+                  // 免费试用  freetry
+                  // 天猫预售 yushou ）
+              API.data_item_market_innersite({
+                  shopId: params.shopId,
+                  id: params.itemId,
+                  position:params.position,
+                  pageNo    : params.pageNo,
+                  pageSize  : params.pageSize,
+                  orderField:orderField,
+                  orderType:orderType,
+                  startDate: startDate,
+                  endDate: endDate
+              }, _.bind(function(json){
+                  var data = json.data;
+                  data.position=params.position;
+                  this.response_send(success, data, {
+                      __status: status
+                  });
+              },this), fail);
+          },
+           /**
+           * 宝贝营销推广-站外活动
+           * @param  {object} params  api参数
+           * @param  {function} success 
+           * @param  {function} fail    
+           */
+          data_item_market_outersite: function(params, success, fail) {
+              var api_name = 'data_item_market_outersite',
+                  status   = this.get_api_status_normal();
+  
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+              var pageNo      = params.pageNo - 0,
+                  pageSize    = params.pageSize - 0,
+                  startDate = DateUtil.tojsdate(params.startDate).getTime(),
+                  endDate   = DateUtil.tojsdate(params.endDate).getTime(),
+                  orderField  = params.orderField || 'date',
+                  orderType   = params.orderType || 'desc';
+              //权限
+              if(this.data.__level !== 'senior'){
+                  orderField  = 'date';
+                  orderType  = 'desc';
+              }
+                  // position:可选值：
+                  // （ 淘金币     tjb
+                  // 天天特价  tejia
+                  // 淘宝清仓  qingcang
+                  // 夜抢购     ye
+                  // 限时大促  xsdc
+                  // 免费试用  freetry
+                  // 天猫预售 yushou ）
+              API.data_item_market_outersite({
+                  shopId: params.shopId,
+                  id: params.itemId,
+                  position:params.position,
+                  pageNo    : params.pageNo,
+                  pageSize  : params.pageSize,
+                  orderField:orderField,
+                  orderType:orderType,
+                  startDate: startDate,
+                  endDate: endDate
+              }, _.bind(function(json){
+                  var data = json.data;
+                  data.position=params.position;
+                  this.response_send(success, data, {
+                      __status: status
+                  });
+              },this), fail);
+          },
+          /**
+           * 宝贝营销推广-淘宝客明细
+           * @param  {object} params  api参数
+           * @param  {function} success 
+           * @param  {function} fail    
+           */
+          data_item_market_tbk: function(params, success, fail) {
+              var api_name = 'data_item_market_tbk',
+                  status   = this.get_api_status_normal();
+  
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+              var pageNo      = params.pageNo - 0,
+                  pageSize    = params.pageSize - 0,
+                  startDate = DateUtil.tojsdate(params.startDate).getTime(),
+                  endDate   = DateUtil.tojsdate(params.endDate).getTime(),
+                  orderField  = params.orderField || 'date',
+                  orderType   = params.orderType || 'desc';
+              //权限
+              if(this.data.__level !== 'senior'){
+                  orderField  = 'date';
+                  orderType  = 'desc';
+              }
+  
+              API.data_item_market_tbk({
+                  shopId: this.shopId,
+                  id: this.itemId,
+                  pageNo    : params.pageNo,
+                  pageSize  : params.pageSize,
+                  startDate: startDate,
+                  endDate: endDate
+              }, _.bind(function(json){
+                  var data = json.data;
+                  this.response_send(success, data, {
+                      __status: status
+                  });
+              },this), fail);
+          },
+          /**
+           * 宝贝营销推广-聚划算明细
+           * @param  {object} params  api参数
+           * @param  {function} success 
+           * @param  {function} fail    
+           */
+          data_item_market_jhs: function(params, success, fail) {
+              var api_name = 'data_item_market_jhs',
+                  status   = this.get_api_status_normal();
+  
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+              var pageNo      = params.pageNo - 0,
+                  pageSize    = params.pageSize - 0,
+                  startDate = DateUtil.tojsdate(params.startDate).getTime(),
+                  endDate   = DateUtil.tojsdate(params.endDate).getTime(),
+                  orderField  = params.orderField || 'date',
+                  orderType   = params.orderType || 'desc';
+              //权限
+              if(this.data.__level !== 'senior'){
+                  orderField  = 'date';
+                  orderType  = 'desc';
+              }
+  
+              API.data_item_market_jhs({
+                  shopId: this.shopId,
+                  id: this.itemId,
+                  pageNo: params.pageNo,
+                  pageSize: params.pageSize,
+                  startDate: startDate,
+                  endDate: endDate,
+                  orderField: orderField,
+                  orderType : orderType
+              }, _.bind(function(json){
+                  var data = json.data;
+                  this.response_send(success, data, {
+                      __status: status
+                  });
+              },this), fail);
+          },
+          /**
+           * 宝贝营销推广-商品促销明细
+           * @param  {object} params  api参数
+           * @param  {function} success 
+           * @param  {function} fail    
+           */
+          data_item_market_sales: function(params, success, fail) {
+              var api_name = 'data_item_market_sales',
+                  status   = this.get_api_status_normal();
+  
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+              var pageNo      = params.pageNo - 0,
+                  pageSize    = params.pageSize - 0,
+                  startDate = DateUtil.tojsdate(params.startDate).getTime(),
+                  endDate   = DateUtil.tojsdate(params.endDate).getTime(),
+                  orderField  = params.orderField || 'date',
+                  orderType   = params.orderType || 'desc';
+              //权限
+              if(this.data.__level !== 'senior'){
+                  orderField  = 'date';
+                  orderType  = 'desc';
+              }
+  
+              API.data_item_market_sales({
+                  shopId: this.shopId,
+                  id: this.itemId,
+                  pageNo: params.pageNo,
+                  pageSize: params.pageSize,
+                  startDate: startDate,
+                  endDate: endDate,
+                  orderField: orderField,
+                  orderType : orderType
+              }, _.bind(function(json){
+                  var data = json.data;
+                  this.response_send(success, data, {
+                      __status: status
+                  });
+              },this), fail);
+          },
+          /**
+           * 最近30天热搜词
+           * @param  {object} params  api参数
+           * @param  {function} success 
+           * @param  {function} fail    
+           */
+          data_item_search_kw_list: function(params, success, fail) {
+              var api_name = 'data_item_search_kw_list',
+                  status   = this.get_api_status_senior();
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+              var type      = params.type,
+  				days      = params.days,
+                  key       = [api_name, type, days].join('.'),
+  				pageNo    = params.pageNo || '1',
+  				pageSize  = params.pageSize || '10',
+                  cacheData = this.cache.get(key);
+                 
+              if(cacheData){ 
+                  this.response_send(success, {list: this.limit_data(cacheData,{pageNo: pageNo, pageSize: pageSize}), total: cacheData.length},{
+                      __status: status,
+                      __isEnd : true
+                  });
+                  return;
+              }
+  
+              API.data_item_search_kw_list({
+                  shopId    : this.shopId,
+                  itemId    : this.itemId, 
+                  type      : type,
+  				days      : days
+              }, _.bind(function(json){
+                  var data = json.data;
+                  if(data){
+                      this.cache.add(key,data);
+                  }
+  				data = data || [];
+                  this.response_send(success, {list: this.limit_data(data,{pageNo: pageNo, pageSize: pageSize}), total: data.length},{
+                      __status: status,
+                      __isEnd : true
+                  });
+              },this), fail);
+          },
+          /**
+           * 最近30天 宝贝数据
+           * @param  {object} params  api参数
+           * @param  {function} success 
+           * @param  {function} fail    
+           */
+          data_shop_offer_list: function(params, success, fail) {
+              var api_name = 'shop_get_offer_list',
+                  status   = this.get_api_status_normal();
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+              var size        = this.QUERY_LENGTH,
+                  pageNo      = params.pageNo ? params.pageNo - 0 : 1,
+                  pageSize    = params.pageSize ? params.pageSize - 0 : size,
+                  queryPageNo = this._translate_pageNo(params),
+                  startDate   = DateUtil.tojsdate(params.startDate).getTime(),
+                  endDate     = DateUtil.tojsdate(params.endDate).getTime(),
+                  sort        = params.sort || 'date',
+                  order       = params.order || 'desc',
+                  key         = [api_name, startDate, endDate].join('.'),
+                  cacheData;
+              var list;
+              if(pageSize > size){
+                  throw new Error('parameters error: '+api_name);
+              }
+              //权限
+              if(this.data.__level !== 'senior'){
+                  sort  = 'date';
+                  order = 'desc';
+              }
+              cacheData = this.cache.get(key); 
+              if(cacheData){
+                  if (params.chart) {
+                      list = deepClone(cacheData.list);
+                  } else {
+                      list = this.limit_data(deepClone(cacheData.list), {pageSize: pageSize, pageNo: pageNo, sort: sort, order: order});
+                  }
+                  this.response_send(success, {
+                          list          : list,
+                          total         : cacheData.list.length,
+                          __price_count : cacheData.__price_count,
+                          __amount_count: cacheData.__amount_count,
+                          __offer_count : cacheData.__offer_count
+                      },
+                      {
+                          __status: status,
+                          __cache : true,
+                          __isEnd : true
+                  });
+                  return;
+              }
+  
+              API.shop_get_offer_list({
+                  // id:this.shopId,
+                  itemId    : this.itemId,
+                  startDate : startDate,
+                  endDate   : endDate
+              }, _.bind(function(json){
+                  var data         = json.data,
+                      price_count  = 0,
+                      amount_count = 0,
+                      offer_count  = 0;
+                  if(data.length){
+                      _.each(data, function(item, idx){
+                          if(item.price){
+                              price_count += item.price;
+                          }
+                          if(item.amount){
+                              amount_count += item.amount;
+                          }
+                          if(item.offer){
+                              offer_count += item.offer;
+                          }
+                          if(item.price && item.offer){
+                              item.avg_price = (item.price/item.offer).toFixed(2) - 0;
+                          } else if (item.price == 0 || item.offer == 0){
+                              item.avg_price = 0;
+                          }
+                      });
+                      price_count = price_count.toFixed(2) - 0;
+                  }
+                  this.cache.add(key,{
+                      list          : data,
+                      total         : data.length,
+                      __price_count : price_count,
+                      __amount_count: amount_count,
+                      __offer_count : offer_count
+                  });
+                  if (params.chart) {
+                      list = data;
+                  } else {
+                      list = this.limit_data(data, {pageSize: pageSize, pageNo: pageNo, sort: sort, order: order});
+                  }
+                  this.response_send(success, {
+                          list          : list,
+                          total         : data.length,
+                          __price_count : price_count,
+                          __amount_count: amount_count,
+                          __offer_count : offer_count
+                      },
+                      {
+                          __status: status,
+                          __isEnd : true
+                  });
+              },this), fail);
+          },
+          /**
+           * 最近30天宝贝成交时间段分布
+           * @method data_shop_item_ontxn_time_list
+           * @param {Object} params 请求参数
+           * @config {String} shopId {optional} 店铺ID
+           * @param {Function} success (==返回值==data.list为原有返回接口的data)
+           * @param {Function} fail
+           */
+          data_shop_item_ontxn_time_list: function(params, success, fail){
+              var api_name = 'data_shop_item_ontxn_time_list',
+                  status   = this.get_api_status_normal();
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+  
+              API.data_shop_item_ontxn_time_list({
+                  itemId    : this.itemId
+              }, _.bind(function(json){
+                  var data = json.data;
+                  this.response_send(success, {list: data},{
+                      __status: status
+                  });
+              },this), fail);
+          },
+          /**
+           * 最近30天自然搜索图表
+           * @method data_shop_search_trend_list
+           * @param {Object} params
+           * @config {String} shopId {optional}
+           * @config {String<'pc','app'>} type 
+           * @param {Function} success (==返回值==data.list为原有返回接口的data)
+           * @param {Function} fail {optional}
+           */
+          data_shop_search_trend_list: function(params, success, fail){
+              var api_name = 'data_shop_search_trend_list',
+                  status   = this.get_api_status_senior();
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+  
+              API.data_shop_search_trend_list({
+                  itemId    : this.itemId,
+                  type      : params.type
+              }, _.bind(function(json){
+                  var data = json.data;
+                  this.response_send(success, {list: data},{
+                      __status: status
+                  });
+              },this), fail);
+          },
+          /**
+           * 最近30天直通车投放来源关键词
+           * @param  {object} params  api参数
+           * @param  {function} success 
+           * @param  {function} fail    
+           */
+          data_item_p4p_kw_chart_list: function(params, success, fail) {
+              var api_name = 'data_item_p4p_kw_chart_list',
+                  status   = this.get_api_status_normal();
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+  
+              var startDate = DateUtil.tojsdate(params.startDate).getTime(),
+                  endDate   = DateUtil.tojsdate(params.endDate).getTime();
+  
+              API.data_item_p4p_kw_chart_list({
+                  itemId    : this.itemId,
+                  shopId    : this.shopId,
+                  type      : params.type,
+                  startDate : startDate,
+                  endDate   : endDate
+              }, _.bind(function(json){
+                  var data = json.data;
+                  this.response_send(success, {list: data},{
+                      __status: status
+                  });
+              },this), fail);
+          },
+          /**
+           * 买家等级
+           * @method data_shop_buyer_level_list
+           * @param {Object} params
+           * @config {String} shopId {optional}
+           * @param {Function} success (==返回值==data.list为原有返回接口的data)
+           * @param {Function} fail
+           */
+          data_shop_buyer_level_list: function(params, success, fail){
+              var api_name = 'data_shop_buyer_level_list',
+                  status   = this.get_api_status_normal();
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+  
+  
+              API.data_shop_buyer_level_list({
+                  itemId    : this.itemId
+              }, _.bind(function(json){
+                  var data = json.data;
+                  this.response_send(success, {list: data},{
+                      __status: status
+                  });
+              },this), fail);
+          },
+          data_shop_rankhotratio_list: function(params, success, fail) {
+              var api_name = 'shop_get_rankhotratio_list',
+                  status   = this.get_api_status_normal();
+              if(status < this.API_PERMISSION){
+                  this.response_send(success, {
+                      __status: status
+                  });
+                  return;
+              }
+  
+              API.shop_get_rankhotratio_list({
+                  id: this.shopId,
+                  itemId: this.itemId
+              }, _.bind(function(json){
+                  var data = json.data;
+                  this.response_send(success, {list: data},{
+                      __status: status
+                  });
+              },this), fail);
+          },
+          /**
+            * @method destroy 
+            */
+          destroy: function(){
+              // just support removeSub all
+              this._list = {};
+  
+              this.data = null;
+              Item.remove(this.id);
+              this.id = null;
+              this.loading = false;
+              this.loading_callback_list = [];
+          }
+      };
+  
+  
+      RC.controls.define('control.item.model', {
+          init: function(){
+              return Item;
+          }
+      });
+  
+  })(_, RayCloud);
+
+});

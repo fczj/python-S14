@@ -1,0 +1,158 @@
+define('modules/shop/temp_detail/module.shop.temp_detail', function(require, exports, module) {
+
+  /**
+  	@author wangchun
+  */
+  ;(function($,RC){
+  
+  	var mdul = {
+  		name: 'shop.temp_detail',
+  		depend: 'shop',
+  		_elm_dom_root: '#container',
+  		_elm_template_name: 'template.shop.temp_detail',
+  
+  		_fn_dom_render: function(){
+              var _this = this;
+  			var $el = _this._elm_dom_container = $(RC.template.get(_this._elm_template_name)).appendTo(_this._elm_dom_root);
+  
+              _this._elm_val_info_detail_src = $el.find('img.info_detail_src');//图片地址
+              _this._elm_val_info_detail_name = $el.find('span.info_detail_name');//名称
+              _this._elm_val_info_detail_seller = $el.find('span.info_detail_seller');//掌柜
+              _this._elm_val_info_detail_address = $el.find('span.info_detail_address');//地址
+              _this._ele_val_head_shop_name = $el.find('.J_head_shop_name'); //横幅店铺名称
+  
+              _this._elm_val_dsr_cas = $el.find('span.info_dsr_cas');//;
+              _this._elm_val_dsr_mas = $el.find('span.info_dsr_mas');//;
+              _this._elm_val_dsr_sas = $el.find('span.info_dsr_sas');//;
+  
+              _this._fn_alt_get_shop_detail_from_api();
+  		},
+  
+          _fn_alt_get_shop_detail_from_api: function(){
+              var _this = this;
+  
+              var name = "temp_detail_param";
+              var param = decodeURI(window.location.hash).match(new RegExp("(^| )?temp_detail_param=([^;]*)(;|$)"))[0].split("=")[1];
+              API.user_shop_add({shopField: param,showDetail:true}, $.proxy(function(json){
+                  _this._fn_ctrl_print_detail(json);
+              },this), $.proxy(function(json){
+                  RC.clearShow();
+                  RC.showFail(json&&json.message || '提交失败，请重试！', 0.5);
+              },this));
+          },
+  
+          _fn_data_format_dsr: function(dsr){
+              dsr = dsr || '';
+              dsr = dsr.replace(/^\{/,'');
+              dsr = dsr.split(';');
+              var o = {};
+              $.each(dsr, function(idx, item){
+                  var x = item.split(':'),
+                      key = x[0],
+                      value = x[1];
+                  if(key){
+                      o[key] = value;
+                  }
+  
+              });
+  
+              if(o.cas){
+                  o.cas = o.cas.replace(/\%$/,'') - 0;
+              }
+              if(o.mas){
+                  o.mas = o.mas.replace(/\%$/,'') - 0;
+              }
+              if(o.sas){
+                  o.sas = o.sas.replace(/\%$/,'') - 0;
+              }
+  
+              return o;
+          },
+  
+          _fn_ctrl_print_detail: function(json){
+              var _this = this;
+  
+              var dsr = json.data.shop && json.data.shop.dsr || '';
+              dsr = _this._fn_data_format_dsr(dsr);
+              var data = json.data.shop,
+                  image = json.data.shop && data.image || '',
+                  sellerNick = json.data.shop && data.sellerNick || '',
+                  name = json.data.shop && data.name || '',
+                  address = json.data.shop && data.address || '不详',
+                  dsr_cas = json.data.shop && dsr.cas || '-',
+                  dsr_mas = json.data.shop && dsr.mas || '-',
+                  dsr_sas = json.data.shop && dsr.sas || '-';
+  
+              var param = decodeURI(window.location.hash).match(new RegExp("(^| )?temp_detail_param=([^;]*)(;|$)"))[0].split("=")[1];
+              if(param=="" || param==null){
+                  window.history.go(-1);
+              }
+  
+              _this._elm_val_info_detail_src.attr("src",image+"_80x80.jpg");
+              _this._elm_val_info_detail_name.html(name);
+              _this._elm_val_info_detail_seller.html(sellerNick);
+              _this._elm_val_info_detail_address.html(address);
+              _this._ele_val_head_shop_name.html(name);
+              _this._elm_val_dsr_cas.html(dsr_cas);
+              _this._elm_val_dsr_mas.html(dsr_mas);
+              _this._elm_val_dsr_sas.html(dsr_sas);
+  
+              if (json.data.needCheck) {
+                      var html_dialog = '<div class="ft-center ft_14 pt_30 pb_30">店铺已完成提交，48小时内完成审核，审核通过后可查看数据。</div>'
+                      $.dialog({
+                          title:"店铺提交完成",
+                          content:html_dialog,
+                          okVal:"确认并返回",
+                          ok:function(){
+                              window.location.href="#/shop/list/?keyword=";
+                          }
+                  });
+                  return false;
+              };
+  
+              $.dialog({
+                  title:"店铺收录成功",
+                  content:'<div class="ft-center ft_14 pt_30 pb_30">感谢您的提交，该店铺已被收录，相关信息48小时后可查询</div>',
+                  okVal:"确认并返回",
+                  ok:function(){
+                      window.location.href="#/shop/list/?keyword=";
+                  },
+                  cancel:false
+              });
+          },
+  
+  		_fn_event_bind: function(){
+  
+  		},
+  
+  		_fn_event_unbind: function(){
+  
+  		},
+  
+  
+  
+  		init: function(){},
+  		getContainer: function(){
+  			return this._elm_dom_container;
+  		},
+  		_update: function(hashs, afterload, is_refresh){
+  			this._fn_dom_render();
+  			afterload && afterload();
+  		},
+  		update: function(hashs, afterload, is_refresh){
+  			window.scroll(0, 0);
+  			this._update(hashs, afterload, is_refresh);
+  		},
+  		disabled: function(){},
+  		destroy: function(){
+  			if(this._elm_dom_container){
+                  this._elm_dom_container.empty().remove();
+  				this._elm_dom_container = null;
+  			}
+  		}
+  		
+  	};
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+
+});

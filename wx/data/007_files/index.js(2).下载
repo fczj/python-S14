@@ -1,0 +1,34 @@
+define('modules/shop/detail/title/optimize/info/index', function(require, exports, module) {
+
+  var $ = require('components/jquery/jquery'),
+      template = require('components/art-template/template'),
+      $el = template.compile("<div class=\"item-info\">\r\n    <div class=\"info-con\">\r\n        <div class=\"img\">\r\n            <a target=\"_blank\" href=\"#/shop/item/?shopId={{id}}&itemId={{itemId}}\"><img src=\"{{image}}_80x80.jpg\" alt=\"{{title}}\"></a></div>\r\n        <div class=\"info\">\r\n            <div class=\"title\">\r\n                <div class=\"th\">宝贝名称：</div>\r\n                <div class=\"text\">\r\n                    {{title}}&nbsp;&nbsp;&nbsp;[<a target=\"_blank\" href=\"#/shop/item/?shopId={{id}}&itemId={{itemId}}\">查看详情</a>]\r\n                </div>\r\n            </div>\r\n            <div class=\"title\">\r\n                <div class=\"th\">宝贝类目：</div>\r\n                <div class=\"text\">{{catName}}</div>\r\n            </div>\r\n            <div class=\"pro-con\">\r\n                {{each properties as pro}}\r\n                <div class=\"property\">\r\n                    <span class=\"name\">{{pro.name}}：</span>\r\n                    <span class=\"value\" title=\"{{pro.value}}\">{{pro.value}}</span>\r\n                </div>\r\n                {{/each}}\r\n            </div>\r\n        </div>\r\n    </div>\r\n    <div class=\"optimize-tips\">\r\n        <div class=\"title\">优化提示：</div>\r\n        <div class=\"text\">\r\n            <div class=\"tips-item\">1、评分“优-差”表示标题的优化程度，不要过分苛求优，根据宝贝实际属性，优化到优或者良即可。</div>\r\n            <div class=\"tips-item\">2、“营销词”是促销类属性的关键词，如促销、团购、包邮、品牌等，宝贝没有此类属性的可以不加。</div>\r\n        </div>\r\n    </div>\r\n</div>\r\n<!-- @require 'modules/shop/detail/title/optimize/info/index.less' -->"),
+      $container = null;
+  
+  function parseProperties(str){
+      var items = str.split(';'),
+          properties = [];
+      for(var i =0,l = items.length;i<l;i++){
+          var itemPer = items[i].split(':');
+          properties.push({
+              name:itemPer[0],
+              value:itemPer[1]
+          });
+      }
+      return properties;
+  }
+  
+  module.exports = {
+      mount:function(container,data){
+          if(!$container){
+              data.properties = parseProperties(data.props);
+              $(container).html($el(data));
+              $container = container;
+          }
+      },
+      dismount:function(){
+          $el.remove();
+      }
+  }
+
+});

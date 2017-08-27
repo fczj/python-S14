@@ -1,0 +1,479 @@
+define('modules/user/order/module.user.order', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var template='<div id="OrderMain">'+
+         '    <div class="logo"><a href="http://xueyuan.maijia.com/" target="_blank"><img'+
+         '            src="${pageContext.request.contextPath}/images/n/logo.png" alt="卖家学院" title="卖家学院"></a>'+
+         '    </div>'+
+         '    <div class="OrderCTit">确认订单信息</div>'+
+         '	<div class="OrderTit">'+
+         '		<span class="OrderTit_detail">商品详情</span>'+
+         '		<span class="OrderTit_price OrderTit_price-style2">价格（元）</span>'+
+         '		<span class="OrderTit_meal">套餐类型</span>'+
+         '		<span class="OrderTit_discount OrderTit_discount-style2">优惠方式（元）</span>'+
+         '		<span class="OrderTit_subtotal">小计（元）</span>'+
+         '	</div>'+
+         '	<div class="OrderList">'+
+         '		<ul>'+
+         '			<li>'+
+         '				<div class="OrderTit_detail"><a href="#"><img src="#"></a><p><a href="#">系列点播课程——无线淘</a></p></div>'+
+         '				<div class="OrderTit_price OrderTit_price-style2"><span>￥58.00</span></div>'+
+         '				<div class="OrderTit_meal"><span><select name="" id="OrderTit_meal_time"><option value="3">1季度</option><option value="6">6个月</option><option value="12">12个月</option></select><select name="" id="OrderTit_meal_ver"><option value="10001">标准版</option><option value="10002">高级版</option></select>监控套餐</span></div>'+
+         '				<div class="OrderTit_discount OrderTit_discount-style2"><select name=""><option value="0">没有优惠</option></select></div>'+
+         '				<div class="OrderTit_subtotal"><span>￥38.00</span></div>'+
+         '			</li>'+
+         '		</ul>'+
+         '	</div>'+
+         '    <div class="OrderTotal">'+
+         '        <div class="OrderTotal_order">'+
+         '            <div class="OrderTotal_order_price">支付宝实付款：<i>￥<fmt:formatNumber value=" ${oriPice/100}" pattern="0.00" maxFractionDigits="2" /></i></div>'+
+         '            <div class="OrderTotal_order_ye"><input type="checkbox" value="" name="" class="check"><span>使用账户余额：<input type="text" value="" disabled readOnly="true">元<br><i>（可用<fmt:formatNumber value=" ${balance/100}" pattern="0.00" maxFractionDigits="2" />元）</i></span>'+
+         '                <em>-￥<fmt:formatNumber value="0" pattern="0.00" maxFractionDigits="2" /></em></div>'+
+         '        </div>'+
+         '        <div class="OrderTotal_anniu"><span>立即付款</span></div>'+
+         '    </div>'+
+         '</div>'+
+         '<div class="tangc" >'+
+         '    <div class="tangc_bg"></div>'+
+         '    <div class="tangc_sc a-success ">'+
+         '        <div class="tit"><span>提示</span><span class="close"></span></div>'+
+         '        <div class="con">'+
+         '            <img src="${pageContext.request.contextPath}/images/popupimg.png">'+
+         '            <strong>请勿重复提交订单!</strong>'+
+         '        </div>'+
+         '        <div class="bottom"><div class="anniu" id="a-suc-ok">查看我的订单</div></div>'+
+         '    </div>'+
+         '</div>';
+  
+  	var order={
+  
+  	init:function(parameter){
+  		var _parameter={};
+          _parameter.OrderPrice = _parameter.OrderSubtotal = "10000"; //单价信息
+          _parameter.UserYe = "856000";
+          _parameter.UserId = "90";
+          _parameter.CourseType = parameter.CourseType;
+          _parameter.url = parameter.submiturl;
+          _parameter.meal = parameter.meal;  //套餐对象
+          this.orderPage();
+          this.orderPay.init(_parameter);
+          this.orderSubmit(_parameter);
+  	},
+  
+  /* init  订单初始*/
+  
+  
+  
+  	orderPage:function(page){
+  
+  		$("#main").html(template);
+  
+  	},
+  
+      orderContainer:{
+          dataGet:function(list,OrderRecord,_parameter){
+              var $OrderTit_discountSelect=$(".OrderTit_discount select");
+              $OrderTit_discountSelect.html("");
+              if(list.length > 0){
+                  for(var i = 0; i < list.length; i++){
+                      if(list[i].hongbao.channel == 0){
+                          var hongbaoName="省" + list[i].hongbao.couponPay/100 + "元：全站通用红包";
+                      }else if(list[i].hongbao.channel == 2){
+                          var hongbaoName="省" + list[i].hongbao.couponPay/100 + "元：卖家学院红包";
+                      }
+                      if(list[i].couponCode == OrderRecord.Id){
+                          $OrderTit_discountSelect.append('<option value="'+list[i].hongbao.couponPay+'" selected="selected" data-id="'+list[i].couponCode+'" hongbao-id="' + list[i].hongbaoId + '">' + hongbaoName + '</option>');
+                      }else{
+                          $OrderTit_discountSelect.append('<option value="'+list[i].hongbao.couponPay+'" hongbao-id="'+list[i].hongbaoId+'" data-id="'+list[i].couponCode+'">' + hongbaoName + '</option>');
+                      }
+                  }
+                  $OrderTit_discountSelect.append('<option value="0">没有优惠</option>');
+              }else{
+                  $(order.orderPay.container).find(order.orderPay.dataMap.$OrderCoupons).attr("disabled","disabled");
+                  $OrderTit_discountSelect.append('<option value="0">没有优惠</option>');
+              }
+  
+              list = [];
+              _parameter.OrderSubtotal = _parameter.OrderPrice-OrderRecord.theBoon;
+              $(order.orderPay.container).find(order.orderPay.dataMap.$OrderSubtotal).html("￥" + parseFloat(_parameter.OrderSubtotal/100).toFixed(2));
+              order.orderPay.MethodOrderTota(_parameter);
+              order.orderPay.YeChange(_parameter);
+          },
+          couponsSelect:function(couponsInfo,_parameter){
+              _parameter.OrderSubtotal = _parameter.OrderPrice-couponsInfo;
+              $(order.orderPay.container).find(order.orderPay.dataMap.$OrderSubtotal).html("￥" + parseFloat(_parameter.OrderSubtotal/100).toFixed(2));
+              order.orderPay.YeChange(_parameter);
+              order.orderPay.MethodOrderTota(_parameter);
+          }
+      },
+  
+  /* orderContainer  优惠红包*/
+  
+  
+      orderPay:{
+      	container: 'body',//模块插入容器
+      	dataMap: {
+      		'$OrderSubtotal' : ".OrderList .OrderTit_subtotal span",  //小计容器
+      		'$OrderTotal' : ".OrderTotal .OrderTotal_order .OrderTotal_order_price i", //合计容器
+      		'$OrderCoupons' : ".OrderList .OrderTit_discount select", //红包下拉容器
+      		'$OrderPrice' : ".OrderList .OrderTit_price span", //订单价格容器
+      		'$OrderYe_input' : ".OrderTotal .OrderTotal_order span input",//余额输入容器
+      		'$OrderYe_check' : ".OrderTotal_order_ye .check",//余额使用复选框容器
+      		'$OrderYe_em' : ".OrderTotal_order_ye em",//优惠余额容器
+      		'$OrderYe_i' : ".OrderTotal .OrderTotal_order span  i"//剩余余额容器
+      	},
+      	init: function(_parameter){
+  
+      		if($(this.container).find(".OrderTit_meal").length > 0){
+      			this.PayChange(_parameter);//套餐信息
+      		}else{
+      			this.DisCount(_parameter);
+      		}
+      		this.YeChange(_parameter);
+      		this.CouponsChange(_parameter);
+      		this.OrderYe_checkChange(_parameter);
+      		this.OrderYe_inputKeyup();
+      		this.OrderTit_meal_selectChange();
+  
+      	},//初始化
+      	YeChange:function(_parameter){
+      		$(this.container).find(this.dataMap.$OrderYe_input).css({"color":"#C6C6C6"});
+      		if(_parameter.OrderSubtotal == 0)$(this.container).find(this.dataMap.$OrderYe_input).html(parseFloat(0).toFixed(2));
+      		else{
+      			if(parseFloat(_parameter.UserYe) > parseFloat(_parameter.OrderSubtotal)){
+      			$(this.container).find(this.dataMap.$OrderYe_input).val(parseFloat(_parameter.OrderSubtotal/100).toFixed(2))
+      				if($(this.container).find(this.dataMap.$OrderYe_check).attr("checked") == "checked"){
+      					$(this.container).find(this.dataMap.$OrderYe_i).html("（可用"+ parseFloat((_parameter.UserYe-$(this.container).find(this.dataMap.$OrderYe_input).val()*100)/100).toFixed(2) +"元）");
+      				}
+      			}
+      			else{
+      			$(this.container).find(this.dataMap.$OrderYe_input).val(parseFloat(_parameter.UserYe/100).toFixed(2))
+      				if($(this.container).find(this.dataMap.$OrderYe_check).attr("checked") == "checked"){
+      					$(this.container).find(this.dataMap.$OrderYe_i).html("（可用"+ parseFloat(0).toFixed(2) +"元）");
+      				}
+      			}
+      		}
+      	},//余额结算
+      	MethodOrderTota:function(_parameter){
+      		var _this = this;
+      		if($(this.container).find(this.dataMap.$OrderYe_input).val().length > 0 && $(this.container).find(this.dataMap.$OrderYe_check).attr("checked") == "checked"){
+      				$(this.container).find(this.dataMap.$OrderTotal).html("￥" + parseFloat((_parameter.OrderSubtotal-$(this.container).find(this.dataMap.$OrderYe_input).val()*100)/100).toFixed(2));
+      				$(_this.container).find(_this.dataMap.$OrderYe_input).attr("disabled",false);
+      				$(_this.container).find(_this.dataMap.$OrderYe_input).css({"color":"#666"});
+      				$(_this.container).find(_this.dataMap.$OrderYe_em).html("-￥" + parseFloat(($(_this.container).find(_this.dataMap.$OrderYe_input).val()*100)/100).toFixed(2));
+      				$(_this.container).find(_this.dataMap.$OrderYe_i).html("（可用"+ parseFloat((_parameter.UserYe-$(_this.container).find(_this.dataMap.$OrderYe_input).val()*100)/100).toFixed(2) +"元）");
+      		}else{
+      			$(this.container).find(this.dataMap.$OrderTotal).html("￥" + parseFloat(_parameter.OrderSubtotal/100).toFixed(2));
+      				$(_this.container).find(_this.dataMap.$OrderYe_input).attr("disabled","disabled");
+      				$(_this.container).find(_this.dataMap.$OrderYe_input).css({"color":"#C6C6C6"});
+      				$(_this.container).find(_this.dataMap.$OrderYe_em).html("-￥" + parseFloat(0).toFixed(2));
+      				$(_this.container).find(_this.dataMap.$OrderYe_i).html("（可用"+ parseFloat(_parameter.UserYe/100).toFixed(2) +"元）");
+      		}
+      		order._parameter = _parameter;
+      	},	//合计结算
+      	DisCount:function(_parameter){//筛选红包
+      		var data={};
+      		var _this = this;
+      		data.status = 1;
+      		data.pageSize = 100;
+      		$.ajax({
+      				type:"get",
+      				async: false,
+      				url:"http://hongbao.maijia.com/restapi/user/hongbao/list",
+      				data:data,
+      				dataType:"jsonp",
+      				success:function(result){
+      					if(result.result == "8"){
+      						// alert(result.message);
+      						// location.href = "http://login.taosj.com/?redirectURL=" + encodeURIComponent(window.location.href);
+      					}
+      					else if(result.result == "1"){
+      						if(result.data.list.length > 0){
+      							var OrderRecord = {};
+      							OrderRecord.OrderChannel = 2; //类型
+      							OrderRecord.theBoon = 0; //最大优惠值
+      							OrderRecord.now = Date.parse(new Date());
+      							OrderRecord.theLately = Date.parse(new Date())*100; //最小时间戳
+      							OrderRecord.theChannel = 0; //最大类型值
+      							OrderRecord.Id = "";
+      							var list=[];
+      							var o1 = result.data.list;
+      							var $OrderTit_discountSelect = $(".OrderTit_discount select");
+      							for(var i = 0; i < o1.length; i++){
+      								if(( o1[i].hongbao.channel == OrderRecord.OrderChannel || o1[i].hongbao.channel == 0 ) && o1[i].hongbao.shouldPay <= _parameter.OrderPrice  && OrderRecord.now >= o1[i].hongbao.startTime && OrderRecord.now <= o1[i].hongbao.endTime){
+      									list.push(o1[i]);
+      									function assignment(){
+      										OrderRecord.theBoon = o1[i].hongbao.couponPay;
+      										OrderRecord.theLately = o1[i].hongbao.endTime;
+      										OrderRecord.theChannel = o1[i].hongbao.channel;
+      										OrderRecord.Id = o1[i].couponCode;
+  
+      									}//记录最优红包信息
+      									if(OrderRecord.theBoon < o1[i].hongbao.couponPay){//选择红包最大值
+      										assignment();
+      									}
+      									else if(OrderRecord.theBoon == o1[i].hongbao.couponPay){//红包最大值相同，选择红包到期最近时间
+      										if(OrderRecord.theLately > o1[i].hongbao.endTime ){
+      											assignment();
+      										}
+      										else if(OrderRecord.theLately == o1[i].hongbao.endTime){//红包到期最近时间相同，选择本站点红包类型
+      											if(OrderRecord.theChannel < o1[i].hongbao.channel){
+      												assignment();
+      											}
+      										}
+      									}
+      								}
+      							}
+      							order.orderContainer.dataGet(list,OrderRecord,_parameter);//有效红包列表传递
+      						}
+      						else{
+      							$(_this.container).find(_this.dataMap.$OrderCoupons).attr("disabled","disabled");
+      						}
+      					}
+      				},
+      				error:function(){
+      				}
+      		});
+      	},//红包结算
+      	CouponsChange:function(_parameter){
+      		var _this = this;
+      		$(this.container).find(this.dataMap.$OrderCoupons).change(function(){
+      				var couponsInfo = $(this).val();
+      				order.orderContainer.couponsSelect(couponsInfo,_parameter);
+      		});
+  
+      	},//红包下拉选择
+      	OrderYe_checkChange:function(_parameter){
+      		var _this = this;
+      		$(this.container).find(this.dataMap.$OrderYe_check).change(function(){
+      			_this.MethodOrderTota(_parameter);
+      		})
+  
+      	},//余额复选框勾选
+      	CheckInputIntFloat:function(oInput){
+  
+      		if('' != oInput.value.replace(/\d{1,}\.{0,1}\d{0,}/,'')){
+  
+      			var oInputValue = oInput.value.match(/\d{1,}\.{0,1}\d{0,}/) == null ? '' : oInput.value.match(/\d{1,}\.{0,1}\d{0,}/);
+      			oInput.value = oInputValue;
+  
+      		}
+  
+      		if(oInput.value.indexOf(".") > 0 && oInput.value.toString().split(".")[1].length > 2){
+  
+      				oInput.value = oInput.value.toString().split(".")[0] + "." + oInput.value.toString().split(".")[1].substr(0, 2);
+  
+      		}
+      		if(oInput.value.substr(0, 1) == "0" && oInput.value.substr(1, 1) != "." && oInput.value.length > 1){
+  
+      				oInput.value = "";
+  
+      		}
+  
+      	},//输入框匹配
+      	OrderYe_inputKeyup:function(_parameter){
+      		var _this = this;
+      		$(_this.container).find(_this.dataMap.$OrderYe_input).keyup(function(){
+      			_this.CheckInputIntFloat($(this)[0]);
+      			if($(_this.container).find(_this.dataMap.$OrderYe_input).val()*100 > _parameter.OrderSubtotal){
+      				$(_this.container).find(_this.dataMap.$OrderYe_input).val((_parameter.OrderSubtotal/100).toFixed(2));
+      				$(_this.container).find(_this.dataMap.$OrderTotal).html("￥" + parseFloat((_parameter.OrderSubtotal-$(_this.container).find(_this.dataMap.$OrderYe_input).val()*100)/100).toFixed(2));
+      				$(_this.container).find(_this.dataMap.$OrderYe_em).html("-￥" + parseFloat(($(_this.container).find(_this.dataMap.$OrderYe_input).val()*100)/100).toFixed(2));
+      				$(_this.container).find(_this.dataMap.$OrderYe_i).html("（可用"+ parseFloat((_parameter.UserYe-$(_this.container).find(_this.dataMap.$OrderYe_input).val()*100)/100).toFixed(2) +"元）");
+      			}
+      			else{
+      				$(_this.container).find(_this.dataMap.$OrderTotal).html("￥" + parseFloat((_parameter.OrderSubtotal-$(_this.container).find(_this.dataMap.$OrderYe_input).val()*100)/100).toFixed(2));
+      				$(_this.container).find(_this.dataMap.$OrderYe_em).html("-￥" + parseFloat(($(_this.container).find(_this.dataMap.$OrderYe_input).val()*100)/100).toFixed(2));
+      				$(_this.container).find(_this.dataMap.$OrderYe_i).html("（可用"+ parseFloat((_parameter.UserYe-$(_this.container).find(_this.dataMap.$OrderYe_input).val()*100)/100).toFixed(2) +"元）");
+      			}
+      		})
+      	},	//输入框输入
+      	mealChange:function(showInfo){
+  
+  			this._parameter.meal.showInfo.price = showInfo.price;
+  			order.PayChange(this._parameter);
+  
+      	},
+      	PayChange:function(_parameter){
+  
+  			//_parameter.meal.change(_parameter);//套餐改变事件
+  
+  			_parameter.OrderPrice = _parameter.meal.showInfo.price;
+  			$(this.container).find(this.dataMap.$OrderPrice).html("￥" + parseFloat(_parameter.OrderPrice/100).toFixed(2));
+  			this.DisCount(_parameter);
+  			_parameter.OrderSubtotal = _parameter.OrderPrice - $(this.container).find(this.dataMap.$OrderCoupons).val();
+  			$(this.container).find(this.dataMap.$OrderSubtotal).html("￥" + parseFloat(_parameter.OrderSubtotal/100).toFixed(2));
+  			this.MethodOrderTota(_parameter);
+  
+  
+  /*
+      		var datas = {};
+     			datas.api_name = "user_change_pay";
+      		datas.userId = _parameter.UserId;
+      		datas.isPreview = true;
+      		datas.month = Mtime;
+      		datas.changeRuleId = Mver;
+      		var _this = this;
+  
+      		$.ajax({
+      			url:"/tx/change/pay",
+      			data:datas,
+      			type:"post",
+      			dataType:"json",
+      			success:function(result){
+      				_parameter.OrderPrice = result.data.money;
+      				$(_this.container).find(_this.dataMap.$OrderPrice).html("￥" + parseFloat(_parameter.OrderPrice/100).toFixed(2));
+      				_this.DisCount();
+      				_parameter.OrderSubtotal = _parameter.OrderPrice - $(_this.container).find(_this.dataMap.$OrderCoupons).val();
+      				$(_this.container).find(_this.dataMap.$OrderSubtotal).html("￥" + parseFloat(_parameter.OrderSubtotal/100).toFixed(2));
+      				_this.MethodOrderTota();
+      			},
+      			error:function(){
+      			}
+  
+      		}); //主站套餐 */
+      	},//主站套餐结算
+      	OrderTit_meal_selectChange:function(){
+      		var _this = this;
+      		$(this.container).find(".OrderTit_meal select").change(function(){
+  
+      			_this.PayChange($("#OrderTit_meal_time").val(),$("#OrderTit_meal_ver").val());
+  
+      		});
+  
+      	}//主站套餐筛选
+      },
+  
+  /* orderPay  支付*/
+  
+  	orderSubmit:function(_parameter){
+  		$(".OrderTotal_anniu span").click(function(){
+  			var submiturl = _parameter.url;
+  			var courseData = {};
+  			courseData.type = _parameter.CourseType;
+  			if($(".OrderTotal_order_ye .check").attr("checked") == "checked"){
+  				courseData.balance = $(".OrderTotal .OrderTotal_order span input").val()*100;
+  			}else{
+  				courseData.balance = 0;
+  			}
+  			courseData.hongbaoId = $(".OrderList .OrderTit_discount select option:selected").attr("hongbao-id");//提交红包id
+  			courseData.couponCode = $(".OrderList .OrderTit_discount select option:selected").attr("data-id");//提交红包码
+  
+  			$.ajax({
+  
+  					type:"post",
+  					url:submiturl,
+  					data:courseData,
+  					dataType:"json",
+  					success:function(result){
+  
+  						if(result.code == 1){
+  							location.href = "http://order.maijia.com/payment/handle?orderId=" + result.orderId;
+  						}
+  						else if(result.code == 0){
+  							location.href = "http://login.maijia.com?redirectURL=" + encodeURIComponent(window.location.href);
+  						}
+  						else if(result.code == 2){
+  							$(".tangc").show();
+  							$(".tangc .tangc_sc strong").html('请勿重复提交订单!');
+  							$(".tangc .tangc_sc .bottom .anniu").attr("id","a-suc-href");
+  							$(".tangc .tangc_sc .bottom .anniu").html('查看我的订单');
+  						}
+  						else if(result.code == 3){
+  							$(".tangc").show();
+  							$(".tangc .tangc_sc strong").html('sorry ，您的订单支付没有完成，订单中的红包已过期或已使用');
+  							$(".tangc .tangc_sc .bottom .anniu").attr("id","a-suc-ok");
+  							$(".tangc .tangc_sc .bottom .anniu").html('确定');
+  						}
+  						else if(result.code == 4){
+  							$(".tangc").show();
+  							$(".tangc .tangc_sc strong").html('同一商品购买过于频繁，请稍后尝试');
+  							$(".tangc .tangc_sc .bottom .anniu").attr("id","a-suc-ok");
+  							$(".tangc .tangc_sc .bottom .anniu").html('确定');
+  						}
+  						else if(result.code == 5){
+  							$(".tangc").show();
+  							$(".tangc .tangc_sc strong").html('交易失败');
+  							$(".tangc .tangc_sc .bottom .anniu").attr("id","a-suc-ok");
+  							$(".tangc .tangc_sc .bottom .anniu").html('确定');
+  						}
+  
+  					},
+  					error:function(){}
+  			});
+  
+  
+  		})
+  		$(".tangc .tangc_sc .bottom .anniu").click(function () {
+  			if($(this).attr("id") == "a-suc-href"){
+  				location.href = "http://order.maijia.com/index.html#/list/";
+  			}
+  			else{
+  				$(".tangc").hide();
+  			}
+  		});
+  
+  		$(".tangc .tangc_sc span.close").click(function () {
+  			$(".tangc").hide();
+  		});
+  	}
+  
+  
+  /* orderSubmit  订单提交*/
+  
+  
+  
+  
+  }
+  
+  	 var conf = {
+          CourseType:"1",
+          meal:{
+              dateList:[{"name":"1季度","value":"1"}],
+              verList:[{"name":"标准版","value":"10001"},
+              			{"name":"高级版","value":"10002"}],
+              showInfo:{"date":"1","ver":"10001","price":"100"}
+          },//订单套餐
+          submiturl:"", //提交订单接口
+          submitparam:{"ver":"10001","value":"1"}, //提交订单参数
+          change:function(date,ver){
+          	order.mealChange();
+          },
+      };
+  
+  	var mdul = {
+  		name: 'user.order',
+  		depend: 'user',
+  		_elm_root: '#main',
+  		_elm_template_name: 'template.user.order',
+  		_render: function(){
+  			if(this.$el){
+  				return;
+  			}
+  			this.$el = $(RC.template.get(this._elm_template_name)).appendTo(this._elm_root);
+  			this._event_bind();
+  		},
+  		_event_bind: function(){
+  		},
+  		_event_unbind: function(){
+  		},
+  		init: function(){},
+  		getContainer: function(){
+  			return this.$el;
+  		},
+  		disabled: function(){},
+  		update: function(hashs, afterload, is_refresh){
+              window.location.href="/index.html#/shop/list/";
+              return;
+  			order.init(conf);
+  		},
+  		destroy: function(){
+  		}
+  	};
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+
+});

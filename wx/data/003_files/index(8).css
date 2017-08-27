@@ -1,0 +1,29 @@
+.modules-shop-title-optimize .subtab {
+  height: 48px;
+  padding-top: 20px;
+  padding-left: 20px;
+}
+.modules-shop-title-optimize .subtab:after {
+  display: table;
+  clear: both;
+  content: "";
+}
+.modules-shop-title-optimize .subtab .tab {
+  float: left;
+  cursor: pointer;
+  margin-bottom: 10px;
+  text-align: center;
+  line-height: 30px;
+  height: 30px;
+  margin-right: 10px;
+  padding-left: 20px;
+  min-width: 40px;
+  padding-right: 20px;
+  background: #f9f9f9;
+  font-size: 16px;
+  color: #666;
+}
+.modules-shop-title-optimize .subtab .tab.current {
+  color: #fff;
+  background: #FE6900;
+}

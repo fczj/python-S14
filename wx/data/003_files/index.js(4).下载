@@ -1,0 +1,41 @@
+define('modules/shop/detail/title/optimize/keyword/index', function(require, exports, module) {
+
+  var $ = require('components/jquery/jquery'),
+      $el = $("<div class=\"keyword-search\">\r\n    <h1>关键词</h1>\r\n    <div class=\"input J_input_con\">\r\n        <input type=\"text\" placeholder=\"请输入关键词\" calss=\"J_input\" maxlength=\"30\">\r\n    </div>\r\n    <div class=\"btns\">\r\n        <div class=\"title-btn test-title-btn J_search\">查询</div>\r\n    </div>\r\n</div>\r\n<!-- @require 'modules/shop/detail/title/optimize/keyword/index.less' -->"),
+      $input = $el.find('input'),
+      $search = $el.find('.J_search'),
+      $container = null;
+  
+  module.exports = {
+      mount:function(container,text){
+          if(!$container){
+              $(container).html($el);
+              $container = container;
+          }
+      },
+      dismount:function(){
+          $el.remove();
+      },
+      show:function (show) {
+          if(show){
+              $el.show();
+          }else{
+              $el.hide();
+          }
+      },
+      onSearch:function(fn){
+          $search.off('click');
+          $search.on('click',function(){
+              fn($input.val());
+          });
+  
+          $input.off('keydown');
+          $input.on('keydown',function(e){
+               if (e.keyCode === 13) {
+                  fn($input.val());
+              }
+          });
+      }
+  }
+
+});

@@ -1,0 +1,250 @@
+define('modules/user/module.user.left_info', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  
+  	var new_mission_html = [
+  	'<div class="J_user-info-mission-new-mask"><style>.user-info-mission-new-mask{height:100%;width:100%;position:fixed;z-index: 999;top:0;font-family:"Microsoft YaHei"}.user-info-mission-new-mask .user-info-mission-new-mask-back{background-color:#000;background-color:rgba(0,0,0,.4);filter:alpha(opacity=40);height:100%;width:100%;z-index:991}.user-info-mission-new-mask .user-info-mission-new-mask-body{position:absolute;width:550px;left:50%;margin-left:-225px;top:25%}.user-info-mission-new-mask .user-info-mission-new-mask-body .user-info-mission-new-mask-body-content{display:inline-block;vertical-align:top;position:relative}.user-info-mission-new-mask .user-info-mission-new-mask-body .user-info-mission-new-mask-body-content .user-info-mission-new-mask-body-content-img{background-image:url(http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/new_mission_mask.png);width:473px;height:194px}.user-info-mission-new-mask .user-info-mission-new-mask-body .user-info-mission-new-mask-body-content .user-info-mission-new-mask-body-content-button{background-image:url(http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/dialog-btn-160.png);width:160px;height:53px;text-align:center;line-height:53px;color:#fff;font-size:22px;position:absolute;left:50%;margin-left:-80px}.user-info-mission-new-mask .user-info-mission-new-mask-body .user-info-mission-new-mask-body-close{display:inline-block;vertical-align:top;background-image:url(http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/close.png);background-repeat:no-repeat;position:absolute;cursor:pointer;width:60px;height:60px}.user-info-mission-new-mask .user-info-mission-new-mask-body .user-info-mission-new-mask-body-close:hover{background-image:url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/close hover.png");background-repeat:no-repeat;position:absolute;cursor:pointer}</style>',
+  '	<div class="user-info-mission-new-mask">',
+  '		<div class="user-info-mission-new-mask-back"></div>',
+  '		<div class="user-info-mission-new-mask-body">',
+  '			<div class="user-info-mission-new-mask-body-content">',
+  '				<div class="user-info-mission-new-mask-body-content-img">',
+  '				</div>',
+  '				<a href="/index.html#/mission/new/" target="_blank"><div class="user-info-mission-new-mask-body-content-button">',
+  '					我要做任务',
+  	'				</div></a>',
+  '			</div>',
+  '			<div class="user-info-mission-new-mask-body-close">',
+  '			</div>',
+  '		</div>',
+  '	</div>',
+  	'</div>'];
+  
+  
+  var gotoluckdraw_html = [
+  	'<div class="J_user-info-gotoluckdraw-mask"><style>.user-info-gotoluckdraw-mask{height:100%;width:100%;position:fixed;z-index: 999;top:0;font-family:"Microsoft YaHei"}.user-info-gotoluckdraw-mask .user-info-gotoluckdraw-mask-back{background-color:#000;background-color:rgba(0,0,0,.7);filter:alpha(opacity=70);height:100%;width:100%;z-index:991}.user-info-gotoluckdraw-mask .user-info-gotoluckdraw-mask-body{position:absolute;width:700px;left:50%;margin-left:-300px;top:20%;}.user-info-gotoluckdraw-mask .user-info-gotoluckdraw-mask-body .user-info-gotoluckdraw-mask-body-content{display:inline-block;vertical-align:top;position:relative}.user-info-gotoluckdraw-mask .user-info-gotoluckdraw-mask-body .user-info-gotoluckdraw-mask-body-content .user-info-gotoluckdraw-mask-body-content-img{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo0ZDY2ZTA3MC1kMzdjLTQwMjYtOTRlNS1iYTZjYzQ0NDJmMjIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6REFDNDkxMDA1QzRDMTFFNTlCMjlCQzQzMzQ0NjVGRkQiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6REFDNDkwRkY1QzRDMTFFNTlCMjlCQzQzMzQ0NjVGRkQiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDpkOGViMDYzNS1hZDI3LTQ2OWItODM1Zi0xZWNkM2I2YzliMzciIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NGQ2NmUwNzAtZDM3Yy00MDI2LTk0ZTUtYmE2Y2M0NDQyZjIyIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+Kkwj4gAAAHhJREFUeNo0jokNxDAIBB2Mv/4LuU6uj6vAlt9Mgg7JCGZZ8PX7fkIIvfec85xz773W8t4LlIaqteacizGq6iNA3T9AYwxzKPaU0vUG2jmHDFRbSmOC1UBhKYgR7LVWTpZSnhs8BDJTUBGhJSsfBeGzJUzMN24BBgAnD0q1RTLAogAAAABJRU5ErkJggg==);width:600px;height:220px;border-radius:5px;}.user-info-gotoluckdraw-mask .user-info-gotoluckdraw-mask-body .user-info-gotoluckdraw-mask-body-content .user-info-gotoluckdraw-mask-body-content-button{background-image:url(http://cdn.maijia.com/www/events/pages/luckdraw/images/all/warning.png);width:254px;height:64px;text-align:center;line-height:64px;color:#fff;font-size:22px;position:absolute;left:50%;margin-left:-120px;margin-top:-100px;}.user-info-gotoluckdraw-mask .user-info-gotoluckdraw-mask-body .user-info-gotoluckdraw-mask-body-close{display:inline-block;vertical-align:top;margin-left: 20px;margin-top: 25px;background-image:url(http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/close.png);background-repeat:no-repeat;position:absolute;cursor:pointer;width:60px;height:60px}.user-info-gotoluckdraw-mask .user-info-gotoluckdraw-mask-body .user-info-gotoluckdraw-mask-body-close:hover{background-image:url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/close hover.png");background-repeat:no-repeat;position:absolute;cursor:pointer}</style>',
+  '	<div class="user-info-gotoluckdraw-mask">',
+  '		<div class="user-info-gotoluckdraw-mask-back"></div>',
+  '		<div class="user-info-gotoluckdraw-mask-body">',
+  '			<div class="user-info-gotoluckdraw-mask-body-content">',
+  	'				<div class="user-info-gotoluckdraw-mask-body-content-img"><div style="color: #cf1824;text-align: center;margin-left: 50px;margin-right: 50px;padding-top: 30px;font-size: 20px;font-family:\'Microsoft YaHei\'">恭喜你还有  1  次抽奖机会！<br/>iPhone 6s Plus、话费等众多好礼等你拿！</div>',
+  	'				</div>',
+  '				<a href="http://www.maijia.com/events/luckdraw.html" target="_blank"><div class="user-info-gotoluckdraw-mask-body-content-button">',
+  '					立即抽奖',
+  	'				</div></a>',
+  '			</div>',
+  '			<div class="user-info-gotoluckdraw-mask-body-close">',
+  '			</div>',
+  '		</div>',
+  '	</div>',
+  	'</div>'];
+  
+  	var mdul = {
+  		name: 'user.left_info',
+  		depend: 'user',
+  		_elm_dom_root: '#person_header',
+  		_elm_template_name: 'template.user.left_info',
+  		data:{},
+  		hash:{},
+  		// dom render/update
+  		_fn_dom_render: function(data){
+  			// this._elm_dom_container = $(this._elm_dom_root).html(RC.template.get(this._elm_template_name,data));
+  			// RC.sub('raycloud.pages.hashchange', this._fn_event_handler_hashchange_proxy = $.proxy(this._fn_event_handler_hashchange,this));
+  		},
+  		_fn_event_handler_hashchange:function(hash){
+  			this.hash = hash;
+  			var showmesg = true;
+  			if(this.data.nickreal){
+  				showmesg = false;
+  			}
+  			var fromurl='';
+  			if(hash.fromurl){
+  				fromurl = hash.fromurl;
+  			}
+  			if((!this.data.nickreal)||this.data.nickreal==''){
+  				showmesg = true;
+  			}
+  			if(!this.data.mobile){
+  					showmesg = false;
+  			}
+  			if(this.data.mobile=='-'){
+  					showmesg = false;
+  			}
+  			if(showmesg&&$('#user_info_nike_div_value').find('.mesg_left').size()==0){
+  				$('#user_info_nike_div_value').append(RC.template.get(this._elm_template_showmesg,this.data));
+  				//给叉叉绑定事件,给a绑定事件href="#/user/edit_info/;
+  				var _this = this;
+  				$('#user_info_nike_div_value').find(".close_btn").click(function()
+  					{
+  						//设置cookie并且隐藏弹窗
+  						//_this.setcookie("clickHiddenMesgUnsjyamksML","clickHiddenMesgUnsjyamksML");
+  						$('#user_info_nike_div_value').find(".mesg_left").hide();
+  					});
+  				$('#user_info_nike_div_value').find("a").click(function(){
+  					//隐藏,跳转页面,将fromurl带入修改页面
+  					//_this.setcookie("clickHiddenMesgUnsjyamksML","clickHiddenMesgUnsjyamksML");
+  					$('#user_info_nike_div_value').find(".mesg_left").hide();
+  					if(fromurl){
+  						window.location.href="#/user/edit_info/?fromurl="+fromurl;
+  					}else{
+  						window.location.href="#/user/edit_info/";
+  					}
+  				});
+  			}
+  		},
+  		// event
+  		_fn_dom_event_bind: function(){
+  			// 更新
+  			RC.sub('socket.user.user_info.update', this._fn_event_handler_update_info_proxy = $.proxy(this._fn_ctrl_update_info,this));
+  			// 整个应用做权限处理， 下级module就不用注册了
+  			// 权限
+  			RC.sub('ajax.status.8', _fn_event_handler_sessionfail_proxy = $.proxy(this._fn_ctrl_sessionfail,this));
+  			
+  		},
+  		_fn_dom_event_unbind: function(){
+  			// RC.removeSub('raycloud.pages.hashchange', this._fn_event_handler_hashchange_proxy = $.proxy(this._fn_event_handler_hashchange,this));
+  			RC.removeSub('socket.user.user_info.update', this._fn_event_handler_update_info_proxy); 
+  			RC.removeSub('ajax.status.8', this._fn_event_handler_sessionfail_proxy);
+  		},
+  		// event handler
+  		_fn_ctrl_update_info: function(){ 
+  			// init && socket.user_info.update可能是同时触发更新
+  			if(this._status_loading){
+  				return;
+  			}
+  			this._status_loading = true;
+  			API.get_user_info({}, $.proxy(function(json){
+  				this._status_loading = false;
+  				// 请求无用户信息， 在这里不合法
+  				if(!json.data.id){
+  					RC.pub('global.user.sessionfail');
+  					return;
+  				}	
+  				data = this._fn_data_format(json.data);
+  				this._fn_dom_render(data);
+  			},this), $.proxy(function(json){
+  				this._status_loading = false;
+  				// get_user_info api不触发 ajax.status.8, 这里检查一下
+  				if(json && json.result && /^8/.test(json.result)){
+  					RC.pub('ajax.status.8');
+  					location.href = 'http://login.taosj.com/?redirectURL='+encodeURIComponent(window.location.href);
+  				}
+  			},this));
+  		},
+  		_fn_ctrl_sessionfail: function(){
+  			RC.pub('global.user.sessionfail');
+  		},
+  		// util
+  		_fn_data_format: function(data){
+  			data.nickreal = data.nick;
+  			if((!data.nick || data.nick=='')&& data.mobile){
+  				window.location.href="http://i.maijia.com/index.html#/user/fav_category/";
+  				return;
+  			}
+  			data.nickreal = data.nick;
+  			data.nick = data.nick || data.mobile || '-';
+  			data.mobile = data.mobile || '-';
+  			data.email = data.email || '未绑定';
+  			// cut email ...
+  			//$.each(data.account || {},function(key,value){
+  			//	data['account_'+key] = value;
+  			//});
+  			//data.account_balance = data.account_balance || 0;
+  			data.qq = data.qq||'未绑定';
+  			data.email = data.email||'未绑定';
+  			data.account = data.account || {};
+  			if(data.account.balance){
+  				data.account.balance = (data.account.balance/100).toFixed(2);
+  			}
+  			data.account_balance = data.account && data.account.balance || 0;
+  			return data;
+  		},
+  		
+  		init: function(){
+  			// 初始插值占位
+  			var data = this._fn_data_format({});
+  			this._fn_dom_render(data);
+  			this._fn_dom_event_bind();
+  			// 更新信息
+  			this._fn_ctrl_update_info();
+  			this._fn_show_new_mission();
+  		},
+  		getContainer: function(){
+  			return this._elm_dom_container;
+  		},
+  		_fn_show_new_mission:function(){
+  			// if(document.cookie.indexOf("__miss_new=r_1")==-1){
+  			// 	$("body").append(new_mission_html.join(""));
+  			// 	var new_mission_html_event = function(){
+  			// 		$(".J_user-info-mission-new-mask .user-info-mission-new-mask-body-close").on("click",function(){
+  			// 			document.cookie = "__miss_new=r_1; expires=Fri, 21 Dec 2999 04:31:24 GMT;domain=maijia.com";
+  			// 			$(".J_user-info-mission-new-mask").hide();
+  			// 			$(".J_user-info-mission-new-mask").remove();
+  			// 		});
+  			// 		$(".J_user-info-mission-new-mask .user-info-mission-new-mask-body-content-button").on("click",function(){
+  			// 			document.cookie = "__miss_new=r_1; expires=Fri, 21 Dec 2999 04:31:24 GMT;domain=maijia.com";
+  			// 			$(".J_user-info-mission-new-mask").hide();
+  			// 			$(".J_user-info-mission-new-mask").remove();
+  			// 		});
+  			// 	}
+  			// 	new_mission_html_event();
+  			// }else{
+  			// }
+  		},
+  		update: function(hashs,afterload,is_refresh){
+  			if (RC.user.get('_login_status')=='false') {
+  				location.href = 'http://login.taosj.com/?redirectURL='+encodeURIComponent(window.location.href);
+  				return;
+  			}
+  			API.get_user_info({}, $.proxy(function(json){
+  				this._status_loading = false;
+  				// 请求无用户信息， 在这里不合法
+  				if(!json.data.id){
+  					RC.pub('global.user.sessionfail');
+  					return;
+  				}
+  				data = this._fn_data_format(json.data);
+  				this._fn_dom_render(data);
+  				// this._elm_dom_container = $(RC.template.get(this._elm_template_name,data)).appendTo(this._elm_dom_root);
+  			},this), $.proxy(function(json){
+  				this._status_loading = false;
+  				// get_user_info api不触发 ajax.status.8, 这里检查一下
+  				if(json && json.result && /^8/.test(json.result)){
+  					RC.pub('ajax.status.8');
+  					location.href = 'http://login.taosj.com/?redirectURL='+encodeURIComponent(window.location.href);
+  				}
+  			},this));
+  		},
+  		destroy: function(){
+  			if(this._elm_dom_container){
+  				this._fn_dom_event_unbind();
+  				this._elm_dom_container.empty();
+  				this.hash={};
+  				this.data={};
+  			}
+  
+  		},
+  		setcookie:function(name,value){
+  			var Days = 15;
+  		    var exp = new Date();
+  		    exp.setTime(exp.getTime() + Days*24*60*60*1000);
+  		    /*exp.setTime(exp.getTime() + 10*1000);*/
+  
+  		     document.cookie = name + "="+ escape (value) + ";expires=" + exp.toGMTString();
+  		},
+  		getcookie:function(name){
+  		 var arr,reg=new RegExp("(^| )"+name+"=([^;]*)(;|$)");
+  		    if(arr=document.cookie.match(reg))
+  		        return (arr[2]);
+  		    else
+  		        return null;
+  		}
+  	};
+  
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery, RayCloud);
+
+});

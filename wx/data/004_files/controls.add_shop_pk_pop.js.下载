@@ -1,0 +1,87 @@
+define('controls/controls.add_shop_pk_pop', function(require, exports, module) {
+
+  ;(function($, RC) {
+  
+      var _API = function () {
+          var _default = {
+              name: ''
+              , params: {}
+              , success: function () {}
+              , fail: function () {}
+          };
+  
+          return function (config, is_dialog) {
+              config = $.extend(_default, config);
+  
+              if (!config.name) {
+                  return;
+              }
+  
+              if (is_dialog !== false) {
+                  is_dialog = true;
+              }
+              else {
+                  is_dialog = false;
+              }
+  
+  
+              API[config.name](config.params, config.success, config.fail, is_dialog, is_dialog, is_dialog);
+          }
+  
+      }();
+  
+  	
+  	var exports = {
+          name: 'controls.add_shop_pk_pop'
+  
+          , init: function () {
+              var _this = this;
+  
+              if (_this.initialized) {
+                  return;
+              }
+  			
+              _this.initialized = true;
+          }
+  		
+  		, render: function () {}
+  		
+  		, add: function (shop_id, shop_name) {}
+  		
+  		, remove: function (shop_id) {}
+  		
+  		, set: function (id, name) {}
+  		
+  		, get: function () {}
+  		
+  	};
+  
+      RC.controls.define(exports.name, exports);
+  
+  	
+  	
+  })(jQuery, RayCloud);
+  
+  /*
+  var pk = RC.controls.get('xxxx')
+  
+  pk.add('1234456', '店铺名');
+  pk.remove('123456');
+  pk.remove();
+  
+  pk_shop_list
+  
+  pk_shop_list = [
+  	{
+  		"id": 12345
+  		, "name": "店铺名"
+  	}
+  	, {
+  		"id": 12334
+  		"name": "店铺名2"
+  	}
+  ]
+  
+  */
+
+});

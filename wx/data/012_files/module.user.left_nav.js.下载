@@ -1,0 +1,77 @@
+define('modules/user/module.user.left_nav', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var mdul = {
+  		name: 'user.left_nav',
+  		depend: 'user',
+  
+  		_elm_dom_root: '#J_Module_User_leftNav',
+  		_elm_template_name: 'template.user.left_nav',
+  		
+  		_fn_dom_render: function(){
+  			require('components/maijia-usercenter-menu/src/index').renderTo(this._elm_dom_root);
+  			// this._elm_dom_container = $(RC.template.get(this._elm_template_name)).appendTo();
+  			this._fn_event_bind();
+  		},
+  		_fn_dom_update: function(appName){ 
+  			// this._elm_dom_container.find('personal-center-menu first dd').removeClass('active').filter(function(idx,item){
+  			// 	var name = $(item).attr('data-appName');
+  			// 	return  name.indexOf(appName) !== -1;
+  			// }).addClass('current');
+  		},
+  		
+  		_fn_event_bind: function(){
+  			RC.sub('raycloud.pages.hashchange', this._fn_event_handler_hashchange_proxy = $.proxy(this._fn_event_handler_hashchange,this));
+  		},
+  		_fn_event_unbind: function(){
+  			RC.removeSub('raycloud.pages.hashchange', this._fn_event_handler_hashchange_proxy);
+  		},
+  
+  		_status_appName: null,
+  		_fn_event_handler_hashchange: function(hashs){
+  			var appanme = 'shop';
+  			if(hashs.app == 'index'){
+  				appanme = hashs.type||'shop';
+  
+  			}else {
+  				appanme = 'recharge_sms';
+  			}
+  			require('components/maijia-usercenter-menu/src/index').update({
+  				current:appanme
+  			});
+  		},
+  		
+  		init: function(){
+  			this._fn_dom_render(); 
+  			//初始化， 作一次检查
+  			//var path = RC.pages.getCurHash();  console.log(path);
+  			var url = location.href,
+  				ind = url.indexOf('#');
+  			var hash =  ind === -1 ? '' : url.slice(ind, url.length);
+  			var path = hash.split('?')[0] || '';
+  			//只有两级, 国上前后/
+  			var appName = path.split('/')[2] || ''; 
+  			this._fn_dom_update(appName);
+  		},
+  		getContainer: function(){
+  			return this._elm_dom_container;
+  		},
+  		update: function(hashs,afterload,is_refresh){
+  			afterload && afterload();
+  		},
+  		destroy: function(){
+  			if(this._elm_dom_container){
+  				this._fn_event_unbind();
+  				this._elm_dom_container.empty().remove();
+  				this._elm_dom_container = null;
+  			}
+  		}
+  	};
+  
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery, RayCloud);
+
+});

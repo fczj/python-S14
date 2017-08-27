@@ -1,0 +1,428 @@
+.mission-new-page{
+		font-family: "lucida grande",tahoma,arial,"Microsoft YaHei";
+		margin: 0;
+		padding: 0;
+		font-size: 16px;
+		overflow-x:hidden ;
+		/*-webkit-transform:scale(0.5);*/
+	div{
+		margin: 0;
+		padding: 0;
+	}
+	.sina-icon{
+		position: absolute;;
+		margin-left: -33px;
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/sina-icon.png");
+		width: 28px;
+		height: 23px;
+		display: inline-block;
+	}
+	.weixin-icon{
+		position: absolute;
+		margin-left: 5px;
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/weixin-icon.png");
+		width: 28px;
+		display: inline-block;
+		height: 23px;
+	}
+	.right-menu{
+		position: fixed;
+		right: 0px;
+		top:35%;
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/right-menu.png");
+		width: 110px;
+		height: 134px;
+		z-index: 5;
+		text-align: center;
+		color: #ffffff;
+	}
+	.right-menu ul{
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		line-height: 42px;
+	}
+	.right-menu ul li{
+		cursor: pointer;
+	}
+	.mission{
+		background-repeat: repeat-y;
+		background-image: url('http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/back.png');
+		margin-right: auto;
+		width: 1600px;
+		height: 2400px;
+		/*width: 100%;*/
+		margin-left: auto;
+	}
+	.mission-head{
+		width: 1600px;
+		margin-left:-800px;
+		position:absolute;
+		left:50%;
+		text-align:center;
+	}
+	.mission-title{
+		position: absolute;
+		top:0px;
+		left:0px;
+		z-index: 3;
+	}
+	.mission-memo{
+		position: absolute;
+		left:0px;
+		top:0px;
+	}
+	.mission-memo-content{
+		margin-top: 250px;
+		text-align: left;
+		left: 340px;
+  		position: relative;
+  		width: 980px;
+	}
+	.mission-memo-content-title{
+		margin-left: 60px;
+		position: relative;
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/mission-memo-content-title.png");
+		background-repeat: no-repeat;
+		height: 31px;
+		width: 117px;
+  		top: 10px;
+  		color: #ffffff;
+	}
+	ul.memo-all{
+		margin-top:16px;margin-left:20px;margin-bottom:16px;padding-left:40px;
+		font-family: "Microsoft YaHei";
+		margin-left: 20px;
+		display: inline-block;
+		z-index: 4;
+		line-height: 1.6em;
+		list-style: none;
+		color: #ffffff;
+	}
+	.mission-title-content{
+		position: relative;
+		z-index: 4;
+		left:-15px;
+		top:55px;
+	}
+	.mission-body{
+		width: 1600px;
+		margin-left:-800px;
+		position:absolute;
+		left:50%;
+		height: 1628px;
+		/*text-align:center;*/
+	}
+	.mission-map{
+		background-image: url('http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/images/map1146x1628.png');
+		width: 1146px;
+		top:699px;
+		background-repeat: no-repeat;
+		margin-left: -573px;
+		position: absolute;
+		left:50%;
+		height: 1628px;
+		/*left:-400px;*/
+		/*margin-right: auto;*/
+		/*margin-left: auto;*/
+	}
+
+	div.red-pkg{
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/red pkg.png");
+		width: 150px;
+		background-repeat: no-repeat;
+		height:94px;
+		position: relative;
+		z-index: 2;
+	}
+	.red-pkg-back{
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/red pkg bottom.png");
+		width: 160px;
+		position: relative;
+		background-repeat: no-repeat;
+		height: 16px;
+		margin-top: -8px;
+		margin-left:-5px;
+		z-index: 1;
+	}
+	.line-normal{
+		line-height: 58px;
+	}
+	.line-normal a{
+		top: -5px;
+		position: relative;
+	}
+	.line-min{
+		line-height: 25px;
+	}
+	.mission-map .memo{
+		color: white;
+		height: 58px;
+		text-align: center;
+	}
+	.mission-map .memo a{
+		text-decoration: none;
+		color: inherit;
+	}
+	.mission-map .reward-btn{
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/get reward btn.png");
+		background-repeat: no-repeat;
+		height: 43px;
+		width: 120px;
+		margin-left: 15px;
+		margin-top: 28px;
+		color: white;
+		line-height: 40px;
+		text-align: center;
+		cursor: pointer;
+	}
+
+	/*.mission-map .reward-btn:hover{
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/get reward btn hover.png");
+	}*/
+	.mission-map .have_been{
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/been rewarded.png");
+		background-repeat: no-repeat;
+		width: 120px;
+		height: 43px;
+		cursor: default;
+		line-height: 40px;
+		color: #999999;
+		margin-left: 15px;
+		margin-top: 28px;
+		text-align: center;
+
+	}
+	/*.mission-map .have_been:hover{
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/been rewarded hover.png");
+	}*/
+	.fill-white{
+		height:699px;
+	}
+	
+	.red-pkg-money{
+		color: #fffdcb;
+		font-size: 36px;
+		font-weight: bold;
+		text-shadow: 1px 1px 1px #000000;
+		text-align: center;
+		line-height: 120px;
+	}
+
+	div.active_row1{
+		margin-top:15px;
+	}
+	div.first{
+		display: inline-block;
+		margin-left: 110px;
+	}
+	div.active_row2{
+		margin-top: 63px;
+	}
+	div.first{
+		display: inline-block;
+		margin-left: 110px;
+	}
+	div.normal{
+		display: inline-block;
+		margin-left: 100px;
+		/*margin-left: 100px\0;
+		margin-left: 100px\9;*/
+	}
+
+	div.active_row3{
+		margin-top: 118px;
+	}
+	div.active_row3>div{
+		display: inline-block;
+		margin-left: 710px;
+	}
+
+	div.active_row4{
+		margin-top: -50px;
+	}
+	div.active_row4 .first{
+		display: inline-block;
+	}
+	div.active_row4 .second{
+		display: inline-block;
+		margin-left: 615px;
+	}
+	div.active_row5{
+		  margin-top: -65px;
+	}
+	div.active_row5 .first{
+		display: inline-block;
+		margin-left: 290px;
+	}
+	div.active_row5 .second{
+		display: inline-block;
+		margin-left: 258px;
+	}
+
+	.mission-foot{
+		position: relative;
+		margin-top: 100px;
+		margin-left: 485px;
+	}
+
+	.mission-foot .box-mesg{
+		position: absolute;
+		top: -115px;
+  		left: 20px;
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/back-mesg.png");
+		background-repeat: no-repeat;
+		width: 184px;
+		text-align: center;
+		z-index: 3;
+		height: 144px;
+	}
+	.mission-foot .box-mesg>div{
+		margin-top: 24px;
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/box-mesg-content.png");
+		width:126px;
+		height: 73px;
+		color: #fffdcb;
+		margin-left: 30px;
+		     /*margin-left: -33px;*/
+		  /*margin-left: 30px;*/
+	}
+	.mission-foot .box{
+		position: absolute;
+		z-index: 2;
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/box.png");
+		background-repeat: no-repeat;
+		width: 173px;
+		height: 160px;
+	}
+	.mission-foot .box:hover{
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/box-hover2.png");
+		width: 192px;
+		height: 167px;
+	}
+	.mission-foot .box-back{
+		z-index: 1;
+		top:15px;
+		left:-10px;
+		position: absolute;
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/box-back.png");
+		background-repeat: no-repeat;
+		width: 191px;
+		height: 164px;
+	}
+	div.center-mesg{
+		background-repeat: no-repeat;
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/center-mesg-content.png");
+		position: absolute;
+		width: 103px;
+		height: 143px;
+		margin-left: 520px;
+  		margin-top: -20px;
+  		text-align: center;
+  		color: white;
+	}
+	.ft-28{
+		font-size: 28px;
+	}
+	.ft-26{
+		font-size: 26px;
+	}
+	.ft-30{
+		font-size: 30px;
+	}
+	.ft-34{
+		font-size: 34px;
+	}
+	.ft-32{
+		font-size: 32px;
+	}
+	.open-box{
+		height: 78px;
+		width: 260px;
+		position: absolute;
+  		top: 225px;
+  		cursor: pointer;
+  		left: -43px;
+  		text-align: center;
+  		line-height: 75px;
+  		color: #fffdcb;
+	}
+	.open-box.open{
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/open box.png");
+	}
+	.open-box.opened{
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/box opened.png ");
+	}
+	.text-center{
+		text-align: center;
+	}
+	.left-25{
+		margin-left: 25px;
+	}
+	.memo-width-normal{
+		width: 150px;
+		margin-left: 5px;
+	}
+	.memo-width-min{
+		width: 110px;
+		margin-left: 25px;
+	}
+	.cursor-p{
+		cursor: pointer;
+	}
+	div.open-box-fail{
+		width: 1600px;
+		display: none;
+		height: 100%;
+		background-color: rgba(0,0,0,0.7);
+		position: fixed;
+		z-index: 6;
+	}
+	div.open-box-fail .back{
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/open-box-fail.png");
+		background-repeat: no-repeat;
+		position: absolute;
+		/*left:50%;*/
+		top:20%;
+		/*margin-left: -266px;*/
+		width: 532px;
+		height: 377px;
+	}
+	div.open-box-success{
+		width: 1600px;
+		height: 100%;
+		display: none;
+		background-color: rgba(0,0,0,0.7);
+		position: fixed;
+		z-index: 6;
+	}
+	div.open-box-success .back{
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/open-box-success.png");
+		background-repeat: no-repeat;
+		position: absolute;
+		/*left:30%;*/
+		top:10%;
+		/*margin-left: -214px;*/
+		width: 428px;
+		height: 478px;
+	}
+	div.close{
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/close.png");
+		background-repeat: no-repeat;
+		position: absolute;
+		cursor: pointer;
+		width: 60px;
+		height: 60px;
+	}
+	div.close:hover{
+		background-image: url("http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/close hover.png");
+	}
+	div.open-box-fail .close{
+		top:-10px;
+		right:-45px;
+	}
+	div.open-box-success .close{
+		top:20px;
+		right:-90px;
+	}
+}

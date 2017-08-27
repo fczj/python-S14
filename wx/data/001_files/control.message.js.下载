@@ -1,0 +1,89 @@
+define('controls/control.message', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  (function($,RC){
+  	var temp = [
+  				'<a class="menu-hd" href="index.html#/user/message/"><span class="message-icon {{dark}}">{{total}}<b></b></span>消息<b class="triangle"></b></a>',
+  				'<div class="menu-bd">',
+  					'<ul>',
+  						'<li><a href="#/user/message/?msgType=1">站内消息<span class="ml_5 fc-orange">{{totalInnerSite}}</span></a></li>',
+  						'<li><a href="#/user/message/?msgType=0">系统消息<span class="ml_5 fc-orange">{{totalSystem}}</span></a></li>',
+  					'</ul>',
+  				'</div>'
+  			];
+  	RC.template.addTemp('template.control.message',temp);
+  	var Message = {
+  		render: function($el){
+  			this.$el = $el;
+  			this._request();
+  		},
+  		_data: {},
+  		_loop: function(){
+  			this._timer = setTimeout($.proxy(this._request,this), 240000);
+  		},
+  		_request: function(){
+  			API.message_preview_count({}, $.proxy(this._update,this), $.proxy(function(json){
+  				if(json && json.result == 8){
+  					this._stop();
+  				}
+  			},this), false, false, false);
+  		},
+  		_update: function(json){
+  			var data = json.data;
+  			data.total = data.totalInnerSite + data.totalSystem;
+  			if(data.totalInnerSite != this._data.totalInnerSite || data.totalSystem != this._data.totalSystem){
+  				this._data = data;
+  				this._update_dom();
+  			}else{
+  				this._data = data;
+  			}
+  			
+  			this._loop();
+  		},
+  		_update_dom: function(){
+  			var data = $.extend({}, this._data);
+  			data.dark = this._data.total <=0 ? 'dark' : '';
+  			if(data.total <=0 ){
+  				data.total = '';
+  			}
+  			this.$el && this.$el.html(RC.template.get('template.control.message',data));
+  		},
+  		_stop: function(){
+  			if(this._timer){
+  				clearInterval(this._timer);
+  				this._timer = null;
+  			}
+  		},
+  		run: function(){
+  			this._stop();
+  			this._request();
+  		},
+  		clear: function(){
+  			this._stop();
+  			this.$el = null;
+  			this._data = {};
+  		},
+  		update: function(msgType){
+  			if(this._data.hasOwnProperty(msgType)){
+  				if(this._data[msgType] > 0){
+  					this._data[msgType] --;
+  				}
+  				if(this._data.total > 0){
+  					this._data.total --;
+  				}
+  				
+  				this._update_dom();
+  			}
+  		}
+  	};
+  
+  	RC.controls.define('message',{
+  		init: function(){
+  			return Message;
+  		}
+  	});
+  })(jQuery,RayCloud);
+
+});

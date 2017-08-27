@@ -1,0 +1,881 @@
+define('modules/shop/item/index/module.shop.item.index', function(require, exports, module) {
+
+  /**
+      @author chenjiangming
+  */
+  ;(function($,RC){
+      var Item = RC.controls.get('control.item.model');
+      var querystring = RC.controls.get('control.querystring');
+      var chartColor = RC.controls.get('control.config').chartColor;
+  
+      var servicePromiseMap = [];
+      servicePromiseMap.push({name:"信用卡支付",code:1001,"class":"c_1_1",pay:1});
+      servicePromiseMap.push({name:"货到付款",  code:1002,"class":"c_1_2",pay:1});
+      servicePromiseMap.push({name:"支付宝",    code:1003,"class":"c_1_4",pay:1});
+      servicePromiseMap.push({name:"集分宝",    code:1004,"class":"c_1_5",pay:1});
+      servicePromiseMap.push({name:"余额宝",    code:1005,"class":"c_1_6",pay:1});
+      servicePromiseMap.push({name:"余额宝分期付款",  code:1006,"class":"c_1_7",pay:1});
+      servicePromiseMap.push({name:"运费险",   code: 1007,"class":"c_2_1"});
+      servicePromiseMap.push({name:"质量安全",  code:1008,"class":"c_2_4"});
+      servicePromiseMap.push({name:"品牌授权",  code:1009,"class":"c_2_5"});
+      servicePromiseMap.push({name:"第三方质检认证",  code:1010,"class":"c_2_6"});
+      servicePromiseMap.push({name:"小时发货",code: 1011,append:1,"class":"c_4_2"});
+      servicePromiseMap.push({name:"7天无理由退货",  code: 1012,"class":"c_4_3"});
+      servicePromiseMap.push({name:"假一罚三", code: 1013,"class":"c_4_4"});
+      servicePromiseMap.push({name:"消费者保障服务", code: 1014,"class":"c_4_5"});
+      servicePromiseMap.push({name:"破损补寄", code: 1015,"class":"c_4_6"});
+      servicePromiseMap.push({name:"品质承诺", code: 1016,"class":"c_4_7"});
+      servicePromiseMap.push({name:"天退货",  code: 1017,append:1,"class":"c_4_8"});
+      servicePromiseMap.push({name:"免费换新", code: 1018,"class":"c_4_9"});
+      servicePromiseMap.push({name:"海外直邮", code: 1019,"class":"c_4_10"});
+      servicePromiseMap.push({name:"新品",     code: 1020,"class":"c_5_1"});
+      servicePromiseMap.push({name:"公益宝贝", code: 1021,"class":"c_6_1"});
+      servicePromiseMap.push({name:"淘宝充值平台",   code: 1022,"class":"c_6_2"});
+      servicePromiseMap.push({name:"品质保证",       code: 1023,"class":"c_6_3"});
+      servicePromiseMap.push({name:"鞋类三包",       code: 1024,"class":"c_3_8"});
+  
+      var mdul = {
+          name: 'shop.item.index',
+          depend: 'shop',
+          _elem_root: '#itemMain',
+          _elem_template_name: 'template.shop.item.index',
+          _data_last_hashs: {},
+          _status_permission_changed: false,
+          _status_module_active: false,
+          init: function() {},
+          update: function(hashs, afterload, refresh) {
+              this._status_module_active = true;
+              // 参数是否和原先一致
+              if(this._status_permission_changed !== true && refresh !== true && $.param(this._data_last_hashs) === $.param(hashs)){
+                  afterload && afterload();
+                  return;
+              }
+              this._fn_dom_render();
+              this._fn_dom_update(hashs, refresh);
+              afterload && afterload();
+          },
+          disabled: function() {},
+          destroy: function() {
+              if (this.$el) {
+                  this._fn_event_unbind();
+                  this.$el.empty().remove();
+                  this.$el = null;
+  
+                  this._data_last_hashs = {};
+                  this._status_permission_changed = false;
+                  this._status_module_active = false;
+              }
+          },
+  
+          getContainer: function(){
+              return this.$el;
+          },
+          _fn_dom_render: function(){
+              if(this.$el){
+                  return;
+              }
+              this._data_template_all = RC.template.get(this._elem_template_name);
+              this.$el = $(RC.template.get(this._elem_template_name, {box: 'loading'})).appendTo(this._elem_root);
+              this._fn_event_bind();
+          },
+          _fn_event_bind: function() {
+              this.$el.on('click', '.dateRangePicker', $.proxy(function(e){
+                var itemData = Item.getModel(this._data_last_hashs.itemId).toJSON();
+                if(itemData.__level=='normal'){
+                  $('.dateRangePicker').removeClass('J_level')
+                }else{
+                  $('.dateRangePicker').addClass('J_level')
+                }
+              },this));
+              this.$el.on('click', '.order-click', this._fn_event_order_proxy = $.proxy(this._fn_event_order, this));
+              this.$el.on('change', '.dateRangePicker', this._fn_event_date_change_proxy = $.proxy(this._fn_event_date_change, this));
+              this.$el.on('click', '.J_page_jump', this._fn_event_page_jump_proxy = $.proxy(this._fn_event_page_jump, this));
+              this.$el.on('change', '.pageSize', this._fn_event_page_size_change_proxy = $.proxy(this._fn_event_page_size_change, this));
+              // 权限变更(登录/等级变化)
+              RC.sub('control.item.model.permission_change', this._fn_event_handler_permission_change_proxy = $.proxy(this._fn_event_handler_permission_change,this));
+          },
+          _fn_event_unbind: function() {
+              this.$el.off('click', '.order-click', this._fn_event_order_proxy);
+              this.$el.off('change', '.dateRangePicker', this._fn_event_date_change_proxy);
+              this.$el.off('click', '.J_page_jump', this._fn_event_page_jump_proxy);
+              this.$el.off('change', '.pageSize', this._fn_event_page_size_change_proxy);
+              RC.sub('control.item.model.permission_change', this._fn_event_handler_permission_change_proxy);
+          },
+          _fn_event_order: function(e) {
+              var itemData = Item.getModel(this._data_last_hashs.itemId).toJSON();
+              if(itemData.__level !== 'senior'){
+                  RC.pub('module.shop.detail.no_permisson_sort');
+                  return;
+              }
+  
+              var hashs = this._fn_get_cur_hashs(),
+                  $i = $(e.currentTarget).find('.order'),
+                  box = $i.data('box'),
+                  decodeHash = this._fn_util_unparam(decodeURIComponent(hashs[box]));
+  
+                  decodeHash.orderField = $i.data('th');
+                  if ($i.hasClass('desc')) {
+                      decodeHash.orderType = 'asc';
+                  } else {
+                      decodeHash.orderType = 'desc';
+                  }
+                  decodeHash.pageNo && delete decodeHash.pageNo;
+                  this._fn_act_modify_hash(box, encodeURIComponent($.param(decodeHash)));
+          },
+          _fn_event_date_change: function(e) {
+              var hashs = this._fn_get_cur_hashs(),
+                  $target = $(e.target),
+                  box = $target.data('box'),
+                  // decodeHash = this._fn_util_unparam(decodeURIComponent(hashs[box])),
+                  decodeHash = {},
+                  date = $target.val().split('-');
+  
+              decodeHash.startDate = $.trim(date[0].replace(/\//g, '-'));
+              decodeHash.endDate = $.trim(date[1].replace(/\//g, '-'));
+              this._fn_act_modify_hash(box, encodeURIComponent($.param(decodeHash)));
+          },
+          _fn_event_page_jump: function(e) {
+              var hashs = this._fn_get_cur_hashs(),
+                  $target = $(e.target),
+                  box = $target.data('tp'),
+                  decodeHash = this._fn_util_unparam(decodeURIComponent(hashs[box])),
+                  pageNo;
+              if ($target.hasClass('page_sure')) {
+                  pageNo = $target.siblings('input').val();
+                  if (!$.isNumeric(pageNo) || +pageNo <= 0 || +pageNo > $target.data('maxPage')) {
+                      RC.showWarn('请输入正确的页码');
+                      e.preventDefault();
+                      return;
+                  }
+                  $target.data('key', pageNo);
+              }
+              decodeHash.pageNo = $target.data('key');
+              this._fn_act_modify_hash(box, encodeURIComponent($.param(decodeHash)));
+              e.preventDefault();
+          },
+          _fn_event_page_size_change: function(e) {
+              var hashs = this._fn_get_cur_hashs(),
+                  $target = $(e.target),
+                  box = $target.data('box'),
+                  decodeHash = this._fn_util_unparam(decodeURIComponent(hashs[box]));
+  
+              decodeHash.pageSize = $target.val();
+              decodeHash.pageNo = 1;
+              this._fn_act_modify_hash(box, encodeURIComponent($.param(decodeHash)));
+          },
+          _fn_dom_update: function(hashs, refresh) {
+              var that = this;
+              // 加载店铺基本信息
+              Item.getModel(hashs.itemId).getData(function(data){
+                  // id不同，权限变更，重新渲染基本信息
+                  if(this._status_permission_changed === true || refresh === true || hashs.itemId != that._data_last_hashs.itemId){
+                      that._fn_dom_update_info(data);
+                      that._fn_dom_update_overview(hashs);
+                      that._fn_dom_update_time_chart(hashs, refresh);
+                      that._fn_dom_update_buyer_chart(hashs, refresh);
+                  }
+                  that._fn_dom_update_offer(hashs, data, refresh);
+                  that._data_last_hashs = hashs;
+              });
+          },
+          _fn_event_handler_permission_change: function(e) {
+              if(e.id != this._data_last_hashs.itemId){
+                  return;
+              }
+              this._status_permission_changed = true;
+              if(this._status_module_active === true){
+                  this.update(this._data_last_hashs, null, true);
+              }
+          },
+          _fn_dom_update_info: function(data) {
+              var that = this;
+              var RCDate = RC.util.date;
+              data = $.extend({
+                  box: 'info',
+                  title: '-',
+                  shop: '-',
+                  price: '-',
+                  favor: '-',
+                  rate: '-',
+                  changeDate: '-',
+                  level: data.__level,
+                  status: data.__status
+              }, data);
+              if(data.changeDate!='-'){
+                  var ondate = new Date(data.changeDate);
+                  data.changeDate = RCDate.is_date(data.changeDate) ? RCDate.getdate(data.changeDate, 'YY-MM-DD HH:MM:SS') : '-';
+  
+                  var d = data.changeDate.split(" ")[1];
+                  var ddd = ondate.getDay();
+                  var weekd = "星期";
+                  if(ddd==1){
+                      weekd+="一";
+                  }else if(ddd==2){
+                      weekd+="二";
+                  }else if(ddd==3){
+                      weekd+="三";
+                  }else if(ddd==4){
+                      weekd+="四";
+                  }else if(ddd==5){
+                      weekd+="五";
+                  }else if(ddd==6){
+                      weekd+="六";
+                  }else if(ddd==0){
+                      weekd+="日";
+                  }else if(ddd==7){
+                      weekd+="日";
+                  }
+                  data.ondate = weekd+" "+d;
+              }
+              // ondate
+  
+              this._fn_prosime_str_parser(data);
+              that.$el.find('.J_item_info').html(RC.template.get_node('if', 'box', data, that._data_template_all, 0));
+          },
+          _fn_prosime_str_parser:function(data){
+              if(!data || !data.servicePromise){
+                  data.pay_html = 1;
+                  data.promise_html = 1;
+                  return;
+              }
+              var promise_arr = data.servicePromise.split(",");
+              var promise_html = '';
+              var pay_html='';
+              $(promise_arr).each(function(index,item){
+                  var code = 0;
+                  var val = undefined;
+                  if(item.indexOf(":")!=-1){
+                      code = item.split(":")[0];
+                      val = item.split(":")[1]
+                  }else{
+                      code = item;
+                  }
+                  var text = '';
+                  var b_class='';
+                  var pay = undefined;
+                  for(var i=0,length=servicePromiseMap.length;i<length;i++){
+                      if(servicePromiseMap[i].code==code){
+                          if(servicePromiseMap[i].append==1&&val){
+                              text = val+servicePromiseMap[i].name;
+                          }else{
+                              text = servicePromiseMap[i].name;
+                          }
+                          b_class = servicePromiseMap[i]["class"];
+                          pay = servicePromiseMap[i].pay;
+                          break;
+                      }
+                  }
+                  if(text&&text!=''){
+                      var itemHtml ='<div style="display:inline-block;margin-right:20px;"><span style="color:#666;font: 12px/1.5 \'lucida grande\',tahoma,arial,sans-serif;"><b class="shop_info_service_promission_icon '+b_class+'"></b>&nbsp;'+text+'</span></div>';
+                      if(pay){
+                          pay_html+=itemHtml;
+                      }else{
+                          promise_html+=itemHtml;
+                      }
+                  }
+              });
+              if(!pay_html ||pay_html==''){
+                  pay_html=1;
+              }
+              if(!promise_html||promise_html==''){
+                  promise_html=1;
+              }
+              data.pay_html = pay_html;
+              data.promise_html = promise_html;
+              // servicePromiseMap
+          },
+          _fn_dom_update_overview: function(hashs) {
+              var that = this;
+              Item.getModel(hashs.itemId).data_item_info({}, function(data) {
+                  data = $.extend({
+                      box: 'overflow',
+                      title: '-',
+                      shop: '-',
+                      price: '-',
+                      favor: '-',
+                      rate: '-',
+                      changeDate: '-',
+                      level: data.__level,
+                      status: data.__status
+                  }, data);
+                  that.$el.find('.J_item_overview').html(RC.template.get_node('if', 'box', data, that._data_template_all, 0));
+              });
+          },
+          _fn_dom_update_offer: function(hashs, itemInfo, refresh) {
+              var oldOfferHashs = this._data_last_hashs.offer;
+              if(this._status_permission_changed !== true && refresh !== true && hashs.itemId == this._data_last_hashs.itemId && oldOfferHashs === hashs.offer){
+                  return;
+              }
+  
+              var dateUtil = RC.util.date,
+                  offerHashs;
+              //解析参数
+              offerHashs = querystring.parse(hashs.offer ? decodeURIComponent(hashs.offer) : '');
+              // 用外面的id覆盖子模板的id, 外层模块会检查ID合法性
+              offerHashs.itemId = hashs.itemId;
+              offerHashs.shopId = hashs.shopId;
+              // 权限，检查参数检查
+              // 服务器最新更新数据时间
+              var maxDate   = dateUtil.getdate(itemInfo.__updateTime, 'YY-MM-DD'),
+                  startDate = offerHashs.startDate,
+                  endDate   = offerHashs.endDate,
+                  minDate,
+                  // 要做本地排序， 长度限制一下 365*2
+                  maxDays  = 730;
+              // 用户查询权询，一个月以31天计算，保证足够.
+              switch(itemInfo.__level){
+                  case 'senior':
+                      minDate = '2000-01-01';
+                      break;
+                  case 'primary':
+                      minDate = dateUtil.getdiffdate(maxDate, '-182d', 'YY-MM-DD');
+                      break;
+                  default:
+                      minDate = dateUtil.getdiffdate(maxDate, '-30d', 'YY-MM-DD');
+              }
+  
+              oldOfferHashs = querystring.parse(oldOfferHashs ? decodeURIComponent(oldOfferHashs) :  '');
+              var equal_date = oldOfferHashs.startDate == offerHashs.startDate && oldOfferHashs.endDate == offerHashs.endDate && hashs.itemId == this._data_last_hashs.itemId,
+                  need_refresh_charts = this._status_shop_stauts_changed === true || refresh === true || !equal_date;
+  
+              if(!startDate || !endDate || !dateUtil.is_date(startDate) || !dateUtil.is_date(endDate) || startDate < minDate || endDate > maxDate || startDate > endDate){
+                  offerHashs.startDate = dateUtil.getdiffdate(itemInfo.__updateTime,'-29d','YY-MM-DD');
+                  offerHashs.endDate   = dateUtil.getdate(itemInfo.__updateTime,'YY-MM-DD');
+              }
+              minDate = minDate.replace(/-/g, '/');
+              maxDate = maxDate.replace(/-/g, '/');
+              // 排序权限
+              offerHashs.orderField  = offerHashs.orderField || 'date';
+              offerHashs.orderType = offerHashs.orderType || 'desc';
+              if(offerHashs.orderField !== 'date' && itemInfo.__level !== 'senior'){
+                  offerHashs.orderField  = 'date';
+                  offerHashs.orderType = 'desc';
+              }
+              //页码
+              if(!offerHashs.pageNo || !offerHashs.pageNo.match(/^\d+$/)){
+                  offerHashs.pageNo = '1';
+              }
+              if(!offerHashs.pageSize || !offerHashs.pageSize.match(/^\d+$/) || _.indexOf(['10','20','30'], offerHashs.pageSize) === -1){
+                  offerHashs.pageSize = '10';
+              }
+              offerHashs.dateRange = offerHashs.startDate.replace(/-/g, '/') + ' - ' + offerHashs.endDate.replace(/-/g, '/');
+              // load data then render dom
+              // 先取所有数据， 给图表用， 再按分页获取给列表用
+              // todo: 优化嵌套调用
+              Item.getModel(offerHashs.itemId).data_shop_offer_list({
+                  startDate: offerHashs.startDate, endDate: offerHashs.endDate, sort: 'date', order: 'asc', chart: true
+              }, _.bind(function(data1, from_cache){
+                  // 开始时间结束时间不同的时候， 才重新渲染数据图
+                  data1.shopId=hashs.shopId;
+                  data1.itemId=hashs.itemId;
+                  if(need_refresh_charts){
+                      this._fn_dom_update_offer_charts(_.extend(data1,{minDate: minDate, maxDate: maxDate, maxDays: maxDays}), _.extend({},offerHashs));
+                  }
+                  // 获取分页数据， 读过一次， 有缓存了
+                  Item.getModel(offerHashs.itemId).data_shop_offer_list({
+                      startDate: offerHashs.startDate, endDate: offerHashs.endDate, pageNo: offerHashs.pageNo, pageSize: offerHashs.pageSize,
+                      sort: offerHashs.orderField, order: offerHashs.orderType
+                  }, _.bind(function(data2, from_cache){
+                       data2.shopId=hashs.shopId;
+                       data2.itemId=hashs.itemId;
+                      this._fn_dom_update_offer_list(_.extend(data2,{minDate: minDate, maxDate: maxDate, maxDays: maxDays}), offerHashs, hashs);
+                      offerHashs    = null;
+                      oldOfferHashs = null;
+                      hashs         = null;
+                  }, this));
+              },this));
+          },
+          _fn_dom_update_offer_charts: function(data, offerHashs) {
+              data = $.extend({
+                  box: 'offerChart',
+                  status: data.__status,
+                  level: data.__level,
+                  nodata: false,
+              }, data, offerHashs);
+              if (!(data.list && data.list.length) && offerHashs.pageNo === 1) {
+                  renderData.nodata = true;
+              }
+              this.$el.find('.J_offer_chart').html(RC.template.get_node('if', 'box', data, this._data_template_all, 0));
+              if (data.nodata === false && data.list && data.list.length) {
+                  this._fn_act_draw_offer_chart(data.list, {startDate: offerHashs.startDate, endDate: offerHashs.endDate});
+              }
+          },
+          _fn_act_draw_offer_chart: function(list, dateRange) {
+              var dateObj = RC.util.date,
+                  chartInfo = [{
+                      name: '销售额',
+                      item: 'price'
+                  }, {
+                      name: '销量',
+                      item: 'amount'
+                  }, {
+                      name: '成交笔数',
+                      item: 'offer'
+                  }];
+  
+              list.sort(function(a, b) {
+                  return a.date - b.date;
+              });
+  
+              var i = 0, l = list.length;
+              //营销推广文案
+              var yxiaoMap = {};
+              //图里营销推广图标控制
+              var yxiaoTextMap = {
+                  p4p: {color: '#ff6600', txt: '<i class="icon_marketing icon-s-i p4p_new active"></i>'},
+                  zuanzhan: {color: '#4789e5', txt: '<i class="icon_marketing icon-s-i zuanzhan_new active"></i>'},
+                  sales: {color: '#c40000', txt: '<i class="icon_marketing icon-s-i sales_new active"></i>'},
+                  juhuasuan: {color: '#f42e64', txt: '<i class="icon_marketing icon-s-i juhuasuan_new active"></i>'},
+                  taoke: {color: '#f42e64', txt: '<i class="icon_marketing icon-s-i taoke_new active"></i>'},
+                  tbouter: {color: '#f42e64', txt: '<i class="icon_marketing icon-s-i tbouter_new active"></i>'},
+              };
+              for(i=0;i<l;i++){
+                     var str = [];
+                   var temp = list[i];
+                   $.each(yxiaoTextMap, function(key, item){
+                              if(temp[key]){
+                                  str.push('<span style="color:{color}"> {txt} </span>'.replace('{color}',item.color).replace('{txt}', item.txt));
+                              }
+                          });
+                          if(str.length){
+                              yxiaoMap[temp.date] = '营销推广: '+str.join('');
+                    }
+  
+              }
+              // console.log(JSON.stringify(yxiaoMap));
+              dateRange.startDate = dateObj.tojsdate(dateRange.startDate).getTime();
+              dateRange.endDate = dateObj.tojsdate(dateRange.endDate).getTime();
+              dateRange.startDate = (list[0] && list[0].date < dateRange.startDate ? list[0].date:dateRange.startDate);
+              // for (i = 0, l = list.length; i < l; i++) {
+              //     temp = list[i];
+              //     temp.date = dateObj.tojsdate(dateObj.getdate(temp.date, 'YY-MM-DD')).getTime();
+              //     data0.push([temp.date, temp[data0Item]]);
+              //     data1.push([temp.date, temp[data1Item]]);
+              //     data2.push([temp.date, temp[data2Item]]);
+              // }
+              var data = this._fn_process_data_for_chart(list, chartInfo, dateRange);
+              //10天一个单位
+              var step = Math.ceil((dateRange.endDate - dateRange.startDate)/(10 * 24 * 60 * 60 * 1000));
+              var opt = {
+                  chart: {
+                      height: 360,
+                      type: 'area'
+                  },
+                  exporting: {
+                      enabled: false
+                  },
+                  credits: {
+                      enabled: false
+                  },
+                  title: {
+                      text: ' '
+                  },
+                  rangeSelector: {
+                       enabled: false
+                   },
+                  legend: {
+                      align: 'center',      //水平居中
+                      verticalAlign: 'top', //在顶部
+                      margin: 35,
+                      enabled: true,
+                      symbolWidth: 20,
+                      symbolHeight: 8
+                      // useHTML: true,
+                      // labelFormatter: function() {
+                      //     var color = [shopColor, ztcColor];
+                      //     return html = '<span style="color:' + color[this.index] + '"><span style="display:inline-block;width:20px;height:2px;margin-right:5px;vertical-align: 3px;background:' + color[this.index] + '"></span>' + this.name + '</span>';
+                      // }
+                   },
+                   plotOptions: {
+                      area: {
+                          fillOpacity: 0.2,
+                          lineWidth: 1.5
+                      }
+                   },
+                  xAxis: {
+                      type: 'datetime',
+                      title: {text: null},
+                      labels: {
+                          formatter: function () {
+                              return dateObj.getdate(this.value,'YY-MM-DD').replace(/-/g, '\/');
+                          },
+                          staggerLines: 1,  //水平轴label不会换行
+                          step: step,          //3天显示一次
+                      },
+                      gridLineWidth: 1,  //网格线
+                      tickLength: 0,     //伸出水平轴的长度
+                      lineWidth: 2,       //x轴的宽度
+                      tickInterval: 24 * 60 * 60 * 1000,
+                      startOnTick: true,
+                      endOnTick: true
+                  },
+  
+                  tooltip: {
+                      useHTML: true,
+                      formatter: function(){
+                          var date = this.x,
+                              str = '',
+                              //amount = this.points[0] && this.points[0].y,
+                              //price = this.points[1] && this.points[1].y,
+                              //src = this.points[2] && this.points[2].y,
+                              time = RC.util.date.getdate(date, 'YY-MM-DD'),
+                              day = (new Date(date)).getDay(),
+                              str = '<ul>';
+                          $.each(this.points, function(idx, point){
+                              var series = point.series || {},
+                                  color = series.color,
+                                  name = series.legendItem && series.legendItem.textStr || '';
+                                  str += '<li><span style="color:' + color +'">● </span>'+name+': '+ point.y+'</li>';
+                          });
+                          if (yxiaoMap[date]) {
+                              str += '<li><span style="color:#000">● </span>' + yxiaoMap[date] + '</li>';
+                          }
+                          str += '</ul>';
+  
+                          return time +'<br>'+str;
+                      },
+                       shared:true
+                  },
+                  yAxis: [{
+                       // min: 0,
+                       labels: {
+                           // y: 3,
+                           // x: -25,
+                           style: {
+                               color: chartColor[0]
+                           }
+                       },
+                       // showLastLabel: true,
+                       title: {
+                          text: null
+                       },
+                       lineWidth: 2
+  
+                   }, {
+                      // min: 0,
+                      labels: {
+                          // y: 3,
+                          // x: 20,
+                          opposite: true,
+                          style: {
+                              color: chartColor[1]
+                          }
+                      },
+                      opposite: true,
+                      // showLastLabel: true,
+                      title: {
+                         text: null
+                      },
+                      lineWidth: 2
+  
+                   }],
+                  series: [{
+                      name: chartInfo[0].name,
+                      data: data[0],
+                      color: chartColor[0],
+                  }, {
+                      name: chartInfo[1].name,
+                      data: data[1],
+                      color: chartColor[1],
+                      yAxis: 1
+                  }, {
+                      name: chartInfo[2].name,
+                      data: data[2],
+                      color: chartColor[2],
+                      yAxis: 1
+                  }]
+              };
+              try{
+                  this.$el.find('.J_offer_chart .chart').highcharts(opt);
+              }catch(e){}
+          },
+          //时间段为用户选择的时间段，非api返回的时间段，没有数据则用null断裂
+          _fn_process_data_for_chart: function(list, chartInfo, dateRange) {
+              var dateObj = RC.util.date;
+              var s = dateRange.startDate,
+                  e = dateRange.endDate,
+                  t = s;
+              var i = 0, temp, l = list.length;
+              var data0 = [], data1 = [], data2 = [];
+              var item0 = chartInfo[0].item, item1 = chartInfo[1].item, item2 = chartInfo[2].item;
+  
+              temp = list[i];
+              temp.date = dateObj.tojsdate(dateObj.getdate(temp.date, 'YY-MM-DD')).getTime();
+              while(t <= e) {
+                  if (t == temp.date) {
+                      data0.push([t, temp[item0] === undefined ? null: temp[item0]]);
+                      data1.push([t, temp[item1] === undefined ? null: temp[item1]]);
+                      data2.push([t, temp[item2] === undefined ? null: temp[item2]]);
+                      if (i < l - 1) {
+                          temp = list[++i];
+                          //去掉小时、分、秒
+                          temp.date = dateObj.tojsdate(dateObj.getdate(temp.date, 'YY-MM-DD')).getTime();
+                      }
+                  } else {
+                      data0.push([t, null]);
+                      data1.push([t, null]);
+                      data2.push([t, null]);
+                  }
+                  t = dateObj.tojsdate(dateObj.getdiffdate(t, '1d')).getTime();
+              }
+              return [data0, data1, data2];
+          },
+          _fn_dom_update_offer_list: function(data, offerHashs) {
+              data.__price_count       = data.__price_count !== undefined  ? data.__price_count.toFixed(2)  : '-';
+              data.__amount_count      = data.__amount_count !== undefined ? data.__amount_count.toFixed(0) : '-';
+              data.__offer_count       = data.__offer_count !== undefined ? data.__offer_count.toFixed(0)  : '-';
+              var dateUtil = RC.util.date;
+              var renderData = $.extend({
+                  box: 'offerItem',
+                  status: data.__status,
+                  level: data.__level,
+                  nodata: false,
+                  hashs_pageSize: offerHashs.pageSize,
+                  hashs_startDate_: RC.util.date.tojsdate(offerHashs.startDate).getTime(),
+                  hashs_endDate_: RC.util.date.tojsdate(offerHashs.endDate).getTime()
+              }, data, offerHashs);
+  
+              var start = (offerHashs.pageSize - 0 ) * (offerHashs.pageNo - 1) + 1;
+              data.list = data.list || [];
+              $.each(data.list, function(i, item) {
+                  item._idx = start ++;
+                  item.date = dateUtil.getdate(item.date, 'YY-MM-DD');
+                  if (item.chainGrowth) {
+                      item.chainGrowth = Number(item.chainGrowth).toFixed(2);
+                  } else {
+                      item.chainGrowth = '-';
+                      item.chainGrowthTrend = '-';
+                  }
+                  item.avg_price = item.price && item.offer ? (item.price/item.offer).toFixed(2) : '-';
+                  if (item.price == 0 || item.offer == 0) {
+                      item.avg_price = 0;
+                  }
+              });
+              if (!(data.list && data.list.length) && offerHashs.pageNo === 1) {
+                  renderData.nodata = true;
+              }
+              renderData.list = data.list;
+              var offerContainer = this.$el.find('.J_offer_item');
+              offerContainer.html(RC.template.get_node('if','box', renderData, this._data_template_all, 0));
+  
+              if (offerContainer.find('.J_Pages_Container').length === 0) {
+                  return;
+              }
+              //以下渲染分页
+              if (!this._data_page_controls_offer) {
+                  this._data_page_controls_offer = RC.controls.get('controls.shop.pagination');
+              }
+              this._fn_dom_update_pagination(
+                  this._data_page_controls_offer,
+                  offerContainer.find('.J_Pages_Container'), {
+                      tp: 'offer',
+                      href: null /* $.proxy(that._fn_act_cal_detail_pag_href, that) */,
+                      maxNo: data.total,
+                      pageNo: offerHashs.pageNo,
+                      pageSize: offerHashs.pageSize,
+                      hasTotal: data.__hasTotal,
+                      isEnd: data.__isEnd
+              });
+          },
+          _fn_dom_update_pagination: function(pagControl, $container, opt) {
+              this._data_deep_copy_hashs = $.extend(true, {}, this._data_last_hashs);
+              $container.empty().append(pagControl.getHtml(opt));
+          },
+          _fn_dom_update_time_chart: function(hashs) {
+              //功能暂无
+              this.$el.find('.J_time_chart').remove(); return;
+  
+              var that = this;
+              Item.getModel(hashs.itemId).data_shop_item_ontxn_time_list({}, function(data) {
+                  var renderData = {
+                      box: 'timeChart',
+                       status: data.__status,
+                      __status_html: data.__status_html,
+                      level: data.__level,
+                      nodata: false
+                  };
+                  if (!(data.list && data.list.length)) {
+                      renderData.nodata = true;
+                  }
+                  that.$el.find('.J_time_chart').html(RC.template.get_node('if','box', renderData, that._data_template_all, 0));
+                  if (renderData.nodata === false) {
+                     that._fn_act_draw_time_chart(data.list);
+                  }
+              });
+          },
+          _fn_act_draw_time_chart: function(list) {
+              var categories = [], data = [];
+              for(var i=0; i<list.length; i++){
+                  categories.push(list[i].hour);
+                  data.push(list[i].price);
+              }
+              var opt = {
+                  title: { text: ' ' },
+                  xAxis: { categories: categories},
+                  yAxis: { title: { text: ' ' }, min: 0},
+                  tooltip: { valueSuffix: '元' , headerFormat: '{point.key}时<br>',},
+                  legend: false,
+                  series: [{
+                      name: '销售额',
+                      data: data,
+                      color: chartColor[0]
+                  }]
+              };
+  
+              this.$el.find('.J_time_chart .chart').highcharts(opt);
+          },
+          _fn_dom_update_buyer_chart: function(hashs) {
+              var that = this;
+              Item.getModel(hashs.itemId).data_shop_rankhotratio_list({}, function(data) {
+                  var renderData = {
+                      box: 'buyerChart',
+                      status: data.__status,
+                      __status_html: data.__status_html,
+                      level: data.__level,
+                      nodata: false
+                  };
+                  if (!(data.list && data.list.length)) {
+                      renderData.nodata = true;
+                  }
+                  that.$el.find('.J_buyer_chart').html(RC.template.get_node('if','box', renderData, that._data_template_all, 0));
+                  if (renderData.nodata === false) {
+                     that._fn_act_draw_buyer_chart(data.list);
+                  }
+              });
+          },
+          _fn_act_draw_buyer_chart: function(list) {
+              var r = [];
+              _.each(list, function(item, idx){
+                  // r.push([item.title, item.rate]);
+                  r.push({color: chartColor[idx], name: item.rank, y: item.ratio});
+              });
+              var opt = {
+                  chart: {
+                      plotBackgroundColor: null,
+                      plotBorderWidth: null,
+                      plotShadow: false
+                  },
+                  credits: {
+                       enabled: false
+                   },
+                  exporting: {
+                       enabled: false
+                   },
+                  title: {
+                      text: ' ',
+                      align: 'left'
+                  },
+                  tooltip: {
+                      pointFormat: '{series.name}: <b>{point.percentage:.2f}%</b>'
+                  },
+                  plotOptions: {
+                      pie: {
+                          allowPointSelect: true,
+                          cursor: 'pointer',
+                          dataLabels: {
+                              enabled: true,
+                              color: '#000000',
+                              connectorColor: '#000000',
+                              format: '<b>{point.name}</b>: {point.percentage:.2f} %'
+                          },
+                          showInLegend: true
+                      }
+                  },
+                  series: [{
+                      type: 'pie',
+                      name: '销量占比',
+                      data: r
+                  }]
+              };
+  
+              // var opt = {
+              //     chart: {
+              //         plotBackgroundColor: null,
+              //         plotBorderWidth: null,
+              //         plotShadow: false
+              //     },
+              //     credits: {
+              //          enabled: false
+              //      },
+              //     exporting: {
+              //          enabled: false
+              //      },
+              //     title: {
+              //         text: ' ',
+              //         align: 'left'
+              //     },
+              //     tooltip: {
+              //         pointFormat: '{series.name}: <b>{point.percentage:.2f}%</b>'
+              //     },
+              //     plotOptions: {
+              //         pie: {
+              //             allowPointSelect: true,
+              //             cursor: 'pointer',
+              //             dataLabels: {
+              //                 enabled: true,
+              //                 color: '#000000',
+              //                 connectorColor: '#000000',
+              //                 format: '<b>{point.name}</b>: {point.percentage:.2f} %'
+              //             }
+              //         }
+              //     },
+              //     series: [{
+              //         type: 'pie',
+              //         name: '买家等级',
+              //         data: r
+              //     }]
+              // };
+  
+              this.$el.find('.J_buyer_chart .chart').highcharts(opt);
+          },
+          /**
+           * 返回hash的对象形式，没传参数返回当前url的hash对象
+           * @return {[type]} [description]
+           */
+          _fn_get_cur_hashs: function() {
+              var url = location.href,
+                  index, o = {}, l, t, hashs, i;
+  
+              index = url.indexOf('#');
+              if (index !== -1) {
+                  hashs =  url.slice(index + 1);
+                  if (hashs.indexOf('?') !== -1) {
+                      hashs = hashs.slice(hashs.indexOf('?') + 1);
+                      hashs = hashs.split('&');
+                      for (i = 0, l = hashs.length; i < l; i++) {
+                          t = hashs[i].split('=');
+                          if (t[0]) {
+                              o[t[0]] = t[1];
+                          }
+                      }
+                  }
+              }
+              return o;
+          },
+          _fn_act_modify_hash: function(key, value) {
+              var hash = {};
+              hash[key] = value;
+              RC.pages.modifyCurHash(hash);
+          },
+          _fn_util_unparam: function(str) {
+              if (!str || typeof str != 'string') {
+                  return {};
+              }
+              var obj = {},
+                  reg = /(\w+)=([^&]+)/g,
+                  result;
+  
+              while (result = reg.exec(str)) {
+                  obj[result[1]] = decodeURIComponent(result[2]);
+              }
+  
+              return obj;
+          }
+  
+      };
+  
+      RC.modules.define(mdul.name, mdul);
+  })(jQuery, RayCloud);
+  
+
+});

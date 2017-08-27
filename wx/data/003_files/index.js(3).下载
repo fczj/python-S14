@@ -1,0 +1,27 @@
+define('modules/shop/detail/title/optimize/input-tips/index', function(require, exports, module) {
+
+  var $ = require('components/jquery/jquery'),
+      $html = $("<div class=\"mesg J_mesg_input\">\r\n    <div class=\"mesg-text J_mesg_text\">请输入</div>\r\n    <div class=\"arrow\"></div>\r\n</div>\r\n<!-- @require 'modules/shop/detail/title/optimize/input-tips/index.less' -->"),
+      $container = null;
+  
+  module.exports = {
+      mount:function(container){
+          if(!$container){
+              $container = container;
+              $(container).append($html);
+          }
+      },
+      dismount:function(){
+          $html.remove();
+      },
+      show:function(mesg){
+          mesg = mesg || '请输入';
+          $html.find('.J_mesg_text').html(mesg);
+          $html.fadeIn(1000);
+          setTimeout(function() {
+              $html.fadeOut(1000);
+          }, 2000);
+      }
+  }
+
+});

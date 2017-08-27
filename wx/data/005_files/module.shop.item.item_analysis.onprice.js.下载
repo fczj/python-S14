@@ -1,0 +1,233 @@
+define('modules/shop/item/item_analysis/module.shop.item.item_analysis.onprice', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,_,RC){
+  	var querystring = RC.controls.get('control.querystring'),
+  		ItemModel   = RC.controls.get('control.item.model');
+  
+  	var mdul = {
+  		name: 'shop.item.item_analysis.onprice',
+  		depend: 'shop',
+  		_elem_root: '#main_item_analysis',
+  		_elem_template_name: 'template.shop.item.item_analysis.onprice',
+  		_fn_dom_render: function(data){
+  			if(this.$el){
+  				return;
+  			}
+  			this.$el = $(RC.template.get(this._elem_template_name, data || {})).appendTo(this._elem_root);
+  			this._fn_event_bind();
+  		},
+  		_fn_dom_update_list: function(data, hashs, mixHashs){
+  			// translate for template
+  			data._stauts_view = 1;
+  			data.list = data.list || [];
+  			var dateUtil = RC.util.date;
+  			_.each(data.list, function(item){
+  
+  				var o = item;
+  				if(o.oriPrice && o.oldOriPrice){
+  	        			if(o.oriPrice>o.oldOriPrice){
+  	        				o.oriPrice_m = '<span style="color:#e6283e;"><b class="price-up"></b><b class="fm-arial ft-normal">&#165;</b>'+(o.oriPrice-o.oldOriPrice).toFixed(2)+'</span>';
+  	        			}else if(o.oriPrice<o.oldOriPrice){
+  	        				o.oriPrice_m = '<span style="color:#3bac8a;"><b class="price-down"></b><b class="fm-arial ft-normal">&#165;</b>'+(o.oldOriPrice-o.oriPrice).toFixed(2)+'</span>';
+  	        			}else{
+  							o.oriPrice_m = '<span style="color:#999;"><b class="price-normal"></b><b class="fm-arial ft-normal">&#165;</b>0.00</span>';
+  	        			}
+          			}else{
+          				o.oriPrice_m = '<span style="color:#999;"><b class="price-normal"></b><b class="fm-arial ft-normal">&#165;</b> -</span>';
+          			}
+  
+          			if(o.newPrice && o.oldPrice){
+  	        			if(o.newPrice>o.oldPrice){
+  	        				o.newPrice_m = '<span style="color:#e6283e;"><b class="price-up"></b><b class="fm-arial ft-normal">&#165;</b>'+(o.newPrice-o.oldPrice).toFixed(2)+'</span>';
+  	        			}else if(o.newPrice<o.oldPrice){
+  	        				o.newPrice_m = '<span style="color:#3bac8a;"><b class="price-down"></b><b class="fm-arial ft-normal">&#165;</b>'+(o.oldPrice-o.newPrice).toFixed(2)+'</span>';
+  	        			}else{
+  	        				o.newPrice_m = '<span style="color:#999;"><b class="price-normal"></b><b class="fm-arial ft-normal">&#165;</b>0.00</span>';
+  	        			}
+          			}else{
+          				o.newPrice_m = '<span style="color:#999;"><b class="price-normal"></b><b class="fm-arial ft-normal">&#165;</b> -</span>';
+          			}
+  
+          			if(o.mPrice && o.oldMPrice){
+  	        			if(o.mPrice>o.oldMPrice){
+  	        				o.mPrice_m = '<span style="color:#e6283e;"><b class="price-up"></b><b class="fm-arial ft-normal">&#165;</b>'+(o.mPrice-o.oldMPrice).toFixed(2)+'</b>';
+  	        			}else if(o.mPrice<o.oldMPrice){
+  	        				o.mPrice_m = '<span style="color:#3bac8a;"><b class="price-down"></b><b class="fm-arial ft-normal">&#165;</b>'+(o.oldMPrice-o.mPrice).toFixed(2)+'</b>';
+  	        			}else{
+  	        				o.mPrice_m = '<span style="color:#999;"><b class="price-normal"></b><b class="fm-arial ft-normal">&#165;</b>0.00</span>';
+  	        			}
+  	        		}else{
+  	        			o.mPrice_m = '<span style="color:#999;"><b class="price-normal"></b><b class="fm-arial ft-normal">&#165;</b> -</span>';
+  	        		}
+  
+          			o.oldOriPrice =o.oldOriPrice&&o.oldOriPrice.toFixed(2);
+          			o.oriPrice = o.oriPrice&&o.oriPrice.toFixed(2);
+  					o.oldPrice = o.oldPrice&&o.oldPrice.toFixed(2);
+  					o.newPrice = o.newPrice&&o.newPrice.toFixed(2);
+  					o.oldMPrice = o.oldMPrice&&o.oldMPrice.toFixed(2);
+  					o.mPrice = o.mPrice&&o.mPrice.toFixed(2);
+  
+  					o.oldOriPrice =o.oldOriPrice||' -';
+  					o.oriPrice = o.oriPrice||' -';
+          			o.oldPrice = o.oldPrice||' -';
+          			o.newPrice = o.newPrice||' -';
+          			o.oldMPrice = o.oldMPrice||' -';
+          			o.mPrice = o.mPrice||' -';
+          			//<b class="price-up"><b>  
+          			//<b class="price-down"><b>
+                      if(o.changeDate){
+  						o.date = RC.util.date.getdate(o.changeDate, 'YY-MM-DD');
+  					}else{
+  						o.date = '-';
+  					}
+  					// list[i] = $.extend({oldPrice: '-', newPrice: '-', title: '-', oriPrice: '-'}, o);
+  					
+  
+  				// translate
+  				// item.changeDate = item.changeDate !== undefined ? dateUtil.getdate(item.changeDate, 'YY-MM-DD') : '-';
+  				// item.oldPrice   = item.oldPrice !== undefined ? item.oldPrice.toFixed(2) : '-';
+  				// item.price      = item.price !== undefined ? item.price.toFixed(2) : '-';
+  				// item.oriPrice   = item.oriPrice !== undefined ? item.oriPrice.toFixed(2) : '-';
+  				_.each({changeDate: '-', id: '', image: '-', title: '-'}, function(value,key){
+  					item[key] = item[key] !== undefined ? item[key] : value;
+  				});
+  			});
+  			data._list_length = data.list.length;
+  			// date
+  			data._minDate          = mixHashs._minDate ? mixHashs._minDate.replace(/-/g,'/') : '';
+  			data._maxDate          = mixHashs._maxDate ? mixHashs._maxDate.replace(/-/g,'/') : '';
+  			data.hashs_startDate_  = hashs.startDate.replace(/-/g,'/');
+  			data.hashs_endDate_    = hashs.endDate.replace(/-/g,'/');
+  			data._hashs_startDate_ = dateUtil.tojsdate(hashs.startDate).getTime();
+  			data._hashs_endDate_   = dateUtil.tojsdate(hashs.endDate).getTime();
+  			data.hashs_pageNo     = hashs.pageNo;
+  			data.hashs_pageSize   = hashs.pageSize;
+  			data.hashs_shopId     = hashs.shopId;
+  			data.hashs_itemId     = hashs.itemId;
+  			// render
+  			this.$el.html(RC.template.get_node('if','_stauts_view',data,RC.template.get(this._elem_template_name),0));
+  			// render pages
+  			var pages = this.$el.find('.J_Pages');
+  			if(pages && pages.length){
+  				if(hashs.root){delete hashs.root;}
+  				if(hashs.app){delete hashs.app;}
+  				if(hashs.classification){delete hashs.classification;}
+  				var pagesHtml = RC.controls.get('controls.shop.pagination').getHtml({
+  					lk: function(pageNo){ 
+  						hashs.pageNo = pageNo;
+  						return '#/shop/item/item_analysis/?'+ querystring.stringify(hashs);
+  					},
+  					pageSize: hashs.pageSize -0,
+  					pageNo: hashs.pageNo - 0,
+  					maxNo: data.total,
+  					hasTotal: true,
+  					isEnd: true,
+  					goPage: false
+  				});
+  				pages.html(pagesHtml);
+  			}
+  		},
+  		_fn_event_bind: function(){
+  			this.$el.on('change', '.dateRangePicker', function(e){
+  				var value = $.trim($(e.currentTarget).val()).split(/\s*-\s*/);
+  				RC.pages.modifyCurHash({
+  					startDate: value[0].replace(/\//g,'-'),
+  					endDate  : value[1].replace(/\//g,'-'),
+  					pageNo   : '1'
+  				});
+  			});
+  			this.$el.on('change', '.pageSize', function(e){
+  				RC.pages.modifyCurHash({
+  					pageSize : $(e.currentTarget).val(),
+  					pageNo   : '1'
+  				});
+  			});
+  		},
+  		_fn_event_unbind: function(){
+  			this.$el.off('change', '.dateRangePicker');
+  			this.$el.off('change', '.pageSize');
+  		},
+  		init: function(){},
+  		getContainer: function(){return this.$el;},
+  		disabled: function(){},
+  		_status_hashs: {},
+  		update: function(hashs, afterload, refresh, itemInfo){
+  			// normalize hashs
+  			var dateUtil   = RC.util.date,
+  				updateTime = itemInfo.__updateTime,
+  				minDate,
+  				maxDate    = dateUtil.getdate(updateTime,'YY-MM-DD');
+  			// 一个月以31天计算
+  			switch(itemInfo.__level){
+  				case 'senior': 
+  					minDate = '2000-01-01';
+  					break;
+  				case 'primary': 
+  					minDate = dateUtil.getdiffdate(maxDate, '-182d', 'YY-MM-DD');
+  					break;
+  				default:
+  					minDate = dateUtil.getdiffdate(maxDate, '-30d', 'YY-MM-DD');
+  			}
+  			if(!hashs.startDate || !hashs.endDate || !dateUtil.is_date(hashs.startDate) || !dateUtil.is_date(hashs.endDate) || hashs.startDate - minDate < 0 || hashs.endDate - maxDate > 0){
+  				hashs.startDate = dateUtil.getdiffdate(updateTime, '-29d', 'YY-MM-DD');
+  				hashs.endDate   = dateUtil.getdate(updateTime, 'YY-MM-DD');
+  			}
+  			if(!hashs.pageNo || !String(hashs.pageNo).match(/^\d+$/)){
+  				hashs.pageNo = '1';
+  			}
+  			if(!hashs.pageSize || !String(hashs.pageSize).match(/^\d+$/) || _.indexOf(['10','20','30'], String(hashs.pageSize)) === -1){
+  				hashs.pageSize = '10';
+  			}
+  			// 只保存，有效的，正确的参数
+  			var require_params  = ['shopId', 'itemId', 'type', 'startDate', 'endDate', 'pageNo', 'pageSize'],
+  				oldHashs        = this._status_hashs,
+  				hashsChanged    = false;
+  			_.each(require_params, function(name, idx){
+  				if(oldHashs[name] != hashs[name]){
+  					hashsChanged = true;
+  					oldHashs[name] = hashs[name];
+  				}
+  			});
+  			if(refresh !== true && hashsChanged === false){
+  				afterload && afterload();
+  				return;
+  			}
+  			// cache hashs
+  			this._status_hashs = _.extend({},oldHashs);
+  			// render 基本结构
+  			this._fn_dom_render({_stauts_view: 0});
+  
+  			// load data then update dom
+  			ItemModel.getModel(hashs.itemId).data_shop_item_onprice_list({
+  				shopId   : hashs.shopId,
+  				itemId   : hashs.itemId,
+  				startDate: hashs.startDate,
+  				endDate  : hashs.endDate,
+  				pageNo   : hashs.pageNo,
+  				pageSize : hashs.pageSize
+  			}, _.bind(function(data){
+  				this._fn_dom_update_list(data, oldHashs, {_minDate: minDate, _maxDate: maxDate});
+  				oldHashs = null;
+  				minDate  = null;
+  				maxDate  = null;
+  			},this));
+  
+  			afterload && afterload();
+  		},
+  		destroy: function(){
+  			if(this.$el){
+  				this._fn_event_unbind();
+  				this._status_hashs = {};
+  				this.$el.empty().remove();
+  				this.$el = null;
+  			}
+  		}
+  	};
+  	
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,_,RayCloud);
+
+});

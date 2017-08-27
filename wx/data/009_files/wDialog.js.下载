@@ -1,0 +1,126 @@
+define('components/wDialog/wDialog', function(require, exports, module) {
+
+  /* @require "components/wDialog/wDialog.less" */
+  
+  (function (factory) {
+      if (typeof define === 'function' && define.amd) {
+          // AMD
+          define(['jquery'], factory);
+      } else if (typeof module === 'object' && module.exports) {
+          factory(require('components/jquery/jquery'));
+      } else {
+          // Browser globals
+          factory(jQuery);
+      }
+  }(function ($) {
+      $ = window.$;
+      $.wDialog = function (cfg) {
+          var _cfg = {
+                  title: "提示",
+                  content: "",
+                  width: "",
+                  height: "",
+                  okVal: "确定",
+                  cancelVal: "取消"
+              },
+              $el, $lock, _width, _height,
+              _ok_html = "",
+              _cancel_html = "",
+              _close_html = "",
+              _lock_html = '<div id="mldg-lockmask" data-wdialog="close" style="position: fixed; left: 0px; top: 0px; width: 100%; height: 100%; overflow: hidden; z-index: 99999;"></div>';
+  
+          $.extend(_cfg, cfg || {});
+  
+          if ((typeof _cfg.ok) === "function") {
+              _ok_html = '<span class="mldg-ui-box-btn-ok">' + (_cfg.okVal || "确定") + '</span>';
+          }
+  
+          if ((typeof _cfg.cancel) === "function") {
+              _cancel_html = '<span class="mldg-ui-box-btn-cancel">' + (_cfg.cancelVal || "取消") + '</span>';
+          }
+              _close_html = '<div class="mldg-ui-box-hd-close">&times;</div>';
+  
+          switch (_cfg.width) {
+              case "small":
+                  _width = "width:400px;";
+                  break;
+              case "normal":
+                  _width = "width:500px;";
+                  break;
+              case "large":
+                  _width = "width:600px;";
+                  break;
+              default :
+                  _width = "width:auto;";
+                  break;
+          }
+  
+          var _html = [
+              '<div class="mldg-ui-box" data-wdialog="close" style="display:none;' + _width + '">',
+              '<div class="mldg-ui-box-hd">',
+              '<div class="mldg-ui-box-hd-tit">' + (_cfg.title || "提示") + '</div>',
+              _close_html,
+              '</div>',
+              '<div class="mldg-ui-box-bd">' + (_cfg.content || "") + '</div>',
+              '<div class="mldg-ui-box-ft">' + _ok_html + _cancel_html + '</div>',
+              '</div>'
+          ];
+  
+          $el = $(_html.join(""));
+          $lock = $(_lock_html);
+  
+          $("body").append($el);
+          $("body").append($lock);
+  
+          setTimeout(function () {
+              _width = $el.width();
+              _height = $el.height();
+  
+              $el.css({
+                  "margin-left": -_width / 2,
+                  "margin-top": -_height / 1.6,
+                  "display": "block"
+              });
+          }, 0);
+  
+          $el.on("click", ".mldg-ui-box-btn-ok, .mldg-ui-box-btn-cancel, .mldg-ui-box-hd-close", function (e) {
+              var $target = $(e.target),r;
+  
+              if ($target.is(".mldg-ui-box-btn-ok")) {
+                  if ((typeof _cfg.ok) === "function") {
+                      r = _cfg.ok(e);
+  
+                      if(r === false){
+                          return false;
+                      }
+                  }
+              }
+  
+              if ($target.is(".mldg-ui-box-btn-cancel") || $target.is(".mldg-ui-box-hd-close")) {
+                  if ((typeof _cfg.cancel) === "function") {    //存在取消，认定为confirm
+                      r = _cfg.cancel(e);
+  
+                      if(r === false){
+                          return false;
+                      }
+                  }
+              }
+  
+              $el.off();
+              $el.remove();
+              $lock.remove();
+          });
+  
+          return $el;
+      };
+  
+      $.wDialog.close = function () {
+          $('[data-wdialog="close"]').off();
+          $('[data-wdialog="close"]').remove();
+      };
+  
+  
+  }));
+  
+
+});

@@ -1,0 +1,131 @@
+define('modules/shop/detail/title/optimize/table/index', function(require, exports, module) {
+
+  var $ = require('components/jquery/jquery'),
+      template = require('components/art-template/template'),
+      $el = $("<div class=\"table-con\">\r\n    <table class=\"ui-table ui-table-striped ui-table-inbox tablefixed\">\r\n        <thead>\r\n            <tr>\r\n                <th width=\"200\">关键词</th>\r\n                <th data-sort=\"pv\" class=\"th-sort J_sort\"><div class=\"th-text\">展现指数</div><div class=\"sort J_sort_icon\"></div><div class=\"J_pv_help\"></div></th>\r\n                <th data-sort=\"click\" class=\"th-sort J_sort\"><div class=\"th-text\">点击数</div><div class=\"sort J_sort_icon\"></div><div class=\"J_click_help\"></div></th>\r\n                <th data-sort=\"favItemCount\" class=\"th-sort J_sort\"><div class=\"th-text\">宝贝收藏数</div><div class=\"sort J_sort_icon\"></div><div class=\"J_fav_help\"></div></th>\r\n                <th data-sort=\"payCount\" class=\"th-sort J_sort\"><div class=\"th-text\">成交笔数</div><div class=\"sort J_sort_icon\"></div><div class=\"J_pay_help\"></div></th>\r\n                <th data-sort=\"trendpv\" class=\"th-sort J_sort\" width=\"200\"><div class=\"th-text\">搜索热度趋势</div><div class=\"sort J_sort_icon\"></div><div class=\"J_trend_help\"></div></th>\r\n                <th width=\"\"><div class=\"th-text\">操作</div></th>\r\n            </tr>\r\n        </thead>\r\n        <tbody class=\"J_body\">\r\n        </tbody>\r\n    </table>\r\n    <div class=\"J_page page-con\"></div>\r\n</div>\r\n<!-- @require 'modules/shop/detail/title/optimize/table/index.less' -->"),
+      $page = $el.find('.J_page'),
+      $tbodyCon = $el.find('.J_body'),
+      $tbody = template.compile("{{each dataList as item}}\r\n    <tr>\r\n        <td>{{item.word}}</td>\r\n        <td>{{item.pv}}</td>\r\n        <td>{{item.click}}</td>\r\n        <td>{{item.favItemCount}}</td>\r\n        <td>{{item.payCount}}</td>\r\n        <td>\r\n            <div title=\"{{if item.trendpv<0}}下降{{else}}上升{{/if}}{{if item.trendpv<0}}{{-item.trendpv*100}}%{{else}}{{item.trendpv*100}}%{{/if}}\" class=\"bar {{if item.trendpv<0}}down{{else}}up{{/if}}\">\r\n                <div class=\"width\" style=\"width:{{if item.trendpv<0}}{{-item.trendpv*100 > 100?100:-item.trendpv*100}}{{else}}{{item.trendpv*100>100?100:item.trendpv*100}}{{/if}}px\"></div>\r\n            </div>\r\n        </td>\r\n        <td><span class=\"addtitle-button J_addtitle\" data-word=\"{{item.word}}\">加入标题</span></td>\r\n    </tr>\r\n{{/each}}\r\n{{if dataList.length==0}}\r\n    <tr><td colspan=\"7\"><div style=\"text-align:center;line-height:100px;\">无数据</div></td></tr>\r\n{{/if}}"),
+      $tabs = null,
+      helpTips = require('modules/shop/detail/title/optimize/table/help-tips/index'),
+      tplData = null,
+      Pagination = require('modules/shop/detail/title/optimize/table/pagination/pagination'),
+      $container = null;
+  
+  function insertBody(data,dom,pageNo){
+      rebderPage(pageNo);
+      dom.html($tbody({dataList:data.dataList.slice((pageNo-1)*10,pageNo*10)}));
+  }
+  
+  function sortData(data,sortFeild,sortType){
+      data.sort(function(a,b){
+          if(sortType==1){
+              return a[sortFeild] - b[sortFeild];
+          }else{
+              return b[sortFeild] - a[sortFeild];
+          }
+      });
+      return data;
+  }
+  
+  function appendHelpTips(){
+      helpTips.appendTo($el.find('.J_pv_help'),{content:'最近一天宝贝展现指数，数据越大，表示被展现越多'});
+  
+      helpTips.appendTo($el.find('.J_click_help'),{content:'最近一天宝贝被点击的指数，数据越大，表示被点击得越多'});
+  
+      helpTips.appendTo($el.find('.J_fav_help'),{content:'最近一天拥有该词的宝贝被收藏的数量，数据越大，表示被收藏得越多'});
+  
+      helpTips.appendTo($el.find('.J_pay_help'),{content:'最近一天拥有该词的宝贝成交的笔数，数据越大，表示成交越多'});
+  
+      helpTips.appendTo($el.find('.J_trend_help'),{content:'关键词搜索量的涨跌趋势情况'});
+  }
+  
+  function eventBind(){
+      $el.on('click','.J_sort',function(e){
+          if(!tplData || !tplData.dataList ||tplData.dataList.length==0){
+              return;
+          }
+          var dom = $(e.currentTarget),
+              domIcon = dom.find('.J_sort_icon'),
+              sortFeild = dom.attr('data-sort'),
+              icons = $el.find('.J_sort_icon'),
+              sortType = 2;
+          if(domIcon.hasClass('down')){
+              sortType = 1;
+              icons.removeClass('up');
+              icons.removeClass('down');
+              domIcon.removeClass('down');
+              domIcon.addClass('up');
+          }else{
+              icons.removeClass('up');
+              icons.removeClass('down');
+              domIcon.removeClass('up');
+              domIcon.addClass('down');
+          }
+          tplData.dataList = sortData(tplData.dataList,sortFeild,sortType);
+          insertBody(tplData,$tbodyCon,1);
+      });
+  
+      $el.on('click','.ui-page-no',function(e){
+          var dom = $(e.target);
+          if(dom.hasClass('ui-page-cur')){
+              return;
+          }
+          insertBody(tplData,$tbodyCon,dom.attr('data-page'));
+      });
+  }
+  
+  function rebderPage(pageNo){
+      var totalPage = Math.ceil(tplData.dataList.length/10);
+      $page.html(Pagination.compile({
+          pageNo: pageNo,
+          pageSize: 10,
+          pageTotal:totalPage,
+          url: function(pageNo){
+              return 'javascript:void(0)';
+          }
+      }));
+      $page.show();
+  }
+  
+  module.exports = {
+      mount:function(container){
+          if(!$container){
+              $(container).html($el);
+              eventBind();
+              $container = container;
+              appendHelpTips();
+          }
+      },
+      update:function(data,type){
+          $el.show();
+          var icons = $el.find('.J_sort_icon');
+          icons.removeClass('up');
+          icons.removeClass('down');
+          if(type==-1){
+              $tbodyCon.html('<tr><td colspan="7"><div class="loading"></div></td></tr>');
+              $page.hide();
+          }else{
+              tplData = data;
+              insertBody(data,$tbodyCon,1);
+          }
+      },
+      show:function (show) {
+          if(show){
+              $el.show();
+          }else{
+              $el.hide();
+          }
+      },
+      dismount:function(){
+          $el.remove();
+      },
+      onClick:function(fn){
+          $el.off('click','.J_addtitle');
+          $el.on('click','.J_addtitle',function(e){
+              fn($(e.target).attr('data-word'));
+          });
+      }
+  }
+
+});

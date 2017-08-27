@@ -1,0 +1,114 @@
+define('components/maijia-sevenDaysTips/src/index', function(require, exports, module) {
+
+  'use strict';
+  var $ = require('components/jquery/jquery');
+  var template = require('components/art-template/template');
+  var g_data = {};
+  
+  var $el = $("<style type=\"text/css\">.components_seven-tips {\n  position: fixed;\n  height: 100%;\n  font-family: Helvetica, \"PingFang SC\", \"Microsoft YaHei\", Arial, \"WenQuanYi Micro Hei\", \"tohoma,sans-serif\";\n  width: 100%;\n  top: 0;\n  left: 0;\n  z-index: 9999;\n}\n.components_seven-tips .back {\n  background: #000;\n  opacity: 0.7;\n  filter: alpha(opacity=70);\n  height: 100%;\n  width: 100%;\n  z-index: 1;\n}\n.components_seven-tips .container {\n  position: absolute;\n  left: 50%;\n  margin-left: -205px;\n  top: 50%;\n  margin-top: -120px;\n  width: 410px;\n}\n.components_seven-tips .container .close-btn {\n  background: url(\"//cdn.taosj.com/data-www-shop/components/maijia-sevenDaysTips/src/img/close.png\");\n  height: 60px;\n  width: 60px;\n  cursor: pointer;\n  position: absolute;\n  top: 60px;\n  right: -60px;\n}\n.components_seven-tips .container .close-btn:hover {\n  background: url(\"//cdn.taosj.com/data-www-shop/components/maijia-sevenDaysTips/src/img/close-hover.png\");\n}\n.components_seven-tips .container .content .step1 {\n  width: 403px;\n  height: 328px;\n  position: relative;\n  transform: scale(0.2, 0.2);\n  -ms-transform: scale(0.2, 0.2);\n  -moz-transform: scale(0.2, 0.2);\n  -webkit-transform: scale(0.2, 0.2);\n  -o-transform: scale(0.2, 0.2);\n  transition: transform 0.3s;\n  -moz-transition: transform 0.3s;\n  /* Firefox 4 */\n  -webkit-transition: transform 0.3s;\n  /* Safari 和 Chrome */\n  -o-transition: transform 0.3s;\n  transition-timing-function: linear;\n  -moz-transition-timing-function: linear;\n  /* Firefox 4 */\n  -webkit-transition-timing-function: linear;\n  /* Safari 和 Chrome */\n  -o-transition-timing-function: linear;\n  /* Opera */\n}\n.components_seven-tips .container .content .step1.show {\n  transform: scale(1, 1);\n  -ms-transform: scale(1, 1);\n  -moz-transform: scale(1, 1);\n  -webkit-transform: scale(1, 1);\n  -o-transform: scale(1, 1);\n}\n.components_seven-tips .container .content .step1 .head {\n  background: url(//cdn.taosj.com/data-www-shop/components/maijia-sevenDaysTips/src/img/head.png);\n  width: 108px;\n  height: 112px;\n  position: absolute;\n  top: -28px;\n  left: 50%;\n  margin-left: -60px;\n}\n.components_seven-tips .container .content .step1 .hand {\n  background: url(//cdn.taosj.com/data-www-shop/components/maijia-sevenDaysTips/src/img/hand.png);\n  width: 177px;\n  height: 19px;\n  position: absolute;\n  top: 27px;\n  z-index: 2;\n  margin-left: 100px;\n}\n.components_seven-tips .container .content .step1 .cap {\n  background: url(//cdn.taosj.com/data-www-shop/components/maijia-sevenDaysTips/src/img/cap.png);\n  width: 369px;\n  position: absolute;\n  height: 112px;\n  top: 39px;\n  left: 16px;\n  transform: rotateX(0deg);\n  -ms-transform: rotateX(0deg);\n  -moz-transform: rotateX(0deg);\n  -webkit-transform: rotateX(0deg);\n  -o-transform: rotateX(0deg);\n  transform-origin: top;\n  -ms-transform-origin: top;\n  -moz-transform-origin: top;\n  -webkit-transform-origin: top;\n  -o-transform-origin: top;\n  transition: transform 0.5s;\n  -moz-transition: transform 0.5s;\n  /* Firefox 4 */\n  -webkit-transition: transform 0.5s;\n  /* Safari 和 Chrome */\n  -o-transition: transform 0.5s;\n}\n.components_seven-tips .container .content .step1 .cap.after {\n  transform: rotateX(-180deg);\n  -ms-transform: rotateX(-180deg);\n  -moz-transform: rotateX(-180deg);\n  -webkit-transform: rotateX(-180deg);\n  -o-transform: rotateX(-180deg);\n}\n.components_seven-tips .container .content .step1 .cap-open {\n  background: url(//cdn.taosj.com/data-www-shop/components/maijia-sevenDaysTips/src/img/cap-open.png);\n  width: 369px;\n  height: 108px;\n  position: absolute;\n  top: -68px;\n  left: 16px;\n  display: none;\n}\n.components_seven-tips .container .content .step1 .gap {\n  background: url(//cdn.taosj.com/data-www-shop/components/maijia-sevenDaysTips/src/img/gap.png);\n  width: 364px;\n  position: absolute;\n  height: 239px;\n  top: 50%;\n  left: 21px;\n  margin-top: -126px;\n}\n.components_seven-tips .container .content .step1 .hb-back {\n  background: url(//cdn.taosj.com/data-www-shop/components/maijia-sevenDaysTips/src/img/hb-back.png);\n  width: 403px;\n  height: 274px;\n  position: absolute;\n  top: 50%;\n  margin-top: -137px;\n}\n.components_seven-tips .container .content .step1 .open-btn {\n  background: url(//cdn.taosj.com/data-www-shop/components/maijia-sevenDaysTips/src/img/open.png);\n  width: 92px;\n  height: 96px;\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  cursor: pointer;\n  margin-left: -60px;\n  margin-top: -60px;\n  animation: btn_scale 2s;\n  -moz-animation: btn_scale 2s;\n  /* Firefox */\n  -webkit-animation: btn_scale 2s;\n  /* Safari 和 Chrome */\n  -o-animation: btn_scale 2s;\n  animation-iteration-count: infinite;\n  -webkit-animation-iteration-count: infinite;\n  /* Safari 和 Chrome */\n}\n.components_seven-tips .container .content .step1 .open-center {\n  background: transparent url(//cdn.taosj.com/data-www-shop/components/maijia-sevenDaysTips/src/img/open-center.png);\n  width: 423px;\n  height: 469px;\n  position: absolute;\n  left: -12px;\n  top: -107px;\n  transition: top 0.3s;\n  -moz-transition: top 0.3s;\n  /* Firefox 4 */\n  -webkit-transition: top 0.3s;\n  /* Safari 和 Chrome */\n  -o-transition: top 0.3s;\n  transition-timing-function: linear;\n  -moz-transition-timing-function: linear;\n  /* Firefox 4 */\n  -webkit-transition-timing-function: linear;\n  /* Safari 和 Chrome */\n  -o-transition-timing-function: linear;\n  /* Opera */\n  display: none;\n}\n.components_seven-tips .container .content .step1 .open-center.show {\n  display: block;\n  top: -170px;\n}\n.components_seven-tips .container .content .step1 .open-center .wrapper p {\n  position: absolute;\n  top: 90px;\n  width: 310px;\n  left: 50%;\n  margin-left: -155px;\n  color: #7a521d;\n  font-size: 18px;\n  line-height: 1.75em;\n  text-align: center;\n}\n.components_seven-tips .container .content .step1 .open-center .wrapper p span {\n  color: #e2584e;\n}\n.components_seven-tips .container .content .step1 .open-center .wrapper .get_btn {\n  background: transparent url(//cdn.taosj.com/data-www-shop/components/maijia-sevenDaysTips/src/img/open-btn.png);\n  width: 185px;\n  height: 56px;\n  position: absolute;\n  display: block;\n  top: 50%;\n  cursor: pointer;\n  left: 50%;\n  margin-left: -93px;\n  margin-top: -25px;\n  z-index: 3;\n}\n@keyframes btn_scale {\n  50% {\n    transform: scale(0.75, 0.75);\n  }\n  100% {\n    transform: scale(1, 1);\n  }\n}\n</style>\r\n<div class=\"components_seven-tips\">\r\n    <div class=\"back\"></div>\r\n    <div class=\"container\">\r\n        <div class=\"close-btn J_close-btn\"></div>\r\n        <div class=\"content J_content\">\r\n            \r\n        </div>\r\n    </div>\r\n</div>\r\n");
+  var $step1= $("<div class=\"step1 J_step1\">\r\n    <div class=\"head J_after_hide\"></div>\r\n    <div class=\"hand J_after_hide\"></div>\r\n    <div class=\"hb-back\"></div>\r\n    <div class=\"cap J_cap\"></div>\r\n    <div class=\"gap J_gap\"></div>\r\n    <div class=\"cap-open J_cap_open\"></div>\r\n    <div class=\"open-center J_open-center\"></div>\r\n    <div class=\"open-btn J_step1-open-btn J_after_hide\"></div>\r\n</div>");
+  var $step2 = template.compile("<div class=\"wrapper\">\r\n    {{if leaveDay >= 0}}\r\n    <p>Hey，您的套餐再过 <span>{{_leaveDay}}</span> 天就要到期啦， 记得续费哟！ <br/>送您一个 <span>续费红包</span>，<span>7</span> 天有效。</p>\r\n    {{else}}\r\n    <p>Hey，您的套餐已经过期啦， <br/>记得续费哟！<br/>送您一个 <span>续费红包</span>，<span>7</span> 天有效。</p>\r\n    {{/if}}\r\n    <a href=\"http://hongbao.maijia.com/get.html?couponCode={{hongbao.couponCode}}\" class=\"get_btn J_get_btn\"></a>\r\n</div>\r\n");
+  
+  var data = null;
+  
+  function getData(){
+      $.ajax({
+          url:"/user/expire/remind",
+          method:"get",
+          dataType:"json",
+          success:function(json){
+              // json = {
+              //   "data": {
+              //     "leaveDay":7,
+              //     "hongbao": {
+              //         "couponCode": "2j9oiHsd8",
+              //         "hongbaoId": 10001
+              //     }
+              //   },
+              //   "result": 1
+              // }
+              if(json.result==1){
+                  data = json;
+                  if(data.data){
+                      data.data._leaveDay = Math.abs(data.data.leaveDay);
+                      if(data.data._leaveDay===0){
+                          data.data._leaveDay = 1;
+                      }
+                      if(data.data.hongbao&&data.data.hongbao.couponCode&&outOfTime()){
+                          init();
+                      }
+                  }
+              }
+          }
+      });
+  }
+  
+  function outOfTime(){
+      var cookie = document.cookie;
+      if(cookie.indexOf("seven_tips=1")!=-1){
+          return false;
+      }
+      var d = new Date();
+      d.setTime(d.getTime() + (2*24*60*60*1000));
+      var expires = "expires="+d.toUTCString();
+      document.cookie = "seven_tips=1; " + expires;
+      return true;
+  }
+  
+  function init(){
+      $('body').append($el);
+      $el.find('.content').html($step1);
+      $el.on('click',".J_close-btn",function(){
+          $el.remove();
+      });
+  
+      $el.on('click',".J_step1-open-btn",function(){
+           setTimeout(showStep2,0);
+      })
+  
+      setTimeout(function(){
+          $step1.addClass('show');
+      }, 0)
+  }
+  
+  function checkData(){
+      data = {
+        "data": {
+          "leaveDay":7,
+          "hongbao": {
+              "couponCode": "2j9oiHsd8",
+              "hongbaoId": 10001
+          }
+        },
+        "result": 1
+      }
+      
+  }
+  
+  
+  function showStep2(){
+      if(typeof document.documentElement.style['transition'] === 'undefined'){
+          $el.find('.J_step1 .J_cap').hide();
+          $el.find('.J_step1 .J_cap_open').show();
+      }
+      $el.find('.J_step1 .J_cap').addClass('after');
+      $el.find('.J_after_hide').hide();
+      $el.find('.J_open-center').html($step2(data.data));
+      $el.find('.J_gap').css('z-index','5');
+      setTimeout(function(){
+          $el.find('.J_open-center').show();
+          setTimeout(function(){
+              $el.find('.J_open-center').addClass('show');
+              setTimeout(function(){
+                  $el.find('.J_open-center .J_get_btn').css('z-index','6');
+              },300)
+          },100);
+      }, 300)
+  }
+  
+  module.exports = function(){
+      getData();
+  }
+  
+
+});

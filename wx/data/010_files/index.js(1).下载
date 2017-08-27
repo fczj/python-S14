@@ -1,0 +1,79 @@
+define('modules/shop/detail/title/optimize/hottable/index', function(require, exports, module) {
+
+  var $ = require('components/jquery/jquery'),
+      template = require('components/art-template/template'),
+      $el = $("<div class=\"hottable-con\">\r\n    <table class=\"ui-table ui-table-striped ui-table-inbox tablefixed\">\r\n        <thead>\r\n            <tr>\r\n                <th width=\"90\">宝贝</th>\r\n                <th width=\"570\"></th>\r\n                <th width=\"178\">7天销量</th>\r\n                <th width=\"120\">操作</th>\r\n            </tr>\r\n        </thead>\r\n        <tbody class=\"J_body\">\r\n        </tbody>\r\n    </table>\r\n    <div class=\"J_page page-con\"></div>\r\n</div>\r\n<!-- @require 'modules/shop/detail/title/optimize/hottable/index.less' -->"),
+      $page = $el.find('.J_page'),
+      $tbodyCon = $el.find('.J_body'),
+      $tbody = template.compile("{{each dataList as item}}\r\n    <tr>\r\n        <td><a target=\"_blank\" href=\"/index.html#/shop/item/?shopId={{item.shopId}}&itemId={{item.id}}\"><img src=\"{{item.image}}_80x80.jpg\" alt=\"\"></a></td>\r\n        <td><a target=\"_blank\" href=\"/index.html#/shop/item/?shopId={{item.shopId}}&itemId={{item.id}}\">{{item.title}}</a></td>\r\n        <td>{{item.amount30}}</td>\r\n        <td><a target=\"_blank\" href=\"/index.html#/shop/item/?shopId={{item.shopId}}&itemId={{item.id}}\"><span class=\"addtitle-button\">查看详情</span></a></td>\r\n    </tr>\r\n{{/each}}\r\n{{if dataList.length==0}}\r\n    <tr><td colspan=\"7\"><div style=\"text-align:center;line-height:100px;\">无数据</div></td></tr>\r\n{{/if}}"),
+      $tabs = null,
+      tplData = null,
+      Pagination = require('modules/shop/detail/title/optimize/hottable/pagination/pagination'),
+      $container = null;
+  
+  function insertBody(data,dom,pageNo,isEnd){
+      rebderPage(pageNo,data,isEnd);
+      dom.html($tbody({dataList:data.dataList.list}));
+  }
+  
+  function rebderPage(pageNo,data,isEnd){
+          
+      pageNo = pageNo||1;
+      var totalPage = Math.ceil(data.dataList.total/10);
+      totalPage = pageNo;
+      $page.html(Pagination.compile({
+          pageNo: pageNo,
+          pageSize: 10,
+          isEnd:isEnd,
+          pageTotal:totalPage,
+          url: function(pageNo){
+              return 'javascript:void(0)';
+          }
+      }));
+      $page.show();
+  }
+  
+  module.exports = {
+      mount:function(container){
+          if(!$container){
+              $(container).html($el);
+              $container = container;
+          }
+      },
+      update:function(data,type,pageNo,isEnd){
+          $el.show();
+          var icons = $el.find('.J_sort_icon');
+          icons.removeClass('up');
+          icons.removeClass('down');
+          if(type==-1){
+              $tbodyCon.html('<tr><td colspan="7"><div class="loading"></div></td></tr>');
+              $page.hide();
+          }else{
+              insertBody(data,$tbodyCon,pageNo,isEnd);
+          }
+      },
+      show:function (show) {
+          if(show){
+              $el.show();
+          }else{
+              $el.hide();
+          }
+      },
+      dismount:function(){
+          $el.remove();
+      },
+      onPage:function(fn){
+          $el.off('click','.ui-page-no');
+          $el.on('click','.ui-page-no',function(e){
+              var dom = $(e.target);
+              if(dom.hasClass('ui-page-cur')){
+                  return;
+              }
+              $tbodyCon.html('<tr><td colspan="7"><div class="loading"></div></td></tr>');
+              $page.hide();
+              fn(dom.attr('data-page'));
+          });
+      }
+  }
+
+});

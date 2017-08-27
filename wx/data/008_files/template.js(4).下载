@@ -1,0 +1,29 @@
+define('modules/demo/btyh/template', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var page_template = [
+  		'<div class="J_demo-btyh-page">',
+  			'<style>#container{width:auto;background:#f5f5f5;text-align:center;}#container img{vertical-align:top;}</style>',
+  			'<div class="mb_10" style="background:#fff;box-shadow:0 2px 2px rgba(0, 0, 0, .08);">',
+  				'<img src="http://cdn.maijia.com/www/www-old/cdn/201409/20140913_dpjk_05.jpg" />',
+  			'</div>',
+  			'<div class="mb_10">',
+  				'<img src="http://cdn.maijia.com/www/www-old/cdn/201409/20140913_btyh_05.jpg" />',
+  				'<img src="http://cdn.maijia.com/www/www-old/cdn/201409/20140913_btyh_08.jpg" />',
+  			'</div>',
+  			'<div class="pb_10">',
+  				'<img src="http://cdn.maijia.com/www/www-old/cdn/201409/20140913_btyh_14.jpg" />',
+  				'<img src="http://cdn.maijia.com/www/www-old/cdn/201409/20140913_btyh_17.jpg" />',
+  			'</div>',
+  		'</div>'
+  	];
+  	
+  	
+  	RC.template.addTemp('demo.btyh.index', page_template);
+  	
+  })(jQuery,RayCloud);
+
+});

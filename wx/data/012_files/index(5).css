@@ -1,0 +1,67 @@
+.modules-shop-title-optimize .new-title {
+  border: 1px solid #eee;
+  font-size: 16px;
+  padding: 20px;
+  background: #f9f9f9;
+}
+.modules-shop-title-optimize .new-title h1 {
+  margin: 0;
+  padding: 0;
+  font-size: 18px;
+  color: #333;
+  margin-right: 20px;
+  float: left;
+  line-height: 45px;
+}
+.modules-shop-title-optimize .new-title .input {
+  border: 1px solid #ddd;
+  padding: 10px 15px;
+  position: relative;
+  width: 530px;
+  float: left;
+  background: #fff;
+}
+.modules-shop-title-optimize .new-title .input input {
+  border-radius: none;
+  width: 480px;
+  box-shadow: none;
+  color: #333;
+  height: 20px;
+  line-height: 19px;
+  border: none;
+  outline: none;
+  padding: 0;
+}
+.modules-shop-title-optimize .new-title .input input:focus {
+  box-shadow: none;
+  padding: 0;
+}
+.modules-shop-title-optimize .new-title .input .text-num {
+  color: #ff9248;
+}
+.modules-shop-title-optimize .new-title .btns {
+  position: relative;
+  top: 2px;
+}
+.modules-shop-title-optimize .new-title .btns .title-btn {
+  width: 120px;
+  float: left;
+  line-height: 40px;
+  height: 40px;
+  color: #fff;
+  margin-left: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  text-align: center;
+}
+.modules-shop-title-optimize .new-title .btns .test-title-btn {
+  background: #019fe9;
+}
+.modules-shop-title-optimize .new-title .btns .copy-title-btn {
+  background: #ff9248 ;
+}
+.modules-shop-title-optimize .new-title:after {
+  clear: both;
+  display: table;
+  content: "";
+}

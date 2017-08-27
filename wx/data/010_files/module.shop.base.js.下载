@@ -1,0 +1,51 @@
+define('modules/shop/module.shop.base', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var mdul = {
+  		name: 'shop.base',
+  		depend: 'shop',
+  		
+  		init: function(){ 
+  			if(this._inited){
+  				return;
+  			}
+  			this._fn_event_bind();
+  			this._inited = true;
+  		},
+  		_fn_event_bind: function(){
+  			if(this._status_evented){
+  				return;
+  			}
+  			// 权限
+  			RC.sub('ajax.status.8', _fn_event_handler_sessionfail_proxy = $.proxy(this._fn_ctrl_sessionfail,this)); 
+  		},
+  		_fn_event_unbind: function(){
+  			RC.removeSub('ajax.status.8', _fn_event_handler_sessionfail_proxy); 
+  		},
+  		_fn_ctrl_sessionfail: function(){
+  			RC.pub('global.user.sessionfail');
+  		},
+  
+  
+  		getContainer: function(){
+  			return {
+  				show:function(){},
+  				hide: function(){}
+  			};
+  		},
+  		update: function(){
+  		},
+  		destroy: function(){
+  			if(this._inited){
+  				this._fn_event_unbind();
+  				this._inited = false;
+  			}
+  		}
+  	};
+  	RC.modules.define(mdul.name,mdul);
+  })(jQuery, RayCloud);
+
+});

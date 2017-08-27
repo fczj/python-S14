@@ -1,0 +1,168 @@
+define('modules/simplepay/module', function(require, exports, module) {
+
+  ;(function($,RC){
+      var order = require('widget/order');
+      var mdul = {
+              name: 'simplepay',
+              _elm_dom_root: '#container',
+              _template_header:[
+          '    <div class="header_person" style=\'padding-top:20px;margin: 0 auto;width: 1180px;font-family: "Microsoft YaHei", arial;\'>',
+  '           <div class="personal-center-logo clearfix" >',
+  '               <style>',
+  '                   .personal-center-logo {',
+  '                     margin-bottom: 23px;',
+  '                   }',
+  '                   .personal-center-logo img {',
+  '                     margin-top: 4px;',
+              'margin-left: 60px;',
+  '                     float: left;',
+  '                   }',
+  '                   .personal-center-logo .tit {',
+  '                     font-size: 24px;',
+  '                     line-height: 34px;',
+  '                     color: #999999;',
+  '                     display: block;',
+  '                     float: left;',
+  '                     font-weight: normal;',
+  '                   }',
+  '                   .personal-center-logo .tit:before {',
+  '                     content: ".";',
+  '                     display: inline-block;',
+  '                     color: #ccc;',
+  '                     font-size: 30px;',
+  '                     font-weight: bold;',
+  '                     margin: 0 4px 0 10px;',
+  '                   }',
+  '               </style>',
+      '               <a href="http://www.maijia.com"><img src="http://cdn.maijia.com/www/www-old/resources/css/build/images/logo.png" alt="淘数据" width="140" height="60"></a>',
+  // '               <span class="tit">个人中心</span>',
+  '           </div>',
+  '       </div>'
+          ],
+              init: function(){},
+              getContainer: function(){
+                  return this._elm_dom_container;
+              },
+              _fn_dom_render: function(data){ 
+                  if(this._elm_dom_container){
+                      return;
+                  }
+                  this._elm_dom_container = $(this._elm_dom_root).html('<div></div>');
+                  // this._fn_event_bind();
+              },
+              update: function(hashs,afterload, is_refresh){
+                  location.href = "#/shop/list/";return;
+                  location.href='#/surecharge/?id=10002&month=12';return;
+                  //隐藏搜索框,显示专有header
+                  $('.header-outer .header-inner').hide();
+                  $('.header-outer').find('.header_person').remove();
+                  $('.header-outer').append(this._template_header.join(''));
+                  this._fn_dom_render();
+                  hashs.id = hashs.id||10004;
+                  API.get_user_info({},$.proxy(function(userinfo){
+                      // if(userinfo.result==8){
+                      //     location.href = "http://login.taosj.com/?redirectURL=" + encodeURIComponent(window.location.href);
+                      //     return;
+                      // }
+                      var request_data = {
+                          changeRuleId:hashs.id,
+                          userId:userinfo.data.id
+                      };
+                      var path = 'get_tx_change_info';
+                      API[path](request_data,$.proxy(function(data){
+                          this._fn_render_order(hashs,data.data,userinfo);
+                      },this),function(data){
+                           RC.showFail(data.message);
+                      });
+                  },this),function(data){
+                      if(data.result==8){
+                          location.href = "http://login.taosj.com/?redirectURL=" + encodeURIComponent(window.location.href);
+                          return;
+                      }
+                  })
+                  
+              },
+              _fn_render_order: function(hashs,data,userinfo){
+                  hashs.id = hashs.id||10004;
+                  var img = '//cdn.taosj.com/data-www-shop/modules/simplepay/img/meal.png',
+                  title = '',
+                  mealtit = '',
+                  dateList = [],
+                  verList = undefined;
+                  var primary_start_time = userinfo.data.primaryLevelEndTime?userinfo.data.primaryLevelEndTime:(userinfo.data.seniorLevelEndTime||new Date().getTime());
+                  var seniory_start_time = userinfo.data.seniorLevelEndTime||new Date().getTime();
+                  var dateUtil = RC.util.date;
+                  title = '活动套餐购买';
+                  mealtit = '短信套餐';
+                  dateList.push({'name':'套餐一',value:10004});
+                  dateList.push({'name':'套餐二',value:10005});
+                  var showInfo = {};
+  
+                  showInfo = {"ver":hashs.id,"price":data.money,"img":img,"title":title,mealtit:mealtit,submitparam:{"changeRuleId":hashs.id}};
+  
+                  var submiturl = "http://www.maijia.com/tx/change/pay";
+                  if(hashs.preview){
+                      submiturl = 'http://www.maijia.com/user/tx/prom/trial/change/pay';
+                  }
+                  var parameter = {
+                      UserYe:userinfo.data.account.balance||0,
+                      UserId:userinfo.data.account.id,
+                      'Container':this._elm_dom_container,
+                      SiteType : "1",
+                      meal:{
+                          dateList:dateList,
+                          verList:verList,
+                          showInfo:showInfo
+                      },//订单套餐
+                      submiturl:submiturl, //提交订单接口
+                      change:$.proxy(function(ver,time){
+                          var id = ver,month =ver;
+                          if(time){
+                              id = time;
+                          }
+                          var request_data = {
+                              changeRuleId:id,
+                              month:month||'3',
+                              userId:userinfo.data.id,
+                              secret:hashs.secret||''
+                          };
+                          var path = 'get_tx_change_info';
+                          hashs.preview = 1;
+                          if(hashs.preview){
+                             path = 'get_tx_change_info_fenxiao';
+                             request_data.distributorType = hashs.type||5;;
+                             request_data.secret = hashs.secret||'';
+                          }
+                          API[path](request_data,$.proxy(function(data){
+                              this._fn_render_order({id:id},data.data,userinfo);
+                          },this),function(data){
+                          });
+                      },this)
+                  };
+                  parameter.__allow = data.allow;
+                  order.init(parameter); 
+                   this._elm_dom_container.find('.remindInfo').html('活动套餐售出后，不提供折现、退款服务');
+                  if(!data.allow){
+                      this._elm_dom_container.find('.OrderTotal_anniu span').css('background','#cccccc');
+                      this._elm_dom_container.find('.OrderTotal_anniu span').css('cursor','not-allowed');
+                  }
+              },
+              disabled: function(){
+              },
+              destroy: function(){
+                  if(this._elm_dom_container){
+                      this._status_last_hash = {};
+                      this._status_prev_tab_module = null;
+                      this._elm_dom_container.empty();
+                      this._elm_dom_container = null;
+                      $('.header-outer .header-inner').show();
+                      $('.header-outer').find('.header_person').remove();
+                  }
+              }
+      };
+  
+      RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+  
+
+});

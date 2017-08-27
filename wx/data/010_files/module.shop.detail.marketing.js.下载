@@ -1,0 +1,629 @@
+define('modules/shop/detail/marketing/module.shop.detail.marketing', function(require, exports, module) {
+
+  /**
+      @author chenjiangming
+  */
+  ;(function($,RC){
+      var Shop = RC.controls.get('control.shop.model'),
+          panels = {};
+  
+      var newPanel = function(root, containers, templateName) {
+          return RC.controls.get('controls.shop.panel',
+                  {root: root, containers: containers, templateName: templateName});
+      };
+  
+      panels.ztc = newPanel('.J_panel_ztc', {detail: '.J_ztc_detail', chart: '.J_ztc_chart', item: '.J_ztc_item'}, 'template.shop.detail.marketing.ztc');
+      $.extend(panels.ztc, {
+          _fn_dom_update: function(hashs, refresh) {
+              this._fn_dom_update_list('detail', 'data_shop_marker_p4p', hashs, refresh);
+              this._fn_dom_update_list('item', 'data_shop_item_p4p_list', hashs, refresh);
+  
+              var chartInfo = [{name: '店铺曝光指数', item: 'displayRate'}, {name: '直通车投放曝光指数', item: 'p4pDisplayRate'}];
+              chartInfo.width='940';
+              this._fn_dom_update_two_line_chart('chart', 'data_shop_p4p_chart_list', hashs, refresh, null, chartInfo);
+          },
+          _fn_event_bind: function() {
+          },
+          _fn_event_unbind: function() {
+          },
+          _fn_render_data_process: {
+              detail: function(list) {
+                  if (!list || !list.length) {
+                      return;
+                  }
+  
+                  $(list).each(function(i, o) {
+                      this.date = RC.util.date.getdate(o.date, 'YY-MM-DD');
+                      var k = this.keyword;
+                      if (k && k.length > 400) {
+                          this.keyword = k.substring(0, k.indexOf(',', 400)) + '...';
+                      }
+                      this.displayRate = this.displayRate || '-';
+                  });
+              },
+              item: function(list) {
+                  if (!list || !list.length) {
+                      return;
+                  }
+                  $(list).each(function(i, o) {
+                      this.title = this.title || '-';
+                      this.amount30 = this.amount30 || '-';
+                      this.price30 = this.price30 || '-';
+                      if (this.chainGrowth) {
+                          this.chainGrowth = (Number(this.chainGrowth) * 100).toFixed(2) + '%';
+                      } else {
+                          this.chainGrowth = '-';
+                          this.chainGrowthTrend = '-';
+                      }
+                      this.displayRate = this.displayRate || '-';
+                      this.keyword = this.keyword || '-';
+                  });
+  
+              }
+          },
+          _fn_act_cal_detail_pag_href: function(pageNo) {
+              this._data_deep_copy_hashs.detail.pageNo = pageNo;
+              return this._fn_get_url_from_hashs(this._data_deep_copy_hashs);
+          }
+  
+      });
+  
+      panels.zszw = newPanel('.J_panel_zszw', {detail: '.J_zszw_detail', item: '.J_zszw_item'}, 'template.shop.detail.marketing.zszw');
+      $.extend(panels.zszw, {
+          _fn_dom_update: function(hashs, refresh) {
+              this._fn_dom_update_list('detail', 'data_shop_market_zz', hashs, refresh);
+              this._fn_dom_update_list('item', 'data_shop_item_zz_list', hashs, refresh);
+          },
+          _fn_event_bind: function() {
+            this.$el.on('click', '.dateRangePicker', $.proxy(function(e){
+              var shopData = Shop.getModel(this._data_lastest_hash.id).toJSON();
+              if(shopData.__level=='normal'){
+                $('.dateRangePicker').removeClass('J_level')
+              }else{
+                $('.dateRangePicker').addClass('J_level')
+              }
+            },this));
+          },
+          _fn_event_unbind: function() {
+          },
+          _fn_render_data_process: {
+              detail: function(list) {
+                  if (!list || !list.length) {
+                      return;
+                  }
+                  $(list).each(function(i, o) {
+                      this.date = RC.util.date.getdate(o.date, 'YY-MM-DD');
+                      this.displayRate = this.displayRate || '-';
+                  });
+              },
+              item: function(list) {
+                  if (!list || !list.length) {
+                      return;
+                  }
+                  $(list).each(function(i, o) {
+                      if (this.chainGrowth) {
+                          this.chainGrowth = Number(this.chainGrowth).toFixed(2);
+                      } else {
+                          this.chainGrowth = '-';
+                          this.chainGrowthTrend = '-';
+                      }
+                  });
+              }
+          }
+      });
+       //店铺淘宝客
+      panels.tbk = newPanel('.J_panel_tbk', {detail: '.J_tbk_detail'}, 'template.shop.detail.marketing.tbk');
+      $.extend(panels.tbk, {
+          _fn_dom_update: function(hashs, refresh) {
+              this._fn_dom_update_list_tbk('detail', 'data_shop_market_tbk', hashs, refresh);
+          },
+          _fn_event_bind: function() {
+  
+          },
+          _fn_event_unbind: function() {
+          },
+          _fn_render_data_process: {
+              detail: function(list) {
+                  if (!list && !list.length) {
+                      return;
+                  }
+                  $(list).each(function(i, o) {
+  					this.payRate = this.payRate !== undefined ? Math.floor(this.payRate) + '%' : '-';
+                      this.date = RC.util.date.getdate(o.date, 'MM-DD');
+                  });
+              }
+          }
+      });
+  
+      panels.jhs = newPanel('.J_panel_jhs', {detail: '.J_jhs_detail'}, 'template.shop.detail.marketing.jhs');
+      $.extend(panels.jhs, {
+          _fn_dom_update: function(hashs, refresh) {
+              this._fn_dom_update_list('detail', 'data_shop_market_jhs', hashs, refresh);
+          },
+          _fn_event_bind: function() {
+            this.$el.on('click', '.dateRangePicker', $.proxy(function(e){
+              var shopData = Shop.getModel(this._data_lastest_hash.id).toJSON();
+              if(shopData.__level=='normal'){
+                $('.dateRangePicker').removeClass('J_level')
+              }else{
+                $('.dateRangePicker').addClass('J_level')
+              }
+            },this));
+          },
+          _fn_event_unbind: function() {
+  
+          },
+          _fn_render_data_process: {
+              detail: function(list) {
+                  if (!list && !list.length) {
+                      return;
+                  }
+                  $(list).each(function(i, o) {
+                      this.date = RC.util.date.getdate(o.date, 'YY-MM-DD');
+                      this.title = this.title || '-';
+                      this.price_ = this.price_ || '-';
+                      this.oriPrice = this.oriPrice||'-';
+                      this.realPrice = this.realPrice||'-';
+                  });
+              }
+          }
+      });
+  
+      panels.spcx = newPanel('.J_panel_spcx', {detail: '.J_spcx_detail'}, 'template.shop.detail.marketing.spcx');
+      $.extend(panels.spcx, {
+          _fn_dom_update: function(hashs, refresh) {
+              this._fn_dom_update_list('detail', 'data_shop_market_sales', hashs, refresh);
+          },
+          _fn_event_bind: function() {
+  
+          },
+          _fn_event_unbind: function() {
+  
+          },
+          _fn_render_data_process: {
+              detail: function(list) {
+                  if (!list && !list.length) {
+                      return;
+                  }
+                  $(list).each(function(i, o) {
+                      this.date = RC.util.date.getdate(o.date, 'YY-MM-DD');
+                      this.title = this.title || '-';
+                      this.promo = this.promo || '-';
+                  });
+              }
+          }
+      });
+  
+      //站内活动
+  	panels.innersite = newPanel('.J_panel_innersite', {detail: '.J_innersite_detail'}, 'template.shop.detail.marketing.innersite');
+      $.extend(panels.innersite, {
+          _fn_dom_update: function(hashs, refresh) {
+  			hashs.detail = hashs.detail || encodeURIComponent('position=tjb');
+              this._fn_dom_update_list('detail', 'data_shop_market_innersite', hashs, refresh);
+          },
+          _fn_event_bind: function() {
+            this.$el.on('click', '.dateRangePicker', $.proxy(function(e){
+              var shopData = Shop.getModel(this._data_lastest_hash.id).toJSON();
+              if(shopData.__level=='normal'){
+                $('.dateRangePicker').removeClass('J_level')
+              }else{
+                $('.dateRangePicker').addClass('J_level')
+              }
+            },this));
+  			this.$el.on('click', '.ui-tab-nav', $.proxy(function(e){
+  				var $target = $(e.currentTarget);
+  				if($target.hasClass('current')){
+  					return;
+  				}
+  				// 暂时这里处理掉将
+  				var str = decodeURIComponent(this._data_lastest_hash.detail||'');
+  
+  				var obj = {},
+  					reg = /(\w+)=([^&]+)/g,
+  					result;
+  
+  				while (result = reg.exec(str)) {
+  					obj[result[1]] = decodeURIComponent(result[2]);
+  				}
+  
+  				obj.position = $target.attr('data-position');
+                  obj.pageNo=1;
+  				//这里不会有空格，就用jquery的了
+  				RC.pages.modifyCurHash({detail: encodeURIComponent($.param(obj))});
+  			},this));
+          },
+          _fn_event_unbind: function() {
+  			this.$el.off('click', '.ui-tab-nav');
+          },
+          _fn_render_data_process: {
+              detail: function(list) {
+                  if (!list && !list.length) {
+                      return;
+                  }
+                  $(list).each(function(i, o) {
+  					if(this.price === 0){
+  						this._price = 0;
+  					}else{
+  						this._price = this.price !== undefined && this.amount !== undefined ? (this.price/this.amount).toFixed(2) : '-';
+  					}
+                      this.date = RC.util.date.getdate(o.date, 'YY-MM-DD');
+                  });
+  
+              }
+          }
+      });
+  
+      //站外活动
+      panels.outersite = newPanel('.J_panel_outersite', {detail: '.J_outersite_detail'}, 'template.shop.detail.marketing.outersite');
+      $.extend(panels.outersite, {
+          _fn_dom_update: function(hashs, refresh) {
+              // console.log('hashs:'+JSON.stringify(hashs));
+              hashs.detail = hashs.detail || encodeURIComponent('position=fanli');
+              this._fn_dom_update_list('detail', 'data_shop_market_outersite', hashs, refresh);
+          },
+          _fn_event_bind: function() {
+            this.$el.on('click', '.dateRangePicker', $.proxy(function(e){
+              var shopData = Shop.getModel(this._data_lastest_hash.id).toJSON();
+              if(shopData.__level=='normal'){
+                $('.dateRangePicker').removeClass('J_level')
+              }else{
+                $('.dateRangePicker').addClass('J_level')
+              }
+            },this));
+              this.$el.on('click', '.ui-tab-nav', $.proxy(function(e){
+                  var $target = $(e.currentTarget);
+                  if($target.hasClass('current')){
+                      return;
+                  }
+                  // 暂时这里处理掉将
+                  var str = decodeURIComponent(this._data_lastest_hash.detail||'');
+  
+                  // console.log(str);
+  
+                  var obj = {},
+                      reg = /(\w+)=([^&]+)/g,
+                      result;
+  
+                  while (result = reg.exec(str)) {
+                      obj[result[1]] = decodeURIComponent(result[2]);
+                  }
+  
+                  obj.position = $target.attr('data-position');
+                  obj.pageNo=1;
+                  //这里不会有空格，就用jquery的了
+                  RC.pages.modifyCurHash({detail: encodeURIComponent($.param(obj))});
+              },this));
+          },
+          _fn_event_unbind: function() {
+              this.$el.off('click', '.ui-tab-nav');
+          },
+          _fn_render_data_process: {
+              detail: function(list) {
+                  if (!list && !list.length) {
+                      return;
+                  }
+                  $(list).each(function(i, o) {
+                      if(this.price === 0){
+                          this._price = 0;
+                      }else{
+                          this._price = this.price !== undefined && this.amount !== undefined ? (this.price/this.amount).toFixed(2) : '-';
+                      }
+                      this.date = RC.util.date.getdate(o.date, 'YY-MM-DD');
+                  });
+  
+              }
+          }
+      });
+  
+      var mdul = {
+          name: 'shop.detail.marketing',
+          depend: 'shop',
+          _elem_root: '#main',
+          _elem_template_name: 'template.shop.detail.marketing',
+          _data_lastest_hash: null,
+          _status_permission_change: {} /* 记录权限是否变化 */,
+          _status_module_active: false,
+          _fn_dom_render: function(data){
+              if(this.$el){
+                  return;
+              }
+              this.$el = $(RC.template.get(this._elem_template_name, data)).appendTo(this._elem_root);
+              this._fn_event_bind();
+          },
+          _fn_dom_update: function(hashs, refresh) {
+              this._fn_update_tab_url(hashs.type);
+              this._fn_dom_update_tab_panel(hashs.type);
+          },
+          _fn_dom_update_panel: function(hashs, refresh) {
+              var type = hashs.type;
+              //判断权限
+              if (this._status_permission_change[type] || this._data_lastest_hash.id !== hashs.id) {
+                  refresh = true;
+                  this._status_permission_change[type] = false;
+              }
+              panels[type].update(hashs, refresh);
+          },
+          _fn_event_bind: function(){
+              this.$el.on('click', '.mar-tab', this._fn_event_click_tab_proxy = $.proxy(this._fn_event_click_tab, this));
+  
+              this.$el.on('click', '.order-click', this._fn_event_order_proxy = $.proxy(this._fn_event_order, this));
+              this.$el.on('change', '.dateRangePicker', this._fn_event_date_change_proxy = $.proxy(this._fn_event_date_change, this));
+              this.$el.on('click', '.J_page_jump', this._fn_event_page_jump_proxy = $.proxy(this._fn_event_page_jump, this));
+              this.$el.on('change', '.pageSize', this._fn_event_page_size_change_proxy = $.proxy(this._fn_event_page_size_change, this));
+              // this.$el.on('change', '.J_chart_select', this._fn_event_chart_select_change_proxy = $.proxy(this._fn_event_chart_select_change, this));
+              RC.sub('control.shop.model.permission_change', this._fn_event_status_change_proxy = $.proxy(this._fn_event_status_change, this));
+          },
+          _fn_event_unbind: function(){
+              this.$el.off('click', '.mar-tab', this._fn_event_click_tab_proxy);
+              this.$el.off('click', '.order-click', this._fn_event_order_proxy);
+              this.$el.off('change', '.dateRangePicker', this._fn_event_date_change_proxy);
+              this.$el.off('click', '.J_page_jump', this._fn_event_page_jump_proxy);
+              this.$el.off('change', '.pageSize', this._fn_event_page_size_change_proxy);
+              // this.$el.off('change', '.J_chart_select', this._fn_event_chart_select_change_proxy);
+              RC.removeSub('control.shop.model.permission_change', this._fn_event_status_change_proxy);
+          },
+         /* _fn_event_chart_select_change: function(e) {
+              var $input = $(e.target),
+                  series = $($input.data('chart')).highcharts().series,
+                  index = $input.data('index');
+  
+              if (e.target.checked) {
+                  series[index].show();
+              } else {
+                  series[index].hide();
+              }
+          },*/
+          _fn_event_click_tab: function(e) {
+              if ($(e.currentTarget).hasClass("current")) {
+                  e.preventDefault();
+              }
+          },
+          _status_event_scrollFixed: false,
+          _fn_event_bind_scrollFixed: function(){
+              if(!this.$el || this._status_event_scrollFixed === true){
+                  return;
+              }
+              this.$el.find('.mar-tabs').scrollToFixed({marginTop: 44});
+              this._status_event_scrollFixed = true;
+          },
+          _fn_event_unbind_scrollFixed: function(){
+              if(!this.$el || this._status_event_scrollFixed === false){
+                  return;
+              }
+              this.$el.find('.mar-tabs').trigger('detach.ScrollToFixed');
+              this._status_event_scrollFixed = false;
+          },
+          _fn_event_order: function(e) {
+              var shopData = Shop.getModel(this._data_lastest_hash.id).toJSON();
+              if (!RC.user.get('_login_status')) {
+                  RC.pub('global.login.pop');
+                  return;
+              }
+              if(shopData.__level !== 'senior'){
+                  RC.pub('module.shop.detail.no_permisson_sort');
+                  return;
+              }
+  
+              var hashs = this._fn_get_cur_hashs(),
+                  $i = $(e.currentTarget).find('.order'),
+                  box = $i.data('box'),
+                  decodeHash = this._fn_util_unparam(decodeURIComponent(hashs[box]));
+  
+                  decodeHash.orderField = $i.data('th');
+                  if ($i.hasClass('desc')) {
+                      decodeHash.orderType = 'asc';
+                  } else {
+                      decodeHash.orderType = 'desc';
+                  }
+                  decodeHash.pageNo && delete decodeHash.pageNo;
+                  this._fn_act_modify_hash(box, encodeURIComponent($.param(decodeHash)));
+          },
+          _fn_event_date_change: function(e) {
+              var hashs = this._fn_get_cur_hashs(),
+                  $target = $(e.target),
+                  box = $target.data('box'),
+                  // decodeHash = this._fn_util_unparam(decodeURIComponent(hashs[box])),
+                  decodeHash = {},
+                  date = $target.val().split('-');
+                  $target.parents(".ui-tab-hd").eq(0).find('.ui-tab-nav').each(function(){
+                      if($(this).hasClass("current")){
+                          decodeHash.position=$(this).attr("data-position");
+                      }
+                  });
+              decodeHash.startDate = $.trim(date[0].replace(/\//g, '-'));
+              decodeHash.endDate = $.trim(date[1].replace(/\//g, '-'));
+               console.log(JSON.stringify(decodeHash));
+              this._fn_act_modify_hash(box, encodeURIComponent($.param(decodeHash)));
+          },
+          _fn_event_page_size_change: function(e) {
+              var hashs = this._fn_get_cur_hashs(),
+                  $target = $(e.target),
+                  box = $target.data('box'),
+                  decodeHash = this._fn_util_unparam(decodeURIComponent(hashs[box]));
+  
+              decodeHash.pageSize = $target.val();
+              decodeHash.pageNo = 1;
+              this._fn_act_modify_hash(box, encodeURIComponent($.param(decodeHash)));
+          },
+          _fn_event_page_jump: function(e) {
+              var hashs = this._fn_get_cur_hashs(),
+                  $target = $(e.target),
+                  box = $target.data('tp'),
+                  decodeHash = this._fn_util_unparam(decodeURIComponent(hashs[box])),
+                  pageNo;
+              if ($target.hasClass('page_sure')) {
+                  pageNo = $target.siblings('input').val();
+                  if (!$.isNumeric(pageNo) || +pageNo <= 0 || +pageNo > $target.data('maxPage')) {
+                      RC.showWarn('请输入正确的页码');
+                      e.preventDefault();
+                      return;
+                  }
+                  $target.data('key', pageNo);
+              }
+              decodeHash.pageNo = $target.data('key');
+              this._fn_act_modify_hash(box, encodeURIComponent($.param(decodeHash)));
+              e.preventDefault();
+          },
+          _fn_dom_update_tab_panel: function(type) {
+              //隐藏其他,展示当前
+              this.$el.find('.mar-tab').removeClass("current").filter('.J_tab_' + type).addClass("current");
+              this.$el.find('.mar-panel').hide().filter('.J_panel_' + type).show();
+          },
+          _fn_update_tab_url: function(type) {
+              this.$el.find('.J_tab_' + type + ' a').attr('href', location.href);
+          },
+          _fn_event_status_change: function(data) {
+              if (data.id != this._data_lastest_hash.id) {
+                  return;
+              }
+              this._status_permission_change.ztc = true;
+              this._status_permission_change.zszw = true;
+              this._status_permission_change.tbk = true;
+              this._status_permission_change.jhs = true;
+              this._status_permission_change.spcx = true;
+              // this._status_permission_change.outersite = true;
+              // this._status_permission_change.innersite = true;
+              if(this._status_module_active === true){
+                  this.update(this._data_lastest_hash, null, true);
+              }
+          },
+          _fn_init_tab_url: function(tabs) {
+              var that = this;
+  
+              $.each(tabs, function(i, tab) {
+                  that.$el.find('.J_tab_' + tab.type + ' a').attr('href', tab.hash);
+              });
+          },
+          _fn_util_unparam: function(str) {
+              if (!str || typeof str != 'string') {
+                  return {};
+              }
+              var obj = {},
+                  reg = /(\w+)=([^&]+)/g,
+                  result;
+  
+              while (result = reg.exec(str)) {
+                  obj[result[1]] = decodeURIComponent(result[2]);
+              }
+  
+              return obj;
+          },
+          /**
+           * 返回hash的对象形式，没传参数返回当前url的hash对象
+           * @return {[type]} [description]
+           */
+          _fn_get_cur_hashs: function() {
+              var url = location.href,
+                  index, o = {}, l, t, hashs, i;
+  
+              index = url.indexOf('#');
+              if (index !== -1) {
+                  hashs =  url.slice(index + 1);
+                  if (hashs.indexOf('?') !== -1) {
+                      hashs = hashs.slice(hashs.indexOf('?') + 1);
+                      hashs = hashs.split('&');
+                      for (i = 0, l = hashs.length; i < l; i++) {
+                          t = hashs[i].split('=');
+                          if (t[0]) {
+                              o[t[0]] = t[1];
+                          }
+                      }
+                  }
+              }
+              return o;
+          },
+          _fn_act_modify_hash: function(key, value) {
+              var hash = {};
+              hash[key] = value;
+              RC.pages.modifyCurHash(hash);
+          },
+          _fn_destroy_panels: function() {
+              for (var panel in panels) {
+                  if (panels.hasOwnProperty(panel)) {
+                      if (typeof panels[panel].destroy === 'function') {
+                          panels[panel].destroy();
+                      }
+                  }
+              }
+          },
+          init: function(){},
+          getContainer: function(){
+              return this.$el;
+          },
+          update: function(hashs, afterload, refresh){
+              //功能暂无,左侧菜单列表
+              var type = hashs.type,
+                  id = hashs.id,
+                  types = ['ztc', 'zszw', 'tbk', 'jhs', /*'spcx',*/ 'innersite','outersite'],
+                  tabs = [{
+                      name: '直通车',
+                      type: 'ztc',
+                      hash: '#/shop/detail/marketing/?type=ztc&id=' + id
+                  }, {
+                      name: '钻石展位',
+                      type: 'zszw',
+                      hash: '#/shop/detail/marketing/?type=zszw&id=' + id
+                  }, {
+                      name: '聚划算',
+                      type: 'jhs',
+                      hash: '#/shop/detail/marketing/?type=jhs&id=' + id
+                  }, /*{
+                      name: '商品促销',
+                      type: 'spcx',
+                      hash: '#/shop/detail/marketing/?type=spcx&id=' + id
+                  },*/ {
+                      name: '淘宝客',
+                      type: 'tbk',
+                      hash: '#/shop/detail/marketing/?type=tbk&id=' + id
+                  }, {
+                      name: '站内活动',
+                      type: 'innersite',
+                      hash: '#/shop/detail/marketing/?type=innersite&id=' + id
+                  }
+                  , {
+                      name: '站外活动',
+                      type: 'outersite',
+                      hash: '#/shop/detail/marketing/?type=outersite&id=' + id
+                  }],
+                  tab;
+  
+              if (!id) {
+                 return;
+              }
+              if (this._data_lastest_hash && this._data_lastest_hash.id !== hashs.id) {
+                  this._fn_init_tab_url(tabs);
+                  refresh = true;
+              }
+              if ($.inArray(type, types) < 0) {
+                  hashs.type = types[0];
+              }
+              this._status_module_active = true;
+              this._data_lastest_hash = hashs;
+              this._fn_dom_render({tabs: tabs});
+              this._fn_dom_update(hashs);
+              this._fn_dom_update_panel(hashs, refresh);
+              // 每次update的时候，绑定滚动固定顶部. 如果已绑定方法不处理.  disabled解绑
+              this._fn_event_bind_scrollFixed();
+              afterload && afterload();
+          },
+          disabled: function(){
+              this._status_module_active = false;
+              this._fn_event_unbind_scrollFixed();
+          },
+          destroy: function(){
+              if(this.$el){
+                  this._fn_event_unbind_scrollFixed();
+                  this._fn_destroy_panels();
+                  this._fn_event_unbind();
+                  this._data_lastest_hash = null;
+                  this.$el.empty().remove();
+                  this.$el = null;
+              }
+          }
+      };
+  
+      RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+  
+
+});

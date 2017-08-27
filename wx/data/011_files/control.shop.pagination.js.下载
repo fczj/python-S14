@@ -1,0 +1,211 @@
+define('controls/shop/control.shop.pagination', function(require, exports, module) {
+
+  /**
+   * @author chenjiangming
+   */
+  (function($, RC) {
+      var ctrls = {
+          name: 'controls.shop.pagination',
+          init: function(opt) {
+              this.$pagination = null;
+          },
+  
+          /**
+           * 获得分页的DOM的jquery对象
+           * opt {
+           *     tp: {string} , 类型
+           *     lk: {function},计算url的回调,
+           *     pageSize: {number} 
+           *     maxNo: {number} ,当前最大条数或者总条数
+           *     pageNo: {number} 当前页
+           *     isEnd: {boolean} 如果不确定总页数，是否是最后一批数据
+           *     hasTotal: {boolean} 页数是否确定
+           *     goPage: {boolean} 业务确定是否需要确定按钮
+           * }
+           */
+          getHtml: function(opt) {
+              this._fn_act_format_option(opt);
+  
+              var lk = opt.lk,
+                  pageNo = opt.pageNo,
+                  _url = (!lk || lk === '' || /^javascript/.test(lk)) ? 'javascript:void(0);' : /\?|\&/.test(lk) ? lk + '&' : lk + '?',
+                  href = (!lk || lk === '' || /^javascript/.test(lk)) ? function() {
+                          return _url;
+                      } : typeof lk === 'function' ? function(pageNo) {
+                          return lk(pageNo);
+                      } : function(pageNo) {
+                          return _url + 'page_num=' + pageNo;
+                      };
+  
+              this.$pagination = $(RC.template.get('template.controls.shop.pagination', this._fn_get_data(opt)));
+              var $pageJump = this.$pagination.find('[data-act="page_jump"]');
+              $pageJump.each(function() {
+                  $(this).attr('href', href($(this).data('key')));
+              });
+              $pageJump.filter('[data-key=' + pageNo +']').addClass("page-cur").attr("href", 'javascript:;');
+              
+              return this.$pagination.children();
+          },
+  
+          _fn_get_data: function(opt) {
+              if (opt.hasTotal) {
+                  return this._fn_get_data_has_total(opt.tp, opt.maxPage, opt.pageNo, opt.goPage);
+              } else {
+                  return this._fn_get_data_not_total(opt.tp, opt.maxPage, opt.pageNo, opt.isEnd);
+              }
+          },
+          _fn_get_data_has_total: function(tp, maxPage, pageNo, goPage) {
+              var data = {
+                      tp: tp,
+                      maxPage: maxPage,
+                      pageNo: pageNo,
+                      pagePrev: pageNo - 1,
+                      pageNext: pageNo + 1,
+                      hasTotal: true,
+                      goPage: goPage
+                  },
+                  pages = [],
+                  i;
+  
+              if (pageNo === 5 && maxPage === 5) {
+                  data.cat = 1;
+                  for (i = 0; i < 5 ; i++) {
+                      pages[i] = {no: i + 1};
+                  }
+                  data.hasSplit = data.hasMaxPage = false;
+                  data.hasNext = (pageNo < maxPage);
+              } else if (pageNo < 5) {
+                  data.cat = 1;
+                  for (i = 0; i < 5 && i < maxPage; i++) {
+                      pages[i] = {no: i + 1};
+                  }
+                  
+                  data.hasSplit = data.hasMaxPage = (maxPage > 5);
+                  data.hasNext = (pageNo < maxPage);
+              } else if (pageNo < maxPage - 2) {
+                  data.cat = 2;
+                  pages[0] = {no: pageNo - 1};
+                  pages[1] = {no: pageNo};
+                  pages[2] = {no: pageNo + 1};
+              } else {
+                  data.cat = 3;
+                  pages[0] = {no: maxPage - 2};
+                  pages[1] = {no: maxPage - 1};
+                  pages[2] = {no: maxPage};
+  
+                  data.hasNext = !(pageNo === maxPage);
+              }
+              data.pages = pages;
+              return data;
+          },
+          _fn_get_data_not_total: function(tp, maxPage, pageNo, isEnd) {
+              var data = {
+                      tp: tp,
+                      pageNo: pageNo,
+                      pagePrev: pageNo - 1,
+                      pageNext: pageNo + 1,
+                      hasTotal: false
+                  },
+                  pages = [],
+                  i;
+  
+              if (pageNo <= 10) {
+                  data.cat = 1;
+                  for(i = 0; i < 10 && i < maxPage; i++) {
+                      pages[i] = {no: i+1};
+                  }
+                  data.hasSplit = !isEnd;
+                  data.hasNext = !(pageNo === maxPage && isEnd);
+              } else if (pageNo > 10) {
+                  data.cat = 2;
+                  if (pageNo === maxPage && isEnd) {
+                      pages[0] = {no: pageNo - 2};
+                      pages[1] = {no: pageNo - 1};
+                      pages[2] = {no: pageNo};
+                  } else {
+                      pages[0] = {no: pageNo - 1};
+                      pages[1] = {no: pageNo};
+                      pages[2] = {no: pageNo + 1};
+                  }
+                  data.haslastSplit = (!isEnd || (pageNo + 1 < maxPage));
+                  data.hasNext = (!isEnd || (pageNo < maxPage));
+              }
+              data.pages = pages;
+              return data;
+          },
+          _fn_act_format_option: function(opt) {
+              opt.tp = opt.tp || '';
+              opt.pageSize = +opt.pageSize || 10;
+              opt.maxNo = +opt.maxNo;
+              opt.pageNo = +opt.pageNo;
+              opt.hasTotal = (typeof opt.hasTotal === 'boolean' ? opt.hasTotal : true);
+              opt.goPage = (typeof opt.goPage === 'boolean' ? opt.goPage : true);
+              opt.isEnd = !!opt.isEnd;
+              opt.maxPage = Math.ceil(opt.maxNo / opt.pageSize);
+          },
+          destory: function() {}
+      };
+      RC.controls.define(ctrls.name, ctrls);
+  
+      var temp = [
+          '<div><style>.page-container .page_sure{margin-right:15px;margin-left:10px;line-height:30px;border:1px solid #eee;width:50px;height:30px;background-color:#fbfbfb;}.module-shop-item-detail .page-container .page_sure:hover{border:1px solid #eee;background-color:#ff8a3a;color:#fff;}.module-shop-item-detail .page-container input.page-go:focus{outline:none;border:1px solid #eeeeee;}.page-container .page-go{border-radius:0px;height:30px;width:40px;margin-left:10px;margin-right:10px;border:1px solid #eeeeee;font-size:14px;}.page-container a.page-no{border:0px;background-color:#f5f5f5;color:#999999;height:30px;min-width:24px;line-height:30px;}.page-container a.page-no.page-cur{border:0px;background-color:#fff;color:#ff6600;}.page-container a.page-no.page-cur:hover{border:0px;background-color:#fff;color:#ff6600;}.page-container a.page-no:hover{background-color:#ff8a3a;color:#fff;}.page-container .page-next-btn{width:7px;position: relative;top: 1px;height:12px;display:inline-block;background:url(http://cdn.maijia.com/www/www-old/resources/css/build/images/page-next.png);background-repeat:no-repeat;}.page-container .page-pre-btn{width:7px;position: relative;top: 1px;height:12px;display:inline-block;background:url(http://cdn.maijia.com/www/www-old/resources/css/build/images/page-pre.png);background-repeat:no-repeat;}',
+          '</style><div class="page-container">',
+          //不知道总共有几页
+          '<section act-if="hasTotal == false">',
+              '<div act-if="cat == 1">',
+                  '<a act-if="pageNo > 1"  class="J_page_jump page-one page-no" data-act="page_jump" data-tp="{{tp}}" data-key="{{pagePrev}}">上一页</a>',
+                  '<a act-loop="page in pages" class="J_page_jump page-one page-no" data-act="page_jump" data-tp="{{tp}}" data-key="{{page.no}}">{{page.no}}</a>',
+                  '<span act-if="hasSplit == true" class="page-split">...</span>',
+                  '<a class="J_page_jump page-one page-no" act-if="hasNext == true" data-act="page_jump" data-tp="{{tp}}" data-key="{{pageNext}}">下一页</a>',
+              '</div>',
+              //当前页大于10
+              '<div act-if="cat == 2">',
+                  '<a class="J_page_jump page-one page-no" data-act="page_jump" data-tp="{{tp}}" data-key="{{pagePrev}}"></a>',
+                  '<a class="J_page_jump page-one page-no" data-act="page_jump" data-tp="{{tp}}" data-key="1">1</a>',
+                  '<span class="page-split">...</span>',
+                  '<a act-loop="page in pages" class="J_page_jump page-one page-no" data-act="page_jump" data-tp="{{tp}}" data-key="{{page.no}}">{{page.no}}</a>',
+                  '<span  act-if="haslastSplit == true" class="page-split">...</span>',
+                  '<a class="J_page_jump page-one page-no" act-if="hasNext == true" data-act="page_jump" data-tp="{{tp}}" data-key="{{pageNext}}"><span class="page-next-btn"></span></a>',
+              '</div>',
+          '</section>',
+          //知道总共有几页
+          '<section act-if="hasTotal == true">',
+              //当前页小于5
+              '<div cat1 act-if="cat == 1">',
+                  '<a act-if="pageNo > 1"  class="J_page_jump page-one page-no" data-act="page_jump" data-tp="{{tp}}" data-key="{{pagePrev}}"><span class="page-pre-btn"></span></a>',
+                  '<a act-loop="page in pages" class="J_page_jump page-one page-no" data-act="page_jump" data-tp="{{tp}}" data-key="{{page.no}}">{{page.no}}</a>',
+                  '<span act-if="hasSplit == true" class="page-split">...</span>',
+                  '<a act-if="hasMaxPage == true" class="J_page_jump page-one page-no" data-act="page_jump" data-tp="{{tp}}" data-key="{{maxPage}}">{{maxPage}}</a>',
+                  '<a class="J_page_jump page-one page-no" act-if="hasNext == true" data-act="page_jump" data-tp="{{tp}}" data-key="{{pageNext}}"><span class="page-next-btn"></span></a>',
+                  '<span style="margin-left: 15px;" act-if="goPage == true">共{{maxPage}}页，到第<input type="text" class="page-go">页<a href="javascript:;" class="J_page_jump page-one page_sure" data-act="page_sure" data-tp="{{tp}}" data-key="" data-max-page="{{maxPage}}">确定</a></span>',
+              '</div>',
+              //当前页大于5且小于maxPage-2
+              '<div cat2 act-if="cat == 2">',
+                  '<a class="J_page_jump page-one page-no" data-act="page_jump" data-tp="{{tp}}" data-key="{{pagePrev}}"><span class="page-pre-btn"></span></a>',
+                  '<a class="J_page_jump page-one page-no" data-act="page_jump" data-tp="{{tp}}" data-key="1">1</a>',
+                  '<span class="page-split">...</span>',
+                  '<a act-loop="page in pages" class="J_page_jump page-one page-no" data-act="page_jump" data-tp="{{tp}}" data-key="{{page.no}}">{{page.no}}</a>',
+                  '<span class="page-split">...</span>',
+                  '<a class="J_page_jump page-one page-no" data-act="page_jump" data-tp="{{tp}}" data-key="{{maxPage}}">{{maxPage}}</a>',
+                  '<a class="J_page_jump page-one page-no" data-act="page_jump" data-tp="{{tp}}" data-key="{{pageNext}}"><span class="page-next-btn"></span></a>',
+                  '<span style="margin-left: 15px;" act-if="goPage == true">共{{maxPage}}页，到第<input type="text" class="page-go">页<a href="javascript:;" class="J_page_jump page-one page_sure" data-act="page_sure" data-tp="{{tp}}" data-key="" data-max-page="{{maxPage}}">确定</a></span>',
+              '</div>',
+              //当前页大于5且大于等于maxPage-2
+              '<div cat3 act-if="cat == 3">',
+                  '<a class="J_page_jump page-one page-no" data-act="page_jump" data-tp="{{tp}}" data-key="{{pagePrev}}"><span class="page-pre-btn"></span></a>',
+                  '<a class="J_page_jump page-one page-no" data-act="page_jump" data-tp="{{tp}}" data-key="1">1</a>',
+                  '<span class="page-split">...</span>',
+                  '<a act-loop="page in pages" class="J_page_jump page-one page-no" data-act="page_jump" data-tp="{{tp}}" data-key="{{page.no}}">{{page.no}}</a>',
+                  '<a act-if="hasNext == true" class="J_page_jump page-one page-no" data-act="page_jump" data-tp="{{tp}}" data-key="{{pageNext}}" ><span class="page-next-btn"></span></a>',
+                  '<span style="margin-left: 15px;" act-if="goPage == true">共{{maxPage}}页，到第<input type="text" class="page-go">页<a href="javascript:;" class="J_page_jump page-one page_sure" data-act="page_sure" data-tp="{{tp}}" data-key="" data-max-page="{{maxPage}}">确定</a></span>',
+              '</div>',
+              '</section></div>',
+  '</div>'
+      ];
+  
+      RC.template.addTemp('template.controls.shop.pagination', temp);
+  
+  })(jQuery, RayCloud);
+  
+
+});

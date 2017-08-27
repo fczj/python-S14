@@ -1,0 +1,165 @@
+define('controls/controls.optimize_market_keyword_pk_pop', function(require, exports, module) {
+
+  ;(function($, RC) {
+  	var exports = {
+          name: 'controls.optimize_market_keyword_pk_pop'
+  
+          , init: function (cfg) {
+              var _this = this;
+  
+              if (_this.initialized) {
+                  return;
+              }
+  
+              cfg = $.extend({
+                  add: function() {},
+                  remove: function() {}
+              }, cfg);
+  
+  			_this.pk_list = {};
+  			_this.pk_num = 0;
+              _this.addCallback = cfg.add;
+              _this.removeCallback = cfg.remove;
+  
+              _this.initialized = true;
+          }
+  		
+  		, render: function ($container) {
+              var _this = this;
+  
+              if (_this._elm_dom_container) return;
+              $container = $container || 'body';
+              _this._elm_dom_container = $('<div></div>').appendTo($container);
+              _this._fn_act_re_render();
+              //初始隐藏
+              _this._elm_dom_container.find('.shop-pk-side-bar .bd').hide();
+              _this._fn_event_bind();
+          }
+  		
+  		, destroy: function () {
+              this._fn_event_unbind();
+              this._elm_dom_container.remove();
+              delete this.addCallback;
+              delete this.removeClass;
+          }
+  		
+  		, add: function (keyword) {
+  			var _this = this;
+  			
+  			if (!keyword || _this.pk_list.hasOwnProperty(keyword)) {
+  				return;
+  			}
+  
+              ++_this.pk_num;
+              _this.pk_list[keyword] = keyword;
+              _this._fn_act_re_render();
+  		}
+  		
+  		, remove: function (keyword) {
+              var _this = this;
+  
+              if (!keyword || !_this.pk_list.hasOwnProperty(keyword)) {
+                  return;
+              }
+  
+              --this.pk_num;
+              delete _this.pk_list[keyword];
+              _this._fn_act_re_render();
+          }
+          /**
+           * [_fn_act_re_render 每次操作(增加、删除、清空)重新渲染]
+           */
+          , _fn_act_re_render:function() {
+              var keywords = [],
+                  data = {list: []};
+  
+              $.each(this.pk_list, function(i, keyword) {
+                  data.list.push({keyword: keyword});
+                  keywords.push(keyword);
+              });
+  
+              data.empty = !data.list.length;
+              data.keywords = keywords.join(',');
+              this._elm_dom_container.html(RC.template.get('template.control.optimize_market_keyword_pk_pop', data));
+          },
+          _fn_act_add: function(keyword) {
+              this.add(keyword);
+              this.addCallback(keyword);
+          },
+          _fn_act_remove: function(keyword) {
+              this.remove(keyword);
+              this.removeCallback(keyword);
+          },
+          _fn_event_bind: function() {
+              this._elm_dom_container.on('click', '.shop-pk-side-bar .hd', this._fn_event_toggle_compare_proxy =  $.proxy(this._fn_event_toggle_compare, this));
+              this._elm_dom_container.on('click', '.J_Compare', this._fn_event_handler_compare_proxy = $.proxy(this._fn_event_handler_compare, this));
+              this._elm_dom_container.on('click', '.J_Clean', this._fn_event_clean_proxy =  $.proxy(this._fn_event_clean, this));
+              this._elm_dom_container.on('click', '.J_Remove', this._fn_event_remove_keyword_proxy = $.proxy(this._fn_event_remove_keyword, this));
+          },
+          _fn_event_unbind: function() {
+              this._elm_dom_container.off('click', '.shop-pk-side-bar .hd', this._fn_event_toggle_compare_proxy);
+              this._elm_dom_container.off('click', '.J_Compare', this._fn_event_handler_compare_proxy);
+              this._elm_dom_container.off('click', '.J_Clean', this._fn_event_clean_proxy);
+              this._elm_dom_container.off('click', '.J_Remove', this._fn_event_remove_keyword_proxy);
+          },
+          _fn_event_toggle_compare: function() {
+              this._elm_dom_container.find('.shop-pk-side-bar .bd').toggle();
+          },
+          _fn_event_handler_compare: function(e) {
+              if (this.pk_num === 0) {
+                  e.preventDefault();
+              }
+          },
+          _fn_event_clean: function() {
+              var _this = this;
+  
+              $.each(this.pk_list, function(i, keyword) {
+                  _this._fn_act_remove(keyword);
+              });
+          },
+          _fn_event_remove_keyword: function(e) {
+              this._fn_act_remove($(e.target).data('keyword'));
+              this._fn_act_re_render();
+          }
+  	};
+  
+      var PK_POP_TPL = [
+          '<div class="shop-pk-side-bar">',
+              '<div class="hd" style="width: 55px;">关键词对比<b class="line"></b></div>',
+              '<div class="bd" style="display:block">',
+                  '<div class="shop-pk-list-box">',
+                      '<ul>',
+                          '<li act-if="empty == true" style="text-align:center">您还没有选择关键词！</li>',
+                          '<li class="compare-item" act-loop="item in list">',
+                             '<span class="J_Remove remove f-l mt_7" data-keyword={{item.keyword}}>×</span>',
+                             '<span class="shop-name f-l ml_10">{{item.keyword}}</span>',
+                          '</li>',
+                      '</ul>',
+                  '</div>',
+                  '<div class="compare-bottom mt_15">',
+                      '<a class="J_Compare compare-btn ft-center w70 f-l" href="#/optimize_market/keyword_pk/?keywords={{keywords}}">开始对比</a>',
+                      '<a class="f-c-o f-r J_Clean" href="javascript:;">清空</a>',
+                  '</div>',
+              '</div>',
+          '</div>'
+      ];
+      RC.template.addTemp('template.control.optimize_market_keyword_pk_pop', PK_POP_TPL);
+  
+      RC.controls.define(exports.name, exports);
+  	
+  })(jQuery, RayCloud);
+  
+  /*
+  var pk = RC.controls.get('xxxx', {
+      pk: function (pk_list) {
+  
+      }
+  });
+  
+  pk.add('关键词');
+  pk.del('关键词');
+  
+  
+  */
+
+});

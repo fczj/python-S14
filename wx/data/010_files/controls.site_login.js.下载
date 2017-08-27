@@ -1,0 +1,303 @@
+define('controls/controls.site_login', function(require, exports, module) {
+
+  ;(function($, RC) {
+  
+  	var exports = {
+          name: 'controls.site_login'
+  
+          , init: function () {
+              var _this = this;
+  
+              if (_this.initialized) {
+                  return;
+              }
+  			
+              _this.initialized = true;
+          }
+  		
+  		, render: function ($container, afterLogin) {
+  			var _this = this;
+  			$container = $($container).eq(0);
+  			
+  			if (!$container.length) {
+  				return;
+  			}
+  			
+  			//登录成功后的callback
+  			_this.afterLogin = afterLogin;
+  
+  			var $el = _this._elm_dom_container = $container.html(TPL);
+  			_this._elm_dom_loginCode = $el.find('input[name="loginCode"]');
+  			_this._elm_dom_loginPassword = $el.find('input[name="loginPassword"]');
+  			_this._elm_dom_validateCode = $el.find('input[name="validateCode"]');
+  			_this._elm_dom_validateCodeId = $el.find('input[name="validateCodeId"]');
+  			_this._elm_dom_validateCodeImage = $el.find('.J_ValidateCodeImage');
+  			_this._elm_dom_errorTip = $el.find('#loginTip');
+  			
+  			// 模拟 ie7/8/9 下 placeholder
+  			$el.find('input').placeholder();
+  			_this.bind();
+  		}
+  		
+  		, update: function () {
+  			var _this = this;
+  			
+  			// 清空输入框内容
+  			_this._elm_dom_loginCode.val('');
+  			_this._elm_dom_loginPassword.val('');
+  			_this._elm_dom_validateCode.val('');
+  			_this._elm_dom_container.find('.error-tip').html('');
+  			
+  			// 重载验证码
+  			_this._fn_ctrl_load_validateCode({}, $.proxy(_this._fn_dom_update_validateCode, _this));
+  		}
+  		
+  		, bind: function () {
+  			var _this = this;
+  			
+  			if (_this.binded || !_this._elm_dom_container.length) {
+  				return;
+  			}
+  			
+  			_this.binded = true;
+  			
+  			_this._elm_dom_container.on('click', function (e) {
+  				var $target = $(e.target);
+  				
+  				if ($target.hasClass('J_ChangeValidateCode')) {
+  					_this._fn_event_handler_changeValidateCode(e);
+  				}
+  
+  				if ($target.hasClass('login-button')) {
+  					_this._fn_event_handler_submit(e);
+  				}
+  
+  				if ($target.hasClass('third-sina')) {
+  					_this._fn_event_handler_third_login('sina');
+  				}
+  
+  				if ($target.hasClass('third-qzone')) {
+  					_this._fn_event_handler_third_login('qzone');
+  				}
+  			});
+  		}
+  		
+  		, destroy: function () {
+  			var _this = this;
+  			
+  			if (!_this._elm_dom_container.length) {
+  				return;
+  			}
+  			
+  			_this.binded = false;
+  			_this._elm_dom_container.off('click');
+  			_this._elm_dom_container.remove();
+  		}
+  
+  		, _fn_event_handler_submit: function(e) {
+  			var $target = $(e.target)
+  				, _this = this
+  				, callback = this.afterLogin
+  				, loginCode = $.trim(this._elm_dom_loginCode.val())
+  				, loginPassword  = this._elm_dom_loginPassword.val()
+  				, validateCode = this._elm_dom_validateCode.val()
+  				, validateCodeId = this._elm_dom_validateCodeId.val();
+  
+  			e.preventDefault();
+  
+  			if ($target.hasClass('disabled')) {
+  				return;
+  			}
+  			$target.addClass('disabled');
+  			
+  			
+  			//callback处理，默认跳转到用户中心
+  			var _callback = function(params) {
+  				if (!callback && params.status == 'success') {
+  					RC.pages.goPage('#/user/index/?'+ new Date().getTime());
+  					return;
+  				}
+  				else {
+  					params.$target = $target;
+  					callback && callback.call(null, params);
+  				}
+  				//错误提示统一在顶部
+  				if (params.status !== 'success') {
+  					$target.removeClass('disabled');
+  
+  					_this._fn_dom_login_tip(params.message);
+  				}
+  			};
+  
+  			//输入框校验
+  			var verifyResult = this._fn_act_verify_login_form();
+  			if (!verifyResult.status) {
+  				_callback({
+  					status: 'fail'
+  					, message: verifyResult.message
+  				});
+  				return false;
+  			}
+  
+  			RC.showLoading('正在登录，请稍等...');
+  			API.post_user_login({
+  				loginCode: loginCode
+  				, loginPassword: loginPassword
+  				, validateCode  : validateCode
+  				, validateCodeId: validateCodeId
+  			}, function (json) {
+  				RC.clearShow();
+  				// 发布登录状态广播
+  				RC.pub('socket.user.login.login', json.data);
+  				RC.pub('socket.user.user_info.update.nick', json.data);
+  				
+  				_callback({
+  					status: 'success'
+  					, message: '登录成功'
+  				});
+  			}, function (json) {
+  				RC.clearShow();
+  				_callback({
+  					status: 'fail'
+  					, message: (json && json.message) || '未知错误'
+  				});
+  				// 重载验证码
+  				_this._fn_ctrl_load_validateCode({}, $.proxy(_this._fn_dom_update_validateCode, _this));
+  			}, false, false, false);
+  			
+  			return false;
+  		}
+  		
+  		// 登录框验证
+  		, _fn_act_verify_login_form: function () {
+  			var account = this._elm_dom_loginCode.val()
+  				, code = this._elm_dom_validateCode.val()
+  				, pw1 = this._elm_dom_loginPassword.val()
+  				, error;
+  			
+  			if (!$.trim(account)) {
+  				error = '请输入手机号';
+  			}
+  			else if (!Verifier.is_mobile(account)) {
+  				error = '手机格式有误';
+  			} else if (!$.trim(pw1)) {
+  				error = '请输入密码';
+  			}
+  			else if (!/^[0-9a-zA-Z_~!@#$%^&*]{6,16}$/g.test(pw1)) {
+  				error = '密码长度6-16位';
+  			} else if (!$.trim(code)) {
+  				error = '请输入验证码';
+  			}
+  			return {
+  				status: error ? false : true, 
+  				message: error
+  			}
+  		}
+  		
+  		,_fn_dom_login_tip: function(tip) {
+  			if (tip) {
+  				this._elm_dom_errorTip.html(tip).show();
+  			} else {
+  				this._elm_dom_errorTip.html('').hide();
+  			}
+  		}
+  		// 验证码
+  		, _fn_dom_update_validateCode: function(json){
+  			var data = json.data;
+  			this._elm_dom_validateCodeId.val(data.codeId);
+  			//data.url = 'http://www.maijia.com/'+data.url ;
+  			this._elm_dom_validateCodeImage.html('<img class="J_validateCodeImg" src="/'+data.url+'" style="width: 100px; height: 35px;">');
+  		}
+  		
+  		, _fn_ctrl_load_validateCode: function(params, success, fail){
+  			API.get_user_validatecode({},success,fail);
+  		}
+  		
+  		, _fn_event_handler_changeValidateCode: function(e){
+  			e.preventDefault();
+  			this._fn_ctrl_load_validateCode({},$.proxy(this._fn_dom_update_validateCode,this));
+  		}
+  
+  		,_fn_event_handler_third_login: function(type) {
+  			var url = (type === 'sina' ? '/oauth/auth/sina': '/oauth/auth/qzone')
+  				, callback = this.afterLogin
+  				, t
+                  , _this = this;
+  
+  			openWindow = window.open(url, null, 'height=700px,width=700px,left=250px,top=250px');
+  			t = setInterval(function() {
+  				if (window.oauthStatus) {
+                      _this._fn_act_from_third_login(callback, type);
+                      window.oauthStatus = false;
+  				} 
+  				if (window.oauthStatus || openWindow.closed) {
+  					clearInterval(t);
+  				}
+  			} , 500);
+  		},
+  
+          //点击第三方登录授权成功后的去向
+          _fn_act_from_third_login: function(callback, type) {
+              API.get_user_info({} 
+                  , function(res) {
+                      if (callback) {
+                          callback({status: 'success', message: '第三方登录成功'});
+                      } else {
+                          location.reload();
+                      }
+                  }
+                  , function(res) {
+                      if (res.result === 8) {
+                          RC.pages.goPage('#/login/register/?type=bind&source=' + type);
+                      }
+              });
+          }
+  
+  	};
+  	
+  	var Verifier = {
+  		is_mobile: function(value){
+  			/* 号码段来自 http://t.cn/Rv6QvRr */
+              return /^(13[0-9]|14[57]|15[0-35-9]|17[6-8]|18[0-9])\d{8}$|170[059]\d{7}$/.test(value);
+  		},
+  		is_email: function(value){
+  			return /^([a-z\d]+[\._]?)*[a-z\d]+@([a-z\d]+[\._]?)*[a-z\d]+\.[a-z]{2,4}$/i.test(value);
+  		}
+  	};
+  	
+  	var TPL = [
+  		'<div class="login-fileds">',
+  		'<form class="login-form" name="login-form">',
+  		'<div style="display:none;" id="loginTip" class="mb_10 login-tip"></div>',
+  		'<div class="filed">',
+  		'<input type="text" placeholder="手机号" name="loginCode">',
+  		'</div>',
+  		'<div class="filed">',
+  			'<input type="password" placeholder="密码" name="loginPassword">',
+  		'</div>',
+  		'<div class="filed">',
+  			'<input type="text" style="ime-mode:disabled; width: 50px;" maxlength="4" placeholder="验证码" name="validateCode">',
+  			'<input type="hidden" name="validateCodeId" data-img=".J_validateCodeImg">',
+  			'<span class="J_ValidateCodeImage login-code-image ml_5">',
+  			'</span>',
+  			'<a href="javascript:;" class="J_ChangeValidateCode ml_10">换一张</a>',
+  		'</div>',
+  		'<div><a href="#/login/find_password/">忘记密码？</a><a class="ml_10" href="#/login/register/">免费注册</a></div>',
+  		'<div class="mt_10"><input type="submit" class="login-button" value="立即登录"></div>',
+  		'<div class="thirdlogin mt_15">',
+  			'<div class="third-title">',
+  				'<span class="">第三方账户</span>',
+  			'</div>',
+  			'<a href="javascript:;" class="third-b third-qzone f-lt"></a>',
+  			'<a href="javascript:;" class="third-b third-sina f-rt"></a>',
+  		'</div>',
+  		'</form>',
+  	'</div>'
+  	].join('');
+  	
+  	
+      RC.controls.define(exports.name, exports);	
+  })(jQuery, RayCloud);
+  
+
+});

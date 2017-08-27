@@ -1,0 +1,39 @@
+define('modules/shop/detail/buyer_analysis/template.shop.detail.buyer_analysis', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var temp = [
+  	'<div class="burer_analysis_div"><style>.burer_analysis_div .box-title{font-family: "Microsoft YaHei", arial;background-color:#f5f5f5;font-weight:normal;height:40px;line-height:32px;color:#333333;padding-top: 8px;font-size:14px;}</style>',
+  				//最近30天买家分析
+  				'<div class="mt_10 panel-box">',
+  					'<div class="box-title">',
+  						'<div class="">最近30天买家分析</div>',
+  					'</div>',
+  					'<div class="box-content">',
+  						'<div class="clearfix pt_10">',
+  							'<div class="J_shop_buyer_level_list">',
+  								'<div act-if="_status_shop_buyer_level_list == 1">',
+  									'<div class="pl_20">买家等级</div>',
+  									'<div act-if="__status != 3" class="ft-center" style="line-height: 400px;">',
+  										'{{__status_html}}',
+  									'</div>',
+  									'<div act-if="__status == 3">',
+  										'<div act-if="_list_length == 0"><div class="ft-center" style="line-height:400px;">暂无数据</div></div>',
+  										'<div act-if="_list_length != 0" class="J_Charts"></div>',
+  									'</div>',
+  								'</div>',
+  								'<div act-if="_status_shop_buyer_level_list == 0">',
+  									'<div  class="pl_20">买家等级</div>',
+  									'<div class="ft-center" style="line-height:200px;">loading...</div>',
+  								'</div>',
+  							'</div>',
+  						'</div>',
+  					'</div>',
+  				'</div>',
+  	];
+  	RC.template.addTemp('template.shop.detail.buyer_analysis', temp);
+  })(jQuery,RayCloud);
+
+});

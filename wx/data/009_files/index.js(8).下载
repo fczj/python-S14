@@ -1,0 +1,43 @@
+define('modules/shop/detail/title/optimize/subtab/index', function(require, exports, module) {
+
+  var $ = require('components/jquery/jquery'),
+      template = require('components/art-template/template'),
+      $temp = template.compile("<div class=\"subtab\">\r\n    {{each list as item index}}\r\n        <div class=\"tab J_tab {{if index == 0}}current{{/if}}\" data-type=\"{{item}}\">{{item}}</div>\r\n    {{/each}}\r\n</div>\r\n<!-- @require 'modules/shop/detail/title/optimize/subtab/index.less' -->"),
+      $el = null,
+      $tabs = null,
+      $container = null;
+  
+  module.exports = {
+      mount:function(container,data){
+          if(!$container){
+              $el = $($temp(data));
+              $(container).html($el);
+              $container = container;
+              $tabs = $el.find('.J_tab');
+          }
+      },
+      dismount:function(){
+          $el.remove();
+      },
+      show:function(show){
+          if($el){
+              if(show){
+                  $el.show();
+              }else{
+                  $el.hide();
+              }
+          }
+      },
+      onClick:function(fn){
+          $tabs.off('click');
+          $tabs.on('click',function(e){
+              var dom = $(e.target);
+              if(dom.hasClass('current')){return;}
+              $tabs.removeClass('current');
+              dom.addClass('current');
+              fn(dom.attr('data-type'));
+          });
+      }
+  }
+
+});

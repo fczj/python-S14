@@ -1,0 +1,368 @@
+define('modules/module.api', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){ 
+  	var originalAPI = $.extend({},window.API),
+  		// 需要重新的API， 包括队列，缓存
+  		overwriteList = {
+  			'get_user_info': {queue: 1, ajax_status_8: 0},
+  			'get_hotshopes': {queue: 1, expires: 60},
+  			'get_hotkeys' : {queue: 1, expires: 60},
+  
+  			//,'user_get_changerule_message': {queue: 0, expires: 10, ajax_status_8: 1}
+  			//,'user_get_changerule_email': {queue: 0, expires: 10, ajax_status_8: 1}
+  		
+  
+  				///////////////
+  
+  			'user_edit_passord'    : {queue: 0, ajax_status_8: 1},
+  			//'user_edit_email'      : {queue: 0, ajax_status_8: 1},
+  			'user_edit_info'       : {queue: 0, ajax_status_8: 1},
+  			'user_get_recharge_list': {queue: 0, ajax_status_8: 1},
+  			'user_get_change_list': {queue: 0, ajax_status_8: 1},
+  			
+  			//'user_get_changerule_message': {queue: 0, ajax_status_8: 1},
+  			//'user_get_changerule_email': {queue: 0, ajax_status_8: 1},
+  			//'user_change_pay'      : 	{queue: 0, ajax_status_8: 1},
+  
+  			'user_get_warnconfig_info': {queue: 0, ajax_status_8: 1},
+  			'user_warnconfig_edit':	{queue: 0, ajax_status_8: 1},
+  			'user_get_warnconfig_remind_list': {queue: 0, ajax_status_8: 1},
+  			'user_add_warnconfig_remind':  {queue: 0, ajax_status_8: 1},
+  			'user_edit_warnconfig_remind': {queue: 0, ajax_status_8: 1},
+  			'user_delete_warnconfig_remind': {queue: 0, ajax_status_8: 1},
+  
+  
+  			//'shop_monitor_add': {queue: 0, ajax_status_8: 1},
+  			'user_shop_add': {queue: 0, ajax_status_8: 1},
+  			'shop_monitor_delete': {queue: 0, ajax_status_8: 1},
+  			'shop_get_info': {queue: 0, ajax_status_8: 1},
+  			'shop_get_offer_list': {queue: 0, ajax_status_8: 1},
+  			'shop_get_brandratio_list':	{queue: 0, ajax_status_8: 1},
+  			'shop_get_rankhotratio_list':	{queue: 0, ajax_status_8: 1},
+  			'shop_get_rank30amount_list':	{queue: 0, ajax_status_8: 1},
+  			'shop_get_item_list':  {queue: 0, ajax_status_8: 1},
+  			'shop_get_item_ontxn_list': {queue: 0, ajax_status_8: 1},
+  			'shop_get_item_onsale_list': {queue: 0, ajax_status_8: 1},
+  			'shop_get_item_onname_list': {queue: 0, ajax_status_8: 1},
+  			'shop_get_item_onprice_list': {queue: 0, ajax_status_8: 1},
+  			'shop_get_item_anatxn_list': {queue: 0, ajax_status_8: 1},
+  			'shop_get_item_anatxncat_list':	{queue: 0, ajax_status_8: 1},
+  			'shop_get_item_anatxnbrand_list':{queue: 0, ajax_status_8: 1},
+  			'shop_compare': {queue: 0, ajax_status_8: 1},
+  			'get_item_info': {queue: 0, ajax_status_8: 1},
+  
+  
+  
+  			'item_get_list': {queue: 0, ajax_status_8: 1},
+  			'add_mointor_group': {queue: 0, ajax_status_8: 1},
+  			'edit_mointor_group': {queue: 0, ajax_status_8: 1},
+  			'get_remind_list': {queue: 0, ajax_status_8: 1},
+  			//'add_mointor_item': {queue: 0, ajax_status_8: 1},
+  			'edit_mointor_item': {queue: 0, ajax_status_8: 1},
+  			'del_mointor_item': {queue: 0, ajax_status_8: 1},
+  
+  
+  			'user_item_group_info': {queue: 0, ajax_status_8: 1},
+  			'user_item_all_list':	{queue: 0, ajax_status_8: 1},
+  			'user_item_warning_list':{queue: 0, ajax_status_8: 1},
+  			'user_item_warnlog_list': {queue: 0, ajax_status_8: 1},
+  
+  			'user_monitor_item_group_list':	{queue: 0, ajax_status_8: 1},
+  
+  			/// 新增
+  			// @todo: jQuery global ajax setting compelte callback  or  todo: serverCall ajax result status event
+  			'data_shop_item_ontxn_time_list': {queue: 0, ajax_status_8: 1},
+  			'data_shop_search_trend_list': {queue: 0, ajax_status_8: 1},
+  			'data_shop_item_search_list': {queue: 0, ajax_status_8: 1},
+  			'data_shop_p4p_chart_list': {queue: 0, ajax_status_8: 1},
+  			'data_shop_item_p4p_list': {queue: 0, ajax_status_8: 1},
+  			'data_shop_item_zz_list': {queue: 0, ajax_status_8: 1},
+  			'data_shop_item_unshelve_list': {queue: 0, ajax_status_8: 1},
+  			'data_shop_buyer_level_list': {queue: 0, ajax_status_8: 1},
+  			'data_shop_buyer_expense_list': {queue: 0, ajax_status_8: 1},
+  			'data_shop_buyer_area_list': {queue: 0, ajax_status_8: 1},
+  			'data_shop_buyer_buytime_list': {queue: 0, ajax_status_8: 1},
+  			'data_shop_market_tbk': {queue: 0, ajax_status_8: 1}
+  		};
+  	// 缓存请求
+  	var $httpCache = {
+  		list: {},
+  		add: function(name, params, data, expires){
+  			this.list[name+$.param(params)] = {
+  				data: $.extend(true, {},data),
+  				date: {lastModified: new Date(), expires: expires*1000*60}
+  			};
+  		},
+  		remove: function(name, params, data, expires){
+  			var key = name+$.param(params);
+  			if(this.list[key]){
+  				delete this.list[key];
+  			}
+  		},
+  		get: function(name,params){
+  			var cache = this.list[name+$.param(params)];
+  			if(!cache){
+  				return null;
+  			}
+  			if(cache.data && (new Date() - cache.date.lastModified < cache.date.expires)){
+  				return $.extend(true, {},cache.data);
+  			}
+  			return null;
+  		},
+  		update: function(name, data){
+  			var cache = this.list[name];
+  			if(cache){
+  				cache.data = $.extend(true, cache.data, data||{});
+  				cache.date.lastModified = new Date();
+  			}
+  		}
+  	};
+  	//初始值
+  	$.each(overwriteList, function(key, value){
+  		$.extend(value, {status: 0, callback: []});
+  	});
+  	
+  
+  	// overwrite
+  	$.each(overwriteList, function(key, value){
+  		window.API[key] = (function(name, item){
+  			return function(params, success, fail, is_refresh){
+  				if(is_refresh === true){
+  					item.expires && $httpCache.remove(apiName,params);
+  				}else{
+  					var cache = item.expires && $httpCache.get(name,params); 
+  					if(cache){
+  						// 深度复制一份， 防止被success里在改掉
+  						cache = $.extend(true, {},cache);
+  						success && success(cache);
+  						return;
+  					}
+  				}
+  				if(!item.queue){
+  					originalAPI[name](params, function(json){
+  						item.expires && $httpCache.add(name, params, json, item.expires);
+  						success && success(json);
+  					}, function(json){
+  						fail && fail(json);
+  						if(item.ajax_status_8 && json && json.result && /^8/.test(json.result)){
+  							RC.pub('ajax.status.8');
+  						}
+  					});
+  					return;
+  				}
+  				// 请求队列
+  				var paramsKey = '__'+($.param(params) || ''),
+  					statusItem = item[paramsKey] || (item[paramsKey] = {status:0,callback:[]}),
+  					status = statusItem.status,
+  					callback = statusItem.callback;
+  
+  				callback.push({success: success, fail: fail});
+  				if(status !== 0){
+  					return;
+  				}
+  				statusItem.status = 1;
+  				originalAPI[name](params, function(json){
+  					statusItem.status = 0;
+  					item.expires && $httpCache.add(name, params, json, item.expires);
+  					for(var i=0, len=callback.length; i<len; i++){ 
+  						// 深度复制一份， 防止被success里在改掉
+  						var data = $.extend(true, {},json); 
+  						callback[i].success && callback[i].success(data);
+  					}
+  					callback = statusItem.callback = [];
+  					delete item[paramsKey];
+  				}, function(json){
+  					statusItem.status = 0;
+  					for(var i=0, len=callback.length; i<len; i++){
+  						var data = $.extend(true, {},json);
+  						callback[i].fail && callback[i].fail(data);
+  					}
+  					callback = statusItem.callback = []; 
+  					delete item[paramsKey];        
+  					if(item.ajax_status_8 && json && json.result && /^8/.test(json.result)){
+  						RC.pub('ajax.status.8');
+  					}	
+  				});
+  			};
+  		})(key, value);
+  	});
+  	
+  	return;
+  	/*
+  	
+  	
+  	
+  	
+  	
+  	
+  	
+  	
+  	
+  	
+  	
+  	
+  	
+  	
+  	
+  	
+  	return;
+  	var DataCenter = {
+  		list: {
+  			user: {
+  				list:[],
+  				hashkey: {},
+  				defaultKey: 0
+  			}
+  		},
+  		get: function(name, id){
+  			var db = this.list[name];
+  			id = db.hashkey || db.defaultKey;
+  			if(!id){
+  				return null;
+  			}
+  			return db[list][id];
+  		},
+  		add: function(name, item){
+  			var db = this.list[name];
+  			this.list.push(item);
+  			var id = item.id;
+  			bd.hashkey[id] = this.list.length;
+  		}
+  	};
+  
+  
+  	
+  
+  	var originalAPI = $.extend({},window.API);
+  	var loadingStatus = {
+  		_list: {},
+  		get: function(name){
+  			var item = this._list[name];
+  			if(!item){
+  				item = {loading: false, callback: []};
+  			}
+  			return item;
+  		},
+  		done: function(name){
+  			this._list[name] = {loading: false, callback: []};
+  		}
+  	};
+  	var api = {
+  		xxxxxxxxxxxxxx: function(){},
+  		get_user_info: function(params, success, fail, is_refresh){
+  			var apiName = 'get_user_info';
+  			if(is_refresh === true){
+  				$httpCache.remove(apiName,params);
+  			}else{
+  				var cache = $httpCache.get(apiName,params); 
+  				if(cache){
+  					success && success(cache);
+  					return;
+  				}
+  			}
+  			
+  			var status = loadingStatus.get(apiName),
+  				loading = status.loading,
+  				callbackList = status.callback;
+  
+  			callbackList.push({success: success, fail: fail});
+  			if(loading === true){
+  				return;
+  			}
+  			originalAPI[apiName](params, function(data){
+  				$httpCache.add(apiName, {}, data, 10);
+  				$.each(callbackList, function(key,item){
+  					item.success && item.success(data);
+  				});	
+  				loadingStatus.done(apiName);
+  			}, function(e){
+  				$.each(callbackList, function(key,item){
+  					item.fail && item.fail(e);
+  				});
+  				loadingStatus.done(apiName);
+  			});	
+  			
+  		},
+  		get_hotshopes: function(params, success, fail, is_refresh){
+  			var apiName = 'get_hotshopes';
+  			if(is_refresh === true){
+  				$httpCache.remove(apiName,params);
+  			}else{
+  				var cache = $httpCache.get(apiName,params); 
+  				if(cache){
+  					success && success(cache);
+  					return;
+  				}
+  			}
+  			
+  			var status = loadingStatus.get(apiName),
+  				loading = status.loading,
+  				callbackList = status.callback;
+  
+  			callbackList.push({success: success, fail: fail});
+  			if(loading === true){
+  				return;
+  			}
+  			originalAPI[apiName](params, function(data){
+  				$httpCache.add(apiName, {}, data, 60);
+  				$.each(callbackList, function(key,item){
+  					item.success && item.success(data);
+  				});	
+  				loadingStatus.done(apiName);
+  			}, function(e){
+  				$.each(callbackList, function(key,item){
+  					item.fail && item.fail(e);
+  				});
+  				loadingStatus.done(apiName);
+  			});	
+  		},
+  		get_hostkeys: function(params, success, fail, is_refresh){
+  			var apiName = 'get_hostkeys';
+  			if(is_refresh === true){
+  				$httpCache.remove(apiName,params);
+  			}else{
+  				var cache = $httpCache.get(apiName,params); 
+  				if(cache){
+  					success && success(cache);
+  					return;
+  				}
+  			}
+  			
+  			var status = loadingStatus.get(apiName),
+  				loading = status.loading,
+  				callbackList = status.callback;
+  
+  			callbackList.push({success: success, fail: fail});
+  			if(loading === true){
+  				return;
+  			}
+  			originalAPI[apiName](params, function(data){
+  				$httpCache.add(apiName, {}, data, 60);
+  				$.each(callbackList, function(key,item){
+  					item.success && item.success(data);
+  				});	
+  				loadingStatus.done(apiName);
+  			}, function(e){
+  				$.each(callbackList, function(key,item){
+  					item.fail && item.fail(e);
+  				});
+  				loadingStatus.done(apiName);
+  			});	
+  		}
+  	};
+  	window.API = $.extend(window.API, api);
+  	
+  	var mdul = {
+  		name: 'data_center',
+  		type: 'basic',
+  		init: function(){},
+  		destroy: function(){}
+  	};
+  	RC.modules.define(mdul.name, mdul);
+  	*/
+  })(jQuery,RayCloud);
+
+});

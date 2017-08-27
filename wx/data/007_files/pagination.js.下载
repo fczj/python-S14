@@ -1,0 +1,43 @@
+define('modules/shop/detail/title/optimize/hottable/pagination/pagination', function(require, exports, module) {
+
+  var compile = require('modules/shop/detail/title/optimize/hottable/pagination/compile');
+  var $ = require('components/jquery/jquery');
+  
+  function Pagination(config){
+  	this.config = config;
+  	this.config.onpagechange = this.config.onpagechange || function(){};
+  }
+  
+  Pagination.compile = compile.compile;
+  
+  Pagination.prototype = {
+  	appendTo: function(selector, data){
+  		this.$el = $(compile.compile(data)).appendTo(selector);
+  		this._eventBind();
+  	},
+  	_eventBind: function(){
+  		this.$el.on('click', '.ui-page-no', $.proxy(function(e){
+  			var $target = $(e.currentTarget);
+  			var pageNo = $target.attr('data-page');
+  			if($target.hasClass('ui-page-cur')){
+  				return false;
+  			}
+  			this.config.onpagechange(pageNo);
+  		}));
+  	},
+  	_eventUnBind: function(){
+  		this.$el.off('click', '.ui-page-no');
+  	},
+  	destroy: function(){
+  		if(this.$el){
+  			this._eventUnBind();
+  			this.$el.remove();
+  			this.$el = null;
+  			this.config = null;
+  		}
+  	}
+  }
+  
+  module.exports = Pagination;
+
+});

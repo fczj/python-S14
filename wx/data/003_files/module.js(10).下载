@@ -1,0 +1,216 @@
+define('modules/seniorcharge/module', function(require, exports, module) {
+
+  ;
+  (function($, RC) {
+      var order = require('widget/order');
+      var mdul = {
+          name: 'seniorcharge',
+          _elm_dom_root: '#container',
+          _template_header: [
+              '    <div class="header_person" style=\'padding-top:20px;margin: 0 auto;width: 1180px;font-family: "Microsoft YaHei", arial;\'>',
+              '           <div class="personal-center-logo clearfix" >',
+              '               <style>',
+              '                   .personal-center-logo {',
+              '                     margin-bottom: 23px;',
+              '                   }',
+              '                   .personal-center-logo img {',
+              '                     margin-top: 4px;',
+              'margin-left: 60px;',
+              '                     float: left;',
+              '                   }',
+              '                   .personal-center-logo .tit {',
+              '                     font-size: 24px;',
+              '                     line-height: 34px;',
+              '                     color: #999999;',
+              '                     display: block;',
+              '                     float: left;',
+              '                     font-weight: normal;',
+              '                   }',
+              '                   .personal-center-logo .tit:before {',
+              '                     content: ".";',
+              '                     display: inline-block;',
+              '                     color: #ccc;',
+              '                     font-size: 30px;',
+              '                     font-weight: bold;',
+              '                     margin: 0 4px 0 10px;',
+              '                   }',
+              '               </style>',
+              '               <a href="http://www.maijia.com"><img src="http://cdn.maijia.com/www/www-old/resources/css/build/images/logo.png" alt="淘数据" width="140" height="60"></a>',
+              // '               <span class="tit">个人中心</span>',
+              '           </div>',
+              '       </div>'
+          ],
+          init: function() {},
+          getContainer: function() {
+              return this._elm_dom_container;
+          },
+          _fn_dom_render: function(data) {
+              if (this._elm_dom_container) {
+                  return;
+              }
+              this._elm_dom_container = $(this._elm_dom_root).html('<div></div>');
+              // this._fn_event_bind();
+          },
+          update: function(hashs, afterload, is_refresh) {
+              location.href = "#/shop/list/";
+              return;
+              location.href = '#/surecharge/?id=10002&month=12';
+              return;
+              //隐藏搜索框,显示专有header
+              $('.header-outer .header-inner').hide();
+              $('.header-outer').find('.header_person').remove();
+              $('.header-outer').append(this._template_header.join(''));
+              this._fn_dom_render();
+              if (!hashs.id) {
+                  window.history.back();
+                  return;
+              }
+              API.get_user_info({}, $.proxy(function(userinfo) {
+                  if (userinfo.result == 8) {
+                      location.href = "http://login.taosj.com/?redirectURL=" + encodeURIComponent(window.location.href);
+                      return;
+                  }
+                  var request_data = {
+                      changeRuleId: hashs.id,
+                      month: hashs.month || '3',
+                      userId: userinfo.data.id
+                  };
+                  var path = 'get_tx_change_info';
+                  hashs.preview = 1;
+                  if (hashs.preview) {
+                      // if(preview==1)
+                      path = 'get_tx_change_info_fenxiao';
+                      request_data.distributorType = hashs.type || 5;;
+                      request_data.secret = hashs.secret || '';
+                  }
+                  API[path](request_data, $.proxy(function(data) {
+                      this._fn_render_order(hashs, data.data, userinfo);
+                  }, this), function(data) {
+                      RC.showFail(data.message);
+                  });
+              }, this), function(data) {
+                  if (data.result == 8) {
+                      location.href = "http://login.taosj.com/?redirectURL=" + encodeURIComponent(window.location.href);
+                      return;
+                  }
+              })
+  
+          },
+          _fn_render_order: function(hashs, data, userinfo) {
+              // console.log(hashs.id);
+              hashs.id = 10002;
+              hashs.month = 12;
+              var img = 'http://cdn.maijia.com/www/www-old/resources/css/build/images/order/data.png',
+                  title = '',
+                  mealtit = '',
+                  dateList = [],
+                  verList = undefined;
+              if (hashs.id < 5) {
+                  // img = 'http://cdn.maijia.com/www/www-old/resources/css/build/images/order/sms.png';
+                  // title = '卖家网短信套餐购买';
+                  // mealtit = '短信套餐';
+                  // dateList.push({'name':'试用型（1000 条短信）',value:1});
+                  // dateList.push({'name':'标准型（5000 条短信）',value:2});
+                  // dateList.push({'name':'尊贵型（20000 条短信）',value:3});
+                  // dateList.push({'name':'企业型（100000 条短信）',value:4});
+              } else if (hashs.id < 20) {
+                  // img = 'http://cdn.maijia.com/www/www-old/resources/css/build/images/order/email.png';
+                  // mealtit = '邮件套餐';
+                  // title = '卖家网邮件套餐购买';
+                  // dateList.push({'name':'试用型（1000 封邮件）',value:5});
+                  // dateList.push({'name':'标准型（5000 封邮件）',value:6});
+                  // dateList.push({'name':'尊贵型（20000 封邮件）',value:7});
+                  // dateList.push({'name':'企业型（100000 封邮件）',value:8});
+              } else {
+                  var primary_start_time = userinfo.data.primaryLevelEndTime ? userinfo.data.primaryLevelEndTime : (userinfo.data.seniorLevelEndTime || new Date().getTime());
+                  // console.log(userinfo.data.seniorLevelEndTime);
+                  var seniory_start_time = userinfo.data.seniorLevelEndTime || new Date().getTime();
+                  var dateUtil = RC.util.date;
+                  if (hashs.id == 10001) {
+                      title = '淘数据套餐购买<br/>' + dateUtil.getdate(new Date(primary_start_time), 'YY-MM-DD') + '至' + dateUtil.getdate(new Date(data.primaryLevelEndTime), 'YY-MM-DD');
+                  } else {
+                      title = '淘数据套餐购买<br/>' + dateUtil.getdate(new Date(seniory_start_time), 'YY-MM-DD') + '至' + dateUtil.getdate(new Date(data.seniorLevelEndTime), 'YY-MM-DD');
+                  }
+                  // console.log(data);
+                  mealtit = '监控套餐';
+                  // dateList.push({'name':'1季度',value:3});
+                  // dateList.push({'name':'6个月',value:6});
+                  dateList.push({ 'name': '12个月', value: 12 });
+                  verList = [];
+                  // verList.push({"name":"标准版","value":"10001"});
+                  verList.push({ "name": "高级版", "value": "10002" });
+              }
+              var showInfo = {};
+              if (hashs.id > 10000) {
+                  showInfo = { "date": hashs.month || 3, "ver": hashs.id, "price": data.money, "img": img, "title": title, mealtit: mealtit, submitparam: { "changeRuleId": hashs.id, "month": hashs.month || 3 } };
+              } else {
+                  showInfo = { "date": hashs.id, "price": data.money, "img": img, "title": title, mealtit: mealtit, submitparam: { "changeRuleId": hashs.id } };
+              }
+              showInfo.submitparam.distributorType = hashs.type || 5;;
+              showInfo.submitparam.secret = hashs.secret || '';
+              // alert(userinfo.data.account.balance);
+              var submiturl = "http://www.maijia.com/tx/change/pay";
+              if (hashs.preview) {
+                  submiturl = 'http://www.maijia.com/user/tx/prom/trial/change/pay';
+              }
+              var parameter = {
+                  UserYe: userinfo.data.account.balance || 0,
+                  UserId: userinfo.data.account.id,
+                  'Container': this._elm_dom_container,
+                  SiteType: "1",
+                  meal: {
+                      dateList: dateList,
+                      verList: verList,
+                      showInfo: showInfo
+                  }, //订单套餐
+                  submiturl: submiturl, //提交订单接口
+                  change: $.proxy(function(ver, time) {
+                      var id = ver,
+                          month = ver;
+                      if (time) {
+                          id = time;
+                      }
+                      var request_data = {
+                          changeRuleId: id,
+                          month: month || '3',
+                          userId: userinfo.data.id,
+                          secret: hashs.secret || ''
+                      };
+                      var path = 'get_tx_change_info';
+                      hashs.preview = 1;
+                      if (hashs.preview) {
+                          // if(preview==1)
+                          path = 'get_tx_change_info_fenxiao';
+                          request_data.distributorType = hashs.type || 5;;
+                          request_data.secret = hashs.secret || '';
+                      }
+                      API[path](request_data, $.proxy(function(data) {
+                          this._fn_render_order({ id: id, month: month, preview: hashs.preview, secret: hashs.secret, distributorType: hashs.type || 5 }, data.data, userinfo);
+                      }, this), function(data) {});
+                  }, this)
+              };
+              parameter.__allow = data.allow;
+              order.init(parameter);
+              this._elm_dom_container.find('.remindInfo').html(data.remindInfo + "，套餐售出后，不提供折现、退款服务。");
+              if (!data.allow) {
+                  this._elm_dom_container.find('.OrderTotal_anniu span').css('background', '#cccccc');
+                  this._elm_dom_container.find('.OrderTotal_anniu span').css('cursor', 'not-allowed');
+              }
+          },
+          disabled: function() {},
+          destroy: function() {
+              if (this._elm_dom_container) {
+                  this._status_last_hash = {};
+                  this._status_prev_tab_module = null;
+                  this._elm_dom_container.empty();
+                  this._elm_dom_container = null;
+                  $('.header-outer .header-inner').show();
+                  $('.header-outer').find('.header_person').remove();
+              }
+          }
+      };
+  
+      RC.modules.define(mdul.name, mdul);
+  })(jQuery, RayCloud);
+
+});

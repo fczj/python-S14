@@ -1,0 +1,3050 @@
+/**
+ * 1. 卖家网在用旧框架的时候 业务module自定义了很多_elm 和 _stauts开头的字段，现在替换新框架
+ * 	  所以现在注释掉了框架RC.module.destory里的clear() 在1929行，后期有时间修改业务module
+ *    里的字段。
+ * 2. servercall 当返回会话失效（即result == 8）时跳到登陆页
+ */
+
+/**
+ * @author Jerrod
+ */
+;(function($) {
+	if (!window.RayCloud) {
+		window.RayCloud = {};
+	}
+
+	var RC = window.RayCloud;
+	RC.routeConf = null;
+	/**
+	 *  整个挂载工具的初始化
+ * @param {Object} opt, 当前只有路由配置
+	 */
+	RC.init = function(opt) {
+		this.route_conf = opt.route_conf; //装载路由配置
+		this.user.init(opt.user_data); //得到用户相关的信息, 用户权限等的判断也放在这个里面
+		this.modules.init(); //页面模块组建的初始化, 所有的模块预先在此加载
+		this.pages.init(opt.$root); //pages 的功能模块初始化.
+		this.events.init(); //设定的基本事件的初始化.
+		this.localcache.init(); //初始化session 的绑定工作, 非必须.
+		this.serverCall_init(opt.user_data); //初始化最初我们的servercall 里的一些基本设定， 主要用于为了采集错误.
+	};
+	//window.RayCloud = RC;
+})(jQuery);
+
+
+/**
+ * @author Jerrod
+ */
+(function(RC) {
+
+	if (!RC) {
+		window.RayCloud = RC = {};
+	}
+	if (!RC.events) {
+		RC.events = {};
+	}
+
+	RC.events = {
+		_status_canClick: true,
+
+		_data_handler_window_resize: null,
+
+		setClickStatus: function(val) {
+			return this._status_canClick = val;
+		},
+		getClickStatus: function() {
+			return this._status_canClick;
+		},
+
+
+		/**
+		 * event 有多方用途:
+		 * 1. event 主要用于处理与我们的需求与 jqm 冲突的事件级的处理方式, 主要是click 事件;
+		 * 2. 事件的订阅和派送, 建立pub/sub 机制
+		 */
+		_list: {},
+		/**
+		 * 订阅事件
+		 * name -字符串
+		 * callback -相应订阅时的事件
+		 */
+		sub: function(name, callback, context) {
+			var that = this, list = that._list, it = list[name];
+			if (!it) {
+				it = that._list[name] = [];
+			}
+			it.push(context ? function() {
+				callback.apply(context, arguments);
+			} : callback);
+			return this;
+		},
+		/**
+		 * 派发事件
+		 * name - 字符串
+		 */
+		pub: function(name, params) {
+			var that = this, list = that._list, i, j, nj, it;
+
+			//var _params = Array.prototype.splice.call(arguments, 1);
+			var _params = Array.prototype.slice.call(arguments, 1);
+
+			for (i in list) {
+				if (name === i) {
+					it = list[i];
+					for (j = 0, nj = it.length; j < nj; j++) {
+						it[j] && it[j].apply(null, _params);
+					}
+				}
+			}
+			return this;
+		},
+		/**
+		 * 移除派发事件
+		 * name -String
+		 * callback -Function
+		 */
+		removeSub: function(name, callback) {
+			var that = this, list = that._list, i, j, nj, it;
+			for (i in list) {
+				if (name === i) {
+					it = list[i];
+
+					if (!callback) {
+						list[i] = [];
+						return this;
+					}
+
+					for (j = 0, nj = it.length; j < nj; j++) {
+						if (it[j] === callback) {
+							it.splice(j, 1);
+							return this;
+						}
+					}
+				}
+			}
+			return this;
+		},
+
+		//是否允许进一步的点击.
+		clickable: function(callback, context) {
+			var that = this;
+			return function() {
+				if (!that.getClickStatus()) {
+					return false;
+				}
+				var arg = arguments;
+				if (context !== undefined) {
+					arg = Array.prototype.slice.call(arguments);
+					arg = [context].concat(arg);
+				}
+				return callback ? callback.apply(this, arg) : false;
+			};
+		},
+
+		//派发window.resize 事件,
+		_fn_dom_act_window_resize: function() {
+			var that = RC.events;
+			clearTimeout(that._data_handler_window_resize); //老版本的浏览器下, resize 会2次的问题. 此操作为拖拽停止时, 才会处理相应.
+			that._data_handler_window_resize = setTimeout(function() {
+				RC.sub('raycloud.events.window.resize', true);
+			}, 1);
+		},
+		//派发click 事件
+		_fn_dom_act_document_click: function(e) {
+			var target = e.target,
+				$target = $(target);
+			RC.sub('raycloud.events.document.click', {
+				e: e,
+				$target: $target
+			});
+		},
+
+		init: function() {
+			$(window).bind('resize', this._fn_dom_act_window_resize);
+			$(document.body).bind('click', this._fn_dom_act_document_click);
+		}
+	};
+
+	RC.sub = function(name, callback, context) {
+		return this.events.sub(name, callback, context);
+	};
+	RC.pub = function(name, params) {
+		return this.events.pub.apply(this.events, arguments);
+	};
+	RC.removeSub = function(name, callback) {
+		return this.events.removeSub(name, callback);
+	};
+})(window.RayCloud);
+
+
+/**
+ * @author Jerrod
+ */
+(function(RC) {
+
+	if (!RC) {
+		window.RayCloud = RC = {};
+	}
+	if (!RC.localcache) {
+		RC.localcache = {};
+	}
+
+	/**
+	 * 我们当前的所有的信息, 都将是用json的格式 存或取.
+	 * 可以使用 sessionStorage, 保持当前的会话状态, 刷新也可以存在. 但是关闭之后消失. 可以有更高安全性, 对客户端的存储压力也更小.
+	 */
+	RC.localcache = { //本地缓存部分都在这里,
+		_sessionstorage: window.sessionStorage,
+		_localstorage: window.localStorage, //修改成了localStorage, 以便于保存更多的内容.
+
+		init: function() { //初始化事件的绑定等.
+			//当某个session 在另一个页面被改动时触发
+			$(window).bind('session', this._onSession);
+			$(window).bind('storage', this._onStorage);
+		},
+		/**
+		 * 多页应用时, session的值发生改变时, 触发另外一个.
+		 */
+		_onSession: function(e) {
+			e = e || window.event;
+			//TO DO
+		},
+		_onStorage: function(e) {
+			e = e || window.event;
+			//TO DO
+		},
+
+		_getstorage: function(tp) {
+			return !tp ? this._localstorage : tp === 'session' ? this._sessionstorage : this._localstorage;
+		},
+
+		getAll: function(tp) {
+			//这里没有做decode (decodeURIComponent) 处理, 我们假设我们拿的都是原数据, 我们需要的. 具体显示时各业务模块自己处理
+			var i, s = this._getstorage(tp), data = {};
+			for (i in s) {
+				data[i] = this.get(i, tp);
+			}
+			return data;
+		},
+
+		get: function(key, tp) {
+			var s = this._getstorage(tp);
+			if (!key || ! s.getItem(key)) {
+				return false;
+			}
+			//取的时候, 一般情况下我们给出的应该是json对象.
+			try {
+				return JSON.parse(s.getItem(key));
+			} catch(e) {
+				return s.getItem(key);
+			}
+		},
+
+		/** 设置 session
+		 * @Param {String} - key 键值
+		 * @Param {Object} - value 内容, 这个内容我们约束最好为 json对象.
+		 */
+		set: function(key, value, tp) {
+			if (!key || value === undefined) {
+				return false;
+			}
+			var s = this._getstorage(tp);
+			value.last_modified = RC.util.date.getdate();
+			try {
+				val = JSON.stringify(value);
+			} catch(e) {
+				val = value;
+			}
+			s.setItem(key, val);
+		},
+		remove: function(key, tp) {
+			if (!key) {
+				return false;
+			}
+			var s = this._getstorage(tp);
+			if (s.getItem(key)) {
+				s.removeItem(key);
+				return true;
+			}
+			return false;
+		},
+		removeAll: function(tp, is_all) {
+			if (!is_all) {
+				return this._getstorage(tp).clear();
+			}
+			this._sessionstorage.clear();
+			this._localstorage.clear();
+			return true;
+		}
+	};
+})(window.RayCloud);
+
+
+/**
+ * @author Jerrod
+ */
+(function(RC) {
+
+	if (!RC) {
+		window.RayCloud = RC = {};
+	}
+	if (!RC.pages) {
+		RC.pages = {};
+	}
+
+	RC.pages = { //所有单页的hash操作
+		_elm_$co_root_document_element: null, //根容器
+
+		_data_abs_root: '',
+		_data_abs_url: '',
+		_data_history_list: [],
+		_data_route: null,
+		_data_route_list:{},
+		_data_cur_page_id: '',
+
+		_status_loading: false, //loading状态不触发hash 事件.
+
+		_fn_act_get_hash: function() {
+			return this._fn_act_get_url_string_by_symbol('#');
+		},
+		_fn_act_get_search: function() {
+			return this._fn_act_get_url_string_by_symbol('?');
+		},
+		_fn_act_get_url_string_by_symbol: function(symbol) {
+			var url = location.href,
+				ind = url.indexOf(symbol || '#');
+			return ind === -1 ? '' : url.slice(ind, url.length);
+		},
+		_fn_act_get_url: function() {
+			return location.protocol + '//' + location.hostname + ((location.port === 80 || location.port === '') ? '' : ':' + location.port) + location.pathname;
+		},
+		_fn_act_get_hashs: function() {
+			return this._fn_act_act_split_params(this._fn_act_get_hash());
+		},
+		_fn_act_get_searchs: function() {
+			var str_search = this._fn_act_get_search();
+			//选择？与#之间的内容
+			str_search = str_search.slice(1, str_search.indexOf('#') !== -1 ? str_search.indexOf('#') : str_search.length);
+			var re = {}, i = 0, arr_search = str_search.split('&'), ni = arr_search.length, it, key, val;
+			for (; i < ni; i++) {
+				it = arr_search[i].split('=');
+				if (it.length === 0) {
+					continue;
+				}
+				key = it[0];
+				val = it[1];
+				if (!re[key]) {
+					re[key] =val;
+					continue;
+				}
+				re[key] += ',' + val;
+			}
+			return re;
+		},
+		_fn_act_get_abs_root: function() {
+			return this._data_abs_root;
+		},
+		_fn_act_set_abs_root: function(val) {
+			return this._data_abs_root = val;
+		},
+		_fn_act_get_abs_url: function() {
+			return this._data_abs_url;
+		},
+		_fn_act_set_abs_url: function(val) {
+			return this._data_abs_url = val;
+		},
+		_fn_act_get_default_hashs: function() {
+			return this._fn_act_calc_mdul_name(this._fn_act_act_split_params(this._fn_act_get_abs_url()), true);
+		},
+
+		_fn_act_init_route_list: function(conf){
+			var obj = {},
+				getList = function(curconf){
+					return curconf.list || curconf.cp_list || curconf.app_list || curconf.classification_list;
+				};
+			var fn = function(name, conf) {
+				var list = getList(conf);
+				if (!list) {
+					// list不存在， 结束
+					obj[name] = {
+						name : name,
+						value : conf
+					};
+				} else {
+					// 递归list
+					for (var p in list) {
+						fn(name + '.' + p, list[p]);
+					}
+					// 如果default_index存在，说明当前path要指向default_index
+					if (conf.default_index) {
+						obj[name] = obj[name + '.' + conf.default_index];
+					} else {
+						// 不存在default_index，说明是个独立的module, 复制除了list的值
+						var o = {};
+						for (p in conf) {
+							if (conf[p] !== list) {
+								o[p] = conf[p];
+							}
+						}
+						obj[name] = {
+							name : name,
+							value : o
+						};
+					}
+				}
+			};
+			// conf首次肯定有list, 放在外面， 是为了不用拼接name.
+			var list = getList(conf);
+			for (var p in list) {
+				fn(p, list[p]);
+			}
+			obj["_default"] = obj[conf.default_index];
+			return obj;
+		},
+
+		/*
+		 * @param {string} name 空字符串或者以'.'连接的字符串(a.b.c)
+		 */
+		_fn_act_get_mdul_name: function(name){
+			return this._data_route_list[name || '_default'];
+		},
+		_fn_act_calc_mdul_name: function(hashs, is_convert) {
+			var sort_rule = ['root', 'app', 'classification'], i = 0, ni = sort_rule.length, hash = [], it;
+			for (; i < ni; i++) {
+				it = sort_rule[i];
+				if (hashs[it]) {
+					hash.push(hashs[it]);
+				}
+			}
+			hash = hash.join('.');
+			var mdul = this._fn_act_get_mdul_name(hash);
+			if (!is_convert) {
+				return mdul ? mdul.name : hash;
+			}
+			var converts = (mdul.name || hash).split('.'), new_address = [];
+			for (i = 0, ni = converts.length; i < ni; i++) {
+				new_address.push(converts[i]);
+			}
+			return '/' + new_address.join('/') + '/';
+		},
+		_fn_act_dom_page_act: function(hashs, callback) {
+			var prev_hashs = this._fn_act_act_split_params(this._fn_act_get_abs_url()),
+				prev_mdul = this._fn_act_calc_mdul_name(prev_hashs),
+				cur_mdul = this._fn_act_calc_mdul_name(hashs);
+
+			if (!RC.modules.get(prev_mdul) || !RC.modules.get(cur_mdul)) {
+				if (RC.route_conf.page_error_404) {
+					this.goPage(RC.route_conf.page_error_404);
+				} else {
+					$.dialog && $.dialog.alert('该类目不存在, 页面将跳转至上一目录', function() {
+						history.back();
+					});
+				}
+				return;
+			}
+			var cur_mdul_obj = this._fn_act_get_mdul_name(cur_mdul);
+			if (cur_mdul_obj && cur_mdul_obj.value && cur_mdul_obj.value.title) {
+				this._fn_act_set_page_document_title(cur_mdul_obj.value.title);
+			}
+
+			if (prev_mdul === cur_mdul) {
+				var mdul = RC.modules.get(cur_mdul),
+					that = this,
+					afterload = function() {
+						that._fn_act_dom_page_show(mdul.getContainer());
+					};
+
+				callback && callback();
+				mdul.func_update && mdul.func_update(hashs, afterload);
+				return;
+			}
+
+			var prev_mdul = RC.modules.get(prev_mdul),
+				cur_mdul = RC.modules.get(cur_mdul),
+				that = this,
+				afterload = function() {
+					prev_mdul.func_disabled && prev_mdul.func_disabled();
+					that._fn_act_dom_page_hide(prev_mdul.getContainer());
+					that._fn_act_dom_page_show(cur_mdul.getContainer());
+				};
+			callback && callback();
+			cur_mdul.func_update && cur_mdul.func_update(hashs, afterload);
+		},
+		_fn_act_dom_page_show: function(cur_elm) {
+			return cur_elm[0] && cur_elm.show();
+		},
+		_fn_act_dom_page_hide: function(cur_elm) {
+			return cur_elm[0] && cur_elm.hide();
+		},
+		_fn_act_set_page_document_title: function(val) {
+			if (!val || val === '') {
+				return document.title;
+			}
+			return document.title = decodeURI(val);
+		},
+		_fn_act_act_hash_change: function() {
+			//以后需要将一些数据转存入 localstorage里, 保证刷新后仍然可以用
+			if (this._fn_act_get_abs_url() === this._fn_act_get_hash()) {
+				return;
+			}
+			this._fn_act_act_load_page(this._fn_act_get_hash());
+		},
+		_fn_act_act_split_params: function(hash) {
+			var hash_new = hash.replace(/^#/, ''), obj = {};
+			if (/^\/(\w+)(\/(\w+)){0,2}(\/\?(\w+=[^&]*|\w+)|\/$)/.test(hash_new)) {
+				var folder_roots = hash_new.slice(1, hash_new.indexOf('?')),
+					param_roots = /\?/.test(hash_new) ? hash_new.slice(hash_new.indexOf('?') + 1, hash_new.length) : '',
+					folders = folder_roots.split('/'),
+					params = param_roots.split('&'),
+					i = 0, ni = folders.length,
+					sort_rule = ['root', 'app', 'classification'], it_name, item;
+				for (; i < ni; i++) {
+					if (!folders[i] || folders[i] === '') {
+						continue;
+					}
+					it_name = sort_rule[i];
+					obj[it_name] = folders[i];
+				}
+				for (i = 0, ni = params.length; i < ni; i++) {
+					if (!params[i] || params[i] === '') {
+						continue;
+					}
+					item = params[i].split('=');
+					obj[item[0]] = item[1];
+				}
+			} else {
+				obj.root = '';
+			}
+			return obj;
+		},
+		_fn_act_act_load_page: function(hash, isInit) {
+			var hashs = this._fn_act_act_split_params(hash),
+				cur_root = hashs.root,
+				that = this,
+				complete = function() {
+					that._fn_act_set_abs_root(cur_root);
+					that._fn_act_set_abs_url(hash);
+				};
+
+			//以下满足了, hash 与当前hash相等, 并且不是init, 则返回.
+			if (isInit && this._fn_act_get_abs_url() === RC.route_conf.default_index) {
+				hashs = this._fn_act_get_default_hashs();
+				this.replacePage(hashs);
+				//cur_root = this._fn_act_act_split_params(hashs).root;
+				//RC.modules.load(cur_root, hashs, complete);
+				return;
+			}
+			var route_conf = RC.route_conf,
+				routes = route_conf.cp_list,
+				prev_root = this._fn_act_get_abs_root();
+
+			if (cur_root === '' && isInit) {
+				cur_root = route_conf.default_index; //default page
+			}
+			if (routes[cur_root]) {
+
+				RC.pub('raycloud.pages.hashchange', hashs);
+				//当root 更改时, 说明大的产品模块发生了改变, 需要引用和加载其他模块.
+				if (cur_root !== prev_root) {
+					RC.modules.destroy(prev_root);
+					RC.modules.load(cur_root, hashs, complete);
+					this._fn_act_dom_page_act(hashs, complete);
+				} else {
+					if (isInit) { //如果是初次介入, 则需要完成一次模块的加载工作先, 并且将事件再次派发一次给那些没收到的模块
+						RC.modules.load(cur_root, hashs);
+						RC.pub('raycloud.pages.hashchange', hashs);
+					}
+					this._fn_act_dom_page_act(hashs, complete);
+				}
+			} else {
+				if (route_conf.page_error_404) {
+					this.goPage(route_conf.page_error_404);
+				} else {
+					$.dialog && $.dialog.alert('该类目不存在, 页面将跳转至上一目录', function() {
+						history.back();
+					});
+				}
+				//提醒用户该目录不存在, 应该跳到最初设定的位置上去.
+			}
+		},
+
+		/**
+		 * 返回一个当前的url
+		 */
+		getUrl: function() {
+			return this._fn_act_get_url();
+		},
+
+		/**
+		 * 返回一个search类别的对象值
+		 */
+		getSearchs: function() {
+			return this._fn_act_get_searchs();
+		},
+
+		/**
+		 * 修改当前的url设置, 不需要自己做太多处理
+		 * @param {Object} modified							需要修改的对象, 某值为空则表示会删除该选项
+		 * @param {Boolean} is_need_replace				是否需要覆盖之前的
+		 * @param {Boolean} is_need_encode				是否需要做转码
+		 */
+		modifyCurHash: function(modified, is_need_replace, is_need_encode) {
+			if (!modified || typeof modified !== 'object') {
+				return;
+			}
+			var cur_url_params = this._fn_act_get_hashs(), i, lks = [],
+				encode = is_need_encode ? function(str) {
+					return encodeURIComponent(str);
+				} : function(str) {
+					return str;
+				}, it, base_url = [], base_url_obj = {};
+
+			//FIXME 允许对root, app, classification等进行操作
+			for (i in cur_url_params) {
+				if (/^(root|app|classification)$/.test(i)) {
+					base_url_obj[i] = cur_url_params[i];
+					// //过滤掉之前的app等选项
+					//delete cur_url_params[i];
+				}
+			}
+			for (i in modified) {
+				it = modified[i];
+				if (/^(root|app|classification)$/.test(i)) {
+					if (it === undefined || it === '') {
+						delete base_url_obj[i];
+					} else {
+						base_url_obj[i] = it;
+					}
+					continue;
+				}
+				if (it === '') {
+					continue;
+				}
+				lks.push(i + '=' + encode(it));
+			}
+			if (!is_need_replace) {
+				for (i in cur_url_params) {
+					if (modified[i] !== undefined || /^(root|app|classification)$/.test(i)) {
+						continue;
+					}
+					lks.push(i + '=' + encode(cur_url_params[i]));
+				}
+			}
+			lks = lks.length === 0 ? '' : '?' + lks.join('&');
+			for (i in base_url_obj) {
+				base_url.push(base_url_obj[i]);
+			}
+			base_url.push('');
+			base_url = [''].concat(base_url);
+			base_url = base_url.join('/');
+			// console.log('base_url: ' + base_url);
+			return this.goPage('#' + base_url + lks);
+		},
+		getCurHash: function() {
+			return this._fn_act_get_default_hashs();
+		},
+		setCurHash: function(hashs, is_need_reflash) {
+			if (!hashs) {
+				var url = this._fn_act_get_hash();
+				return !is_need_reflash ? false : this.goPage(url + (/\?|&/.test(url) ? '&' : '?') +'is_flash=true');
+			}
+			var _hashs;
+			if (typeof hashs === 'object') {
+				_hashs = [];
+				var i;
+				for (i in hashs) {
+					_hashs.push(i + '=' + hashs[i]);
+				}
+				_hashs = _hashs.length !== 0 ? '?' + _hashs.join('&') : '';
+			} else if (typeof hashs === 'string'){
+				_hashs = hashs.length !== '' ? '?' + hashs : '';
+			}
+			if (!is_need_reflash && this._fn_act_get_hash() === '#' + this.getCurHash() + _hashs) {
+				return false;
+			}
+			if (is_need_reflash) {
+				_hashs = (/\?|&/.test(_hashs) ? '&' : '?') +'is_flash=true';
+			}
+			return this.goPage('#' + this.getCurHash() + _hashs);
+		},
+
+		/**
+		 * 获得当前hash里的key值
+ 		* @param {Object} key
+ 		* 返回当前的值对象
+		 */
+		getHashKey: function(key) {
+			var hashs = this._fn_act_get_hashs();
+			return hashs[key];
+		},
+		getLoadingStatus: function() {
+			return this._status_loading;
+		},
+		setLoadingStatus: function(is_loading) {
+			return this._status_loading = is_loading;
+		},
+		goPage: function(url) {
+			if (!url || url === undefined || url === '') {
+				return;
+			}
+			return location.href = url;
+		},
+		replacePage: function(hashs) {
+			if (hashs) {
+				var address = this._fn_act_get_url();
+				location.replace(address + '#' + hashs);
+			}
+		},
+
+		init: function($root) {
+			this._data_route_list = this._fn_act_init_route_list(RC.route_conf);
+
+			var that = this;
+			//后期将完成历史数据从localstorage 载入.
+			$(window).on('hashchange', function() {
+				that._fn_act_act_hash_change();
+			});
+
+			//第一次的初始化, 得到当前页
+			this._elm_$co_root_document_element = $root || $('#J_app-pages');
+
+			this._fn_act_set_abs_url(this._fn_act_get_hash() === '' ? RC.route_conf.default_index : this._fn_act_get_hash());
+			this._fn_act_set_abs_root(this._fn_act_act_split_params(this._fn_act_get_abs_url()).root);
+
+			this._fn_act_act_load_page(this._fn_act_get_abs_url(), true);
+
+
+		}
+	};
+})(window.RayCloud);
+
+
+;(function($){
+	var _ = {};
+
+	_.substitute = function (str, o, regexp) {
+		return str.replace(regexp || /\\?\{([^{}]+)\}/g, function (match, name) {
+			if (match.charAt(0) === '\\') {
+				return match.slice(1);
+			}
+			return (o[name] === undefined) ? '' : o[name];
+		});
+	};
+
+
+	_.keys = function(obj){
+		var r = [];
+		for(var p in obj){
+			r.push(p);
+		}
+		return r;
+	};
+
+	// List of HTML entities for escaping.
+	var entityMap = {
+		escape: {
+			'&': '&amp;',
+			'<': '&lt;',
+			'>': '&gt;',
+			'"': '&quot;',
+			"'": '&#x27;'
+		}
+	};
+	//entityMap.unescape = _.invert(entityMap.escape);
+
+	// Regexes containing the keys and values listed immediately above.
+	var entityRegexes = {
+		escape: new RegExp('[' + _.keys(entityMap.escape).join('') + ']', 'g')//,
+		//unescape: new RegExp('(' + _.keys(entityMap.unescape).join('|') + ')', 'g')
+	};
+
+
+	_.escape = function(string){
+			if (string === null){
+				return '';
+			}
+			return ('' + string).replace(entityRegexes['escape'], function (match) {
+				return entityMap['escape'][match];
+			});
+	};
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	function Poll(fn,interval){
+		this._interval = interval || 50;
+		this._timer = null;
+		this._fn = fn;
+	}
+
+	Poll.prototype = {
+		start: function(){
+			if(this._timer){
+				return;
+			}
+			var _this = this,
+				interval = this._interval,
+				fn = this._fn;
+			var poll = function(){
+				fn();
+				_this._timer = setTimeout(poll, interval);
+			};
+			this._timer = setTimeout(poll, interval);
+		},
+		cancel: function(){
+			if(this._timer){
+				clearTimeout(this._timer);
+				this._timer = null;
+			}
+		}
+	};
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	var Hash = {
+		get: function(win){
+			// Gets the true hash value. Cannot use location.hash directly due to bug
+			// in Firefox where location.hash will always be decoded.
+			// 不能 location.hash
+			// http://xx.com/#yy?z=1
+			// ie6 => location.hash = #yy
+			// 其他浏览器 => location.hash = #yy?z=1
+			var url = location.href;
+			return '#' + url.replace(/^[^#]*#?(.*)$/, '$1');
+		},
+		set: function(hash){
+			location.hash = hash;
+		}
+	};
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	var HistoryIFrame = {
+		_iframe: null,
+		getIFrame: function(){
+			return this._iframe;
+		},
+		create: function(){
+			if(this._frame){
+				return;
+			}
+			var iframeSrc = this._genEmptyIframeSrc(),
+				iframe;
+			//http://www.paciellogroup.com/blog/?p=604
+			iframe = $('<iframe ' + (iframeSrc ? 'src="' + iframeSrc + '"' : '') +
+				' style="display: none" height="0" width="0" tabindex="-1" title="empty"/>');
+			// Append the iframe to the documentElement rather than the body.
+			// Keeping it outside the body prevents scrolling on the initial
+			// page load
+			///  DOM.prepend(iframe, doc.documentElement);
+			$(document.documentElement).prepend(iframe);
+
+			var _this = this;
+
+
+			// Whenever `document.title` changes, update the Iframe's title to
+			// prettify the back/next history menu entries. Since IE sometimes
+			// errors with "Unspecified error" the very first time this is set
+			// (yes, very useful) wrap this with a try/catch block.
+			document.onpropertychange = function () {
+				try {
+					if (event.propertyName === 'title') {
+						_this.getIFrameDoc().title = document.title + " - " + Hash.get();
+					}
+				} catch (e) {}
+			};
+
+			this._iframe = iframe;
+		},
+		_isCustomDomain: function (win) {
+			win = win || window;
+			var domain = win.document.domain,
+				hostname = win.location.hostname;
+			return domain != hostname &&
+				domain != ('[' + hostname + ']'); // IPv6 IP support
+		},
+		_genEmptyIframeSrc: function (win) {
+			win = win || window;
+			if (this._isCustomDomain(win)) {
+				return 'javascript:void(function(){' + encodeURIComponent("" +
+					"document.open();" +
+					"document.domain='" +
+					win.document.domain + "';document.close();") + "}())";
+			}
+		},
+		writeHash: function(hash){
+			 ///console.log('write: '+hash);
+			 var html = _.substitute("<html><head><title>" + (document.title || "") + " - {hash}</title>{head}</head><body>{hash}</body></html>", {
+						hash: _.escape(hash),
+						// 一定要加哦
+						head: this._isCustomDomain() ? "<script>document.domain = '" + document.domain + "';</script>" : ""
+					}),
+				iframeDoc = this.getIFrameDoc();
+
+				try {
+					// 写入历史 hash
+					iframeDoc.open();
+					// 取时要用 innerText !!
+					// 否则取 innerHtml 会因为 escapeHtml 导置 body.innerHTMl != hash
+					iframeDoc.write(html);
+					iframeDoc.close();
+					// 立刻同步调用 onIframeLoad !!!!
+				} catch (e) {
+
+				}
+		},
+		getIFrameDoc: function(){
+			return this._iframe[0].contentWindow.document;
+		},
+		getIFrameHash: function(){
+			// 不能用 innerHtml 会自动转义！！
+			// #/x?z=1&y=2 => #/x?z=1&amp;y=2
+			return this._iframe[0].contentWindow.document.body.innerText.toString().replace(/^[\s\xa0]+|[\s\xa0]+$/g, '');
+		},
+		remove: function(){
+			$(this._iframe).remove();
+			$(this._iframe).off();
+			this._iframe = null;
+		}
+	};
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		var doc = document,
+			docMode = doc.documentMode,
+			m,
+			numberify = function (s) {
+				var c = 0;
+				// convert '1.2.3.4' to 1.234
+				return parseFloat(s.replace(/\./g, function () {
+					return (c++ === 0) ? '.' : '';
+				}));
+			},
+			ie = docMode || ((m = navigator.userAgent.match(/MSIE\s([^;]*)/)) && m[1] ? numberify(m[1]) : null);
+
+		// 1. 不支持 hashchange 事件，支持 hash 导航(opera??)：定时器监控
+		// 2. 不支持 hashchange 事件，不支持 hash 导航(ie67) : iframe + 定时器
+		if ((!('onhashchange' in window)) || ie && ie < 8) {
+
+			var hashChange = ie && ie < 8 ? function (hash) {
+					HistoryIFrame.writeHash(hash);
+				} : function () {
+					notifyHashChange();
+				},
+
+				notifyHashChange = function () {
+					///todo: win7 ie8 ie7模式， 某些版本上刷新历史记录丢失
+					///HistoryManage.update();
+
+					$(window).trigger('hashchange');
+				},
+				lastHash,
+				poll = new Poll(function(){
+					var hash = Hash.get();
+					if(hash !== lastHash){
+						lastHash = hash;
+						hashChange(hash);
+					}
+				}),
+				setup = function () {
+					poll.start();
+				},
+				tearDown = function () {
+					poll.cancel();
+				},
+				onIframeLoad = function(){
+
+					var c = HistoryIFrame.getIFrameHash(),
+						ch = Hash.get();
+					///console.log(c,ch,'x');
+					// 后退时不等
+					// 定时器调用 hashChange() 修改 iframe 同步调用过来的(手动改变 location)则相等
+					if (c != ch) {
+						Hash.set(c);
+						// 使lasthash为 iframe 历史， 不然重新写iframe，
+						// 会导致最新状态（丢失前进状态）
+
+						// 后退则立即触发 hashchange，
+						// 并更新定时器记录的上个 hash 值
+						lastHash = c;
+					}
+					notifyHashChange();
+				};
+
+			if(ie <8){
+
+				setup = function(){
+
+					if(!HistoryIFrame.getIFrame()){
+						HistoryIFrame.create();
+						var iframe = HistoryIFrame.getIFrame();
+						///load  event后注册， 不能先写入
+						///HistoryIFrame.writeHash(Hash.get());
+						var oldHash = Hash.get();
+						$(iframe).on('load', function(){
+							$(this).off('load');
+							///console.log('load:',lastHash, Hash.get());
+							///iframe未load之前, 比如直接location.hash=后，会丢掉初始记录
+							///写入旧的， 启动poll, 如有更新， 改正
+							///hashChange(Hash.get());
+							HistoryIFrame.writeHash(oldHash);
+
+							$(iframe).on('load', onIframeLoad);
+
+							poll.start();
+						});
+					}
+				};
+
+				tearDown = function () {
+					poll.cancel();
+					HistoryIFrame.remove();
+				};
+			}
+
+			$.event.special.hashchange = {
+				setup: function () {
+					if (this !== window) {
+						return;
+					}
+
+					// 第一次启动 hashchange 时取一下，不能类库载入后立即取
+					// 防止类库嵌入后，手动修改过 hash，
+					lastHash = Hash.get();
+					// 不用注册 dom 事件
+					setup();
+				},
+				tearDown: function () {
+					if (this !== window) {
+						return;
+					}
+					tearDown();
+				}
+			};
+		}
+})(jQuery);
+
+/**
+ * @author xukang
+ */
+(function(RC) {
+
+	if (!RC) {
+		window.RayCloud = RC = {};
+	}
+	if (!RC.user) {
+		RC.user = {};
+	}
+	/**
+	 * RayCloud用户模块
+	 * @module RayCloud.user
+	 * @event raycloud.user.update.{eventname} 当一个属改变时， pub一件事件， {eventname}即属性名
+	 * @event raycloud.user.update.* 只要有属性变化， 就pub
+	 * 接收一个全局事件 raycloud.user.update, 接收key/value的一个参数(value值为基本数据类型)
+	 */
+	RC.user = {
+		_data: {},
+		_callback: [],
+
+		_data_update_session_timer_handler: null,
+		_data_update_session_time: 1000 * 60 * 2, // 2分钟call 一次
+		update_session: function(opt) {
+			var that = this, timeout = 20000;
+			this._data_update_session_timer_handler = setTimeout(function() {
+				$(opt.session_update_urls).each(function(idx, val) {
+					if (!val || val === '') {
+						return;
+					}
+					$.ajax({
+						url: val,
+						type: 'GET',
+						dataType: 'json',
+						timeout: timeout,
+						data: {
+							'api_name': 'check_session'
+						},
+						success: function(data) {
+							if (typeof data === 'string') {
+								try {
+									data = JSON.parse(data);
+								} catch(e) {
+									try {
+										data = eval('(' + data + ')');
+									} catch(e) {
+										data = null;
+									}
+								}
+							}
+							if (!data || typeof data !== 'object') {
+								return;
+							}
+							if (/^7\d*/.test(data.result)) {
+								RC.showWarn && RC.showWarn('提醒: 目前登录失效，麻烦关闭该应用，重新打开！', that._data_update_session_time);
+								return;
+							}
+						}
+					});
+				});
+				that.update_session(opt);
+			}, this._data_update_session_time);
+		},
+
+		/**
+		 * @Param{String} msg								错误提示
+		 * 对于店长的千牛业务, 如果出现no_session了, 走这一接口
+		 */
+		_fn_act_api_load_error_no_session: function(msg) {
+			//需要我们的组件库 dialog 的支持.
+			$.dialog && $.dialog({
+				title: '哦，出错啦！',
+				content: [
+					'<div class=" ft_18 pd_30">',
+						'<div>',
+							'<img src="http://static.superboss.cc/fronttest/w-error-qn_20141106.png" />',
+						'</div>',
+						'<div class="ft_14 pt_20">',
+							'<span class="fc-red">错误原因：</span><br /> &nbsp; &nbsp; &nbsp; <span class="ft_18">' + (msg || '登录时校验失败或者授权失败') + '</span>',
+						'</div>',
+						'<div class="pt_30 ft_14">',
+							'友情提示：<br />',
+							' &nbsp; &nbsp; &nbsp; 1. 出现当前页面请稍后重试<br />',
+							' &nbsp; &nbsp; &nbsp; 2. 重试之后仍然失败，请联系旺旺客服：',
+							'<a href="http://www.taobao.com/webww/ww.php?ver=3&amp;touid=%E5%85%89%E4%BA%91%E8%AE%BE%E8%AE%A1&amp;siteid=cntaobao&amp;status=2&amp;charset=utf-8" target="_blank"><img src="http://amos.alicdn.com/realonline.aw?v=2&amp;uid=%E5%85%89%E4%BA%91%E8%AE%BE%E8%AE%A1&amp;site=cntaobao&amp;s=2&amp;charset=utf-8" alt="">光云设计</a>',
+							' 或 电话咨询：400-6042-789',
+						'</div>',
+					'</div>',
+				].join(''),
+				fixed: true,
+				resize: false,
+				lock: false
+			});
+		},
+
+		/**
+		 * @Param{Object} opt								属性
+		 * 根据不同的类别, 选择对于session的判断处理也将不一样.
+		 */
+		user_session_check: function(opt) {
+			if (!opt || !opt.is_qn_app) {
+				//如果是店长非千牛, 采用被动的触发模式, 每次api call 的时候才提醒.
+				RC.sub('api.load.error.no_session', this._fn_act_api_load_error_no_session, this);
+			} else {
+				//如果是千牛, 采用主动的触发模式.
+				this.update_session(opt);
+			}
+		},
+
+		_data_user_nick: null,
+		_data_user_id: null,
+
+		/**
+		 * @method init
+		 * @param  user_data [object] 初始加载数据
+		 */
+		init: function(opt){
+			var _this = this;
+			this.set(opt || {});
+			this._bindUpdateEvent = function(data){
+				_this.set(data);
+			};
+			this.user_session_check(opt);
+			RC.sub('raycloud.user.update', _this._bindUpdateEvent);
+		},
+		_check: function(data){
+			return true;
+		},
+		set: function(data){
+			if(this._check(data) !== true){
+				return false;
+			}
+
+			if (('id' in data) && data.id === null) {
+				this._data = {
+					_login_status: false
+				};
+			}
+
+			var r = [],  p, oldData = this._data;
+			for(p in data){
+				if(oldData[p] !== data[p]){
+					//
+					this._data[p] = data[p];
+					r.push(p);
+				}
+			}
+
+			var obj = {};
+			for(var i = 0, len = r.length; i<len; i++){
+				obj[r[i]] = this._data[r[i]];
+				RC.pub('raycloud.user.update.'+r[i], this._data[r[i]]);
+			}
+
+			if(r.length){
+				RC.pub('raycloud.user.update.*', obj);
+			}
+
+			var _data = this._data;
+			if (this._callback.length && !$.isEmptyObject(_data)) {
+				$.each(this._callback, function (i, callback) {
+					callback(_data);
+				});
+				this._callback = [];
+			}
+
+			return true;
+		},
+		_copy: function(obj){
+			if($.isPlainObject(obj)){
+				return $.extend({},obj);
+			}
+
+			return obj;
+		},
+		/**
+		 * @method get
+		 * @param key [string] {optional} 键名
+		 * @return {Any}
+		 */
+		get: function(key, callback){
+			if (!arguments.length) {
+				return this._data;
+			}
+
+			var val = (key in this._data) ? this._copy(this._data[key]) : null;
+
+			if (typeof callback == 'function') {
+				if ($.isEmptyObject(this._data)) {
+					this._callback.push(callback);
+				}
+				else {
+					callback(val);
+				}
+			}
+
+			return val;
+		},
+		/**
+		 * @method destory
+		 * @description 销毁
+		 */
+		destory: function(){
+			// remove event
+			RC.removeSub('raycloud.user.update', this._bindUpdateEvent);
+			// hashchange的时候， user.destory并不会调用， 各模块自行处理 removeSub usrer.update.*.
+			// clear data
+			this._data = {};
+		}
+	};
+
+})(window.RayCloud);
+
+
+﻿/**
+ * @author Jerrod
+ */
+(function(RC) {
+
+	if (!RC) {
+		window.RayCloud = RC = {};
+	}
+	if (!RC.util) {
+		RC.util = {};
+	}
+
+	var util = { //工具集.
+		noti: {
+			_elm_$co: null,
+			_elm_$co_bd: null,
+			_data_handler_timeout_show: null,
+			show: function(msg, tp, timeout) {
+				var $co = this._elm_$co || (this._elm_$co = $('#J_ajax-tips')), $bd = this._elm_$co_bd || (this._elm_$co_bd = $('#J_ajax-tips .bd')), that = this;
+				clearTimeout(this._data_handler_timeout_show);
+				RC.events.setClickStatus(false);
+
+				switch(tp) {
+					case 'loading':
+						RC.util.dialog.tips({
+							type: 'loading'
+							, content:  msg || '正在请求中...'
+							, duration: 100000
+						});
+						timeout = timeout || 21000; //比api默认的10s 多出1s做缓冲.
+						break;
+					case 'success':
+						RC.util.dialog.tips({
+							type: 'success'
+							, content:  msg || '请求成功!'
+							, duration: 100000
+						});
+						timeout = timeout || 1000;
+						break;
+
+					case 'fail':
+						RC.util.dialog.alert({
+							content: msg || '请求失败, 请稍候重试!'
+						});
+						timeout = null;
+						RC.events.setClickStatus(true);
+						break;
+					case 'warn':
+						RC.util.dialog.tips({
+							type: 'warn'
+							, content:  msg || '请求失败, 请稍候重试!'
+							, duration: 100000
+						});
+						timeout = timeout || 1000;
+						break;
+				}
+
+				timeout && (this._data_handler_timeout_show = setTimeout(function() {
+					that.hide();
+				}, timeout));
+			},
+			hide: function() {
+				if (!RC.pages.getLoadingStatus()) {
+					RC.events.setClickStatus(true);
+				}
+				RC.util.dialog.hide();
+				clearTimeout(this._data_handler_timeout_show);
+				this._data_handler_timeout_show = null;
+			}
+		}
+	};
+
+	$.extend(RC.util, util);
+
+	RC.util.date = {
+		_date_cur_date: new Date(),
+		_date_reg_all: /^[12][0-9]{3}(-|\/)(0?[0-9]|1[0-2])(-|\/)(0?[1-9]|[1-2][0-9]|3[0-1]).(0?[0-9]|1[0-9]|2[0-3]):(0?[0-9]|[1-5][0-9]):(0?[0-9]|[1-5][0-9])$/,
+		_date_reg_year_month: /^[12][0-9]{3}(-|\/)(0?[0-9]|1[0-2])$/,
+		_date_reg_year_month_date: /^[12][0-9]{3}(-|\/)(0?[0-9]|1[0-2])(-|\/)(0?[1-9]|[1-2][0-9]|3[0-1])$/,
+		_date_reg_year_month_date_hour: /^[12][0-9]{3}(-|\/)(0?[0-9]|1[0-2])(-|\/)(0?[1-9]|[1-2][0-9]|3[0-1]).(0?[0-9]|1[0-9]|2[0-3])$/,
+		_date_reg_year_month_date_hour_minute: /^[12][0-9]{3}(-|\/)(0?[0-9]|1[0-2])(-|\/)(0?[1-9]|[1-2][0-9]|3[0-1]).(0?[0-9]|1[0-9]|2[0-3]):(0?[0-9]|[1-5][0-9])$/,
+		_date_reg_time: /^(0?[0-9]|1[0-9]|2[0-3]):(0?[0-9]|[1-5][0-9]):(0?[0-9]|[1-5][0-9])$/,
+		/***
+		 * @param {Object|Number|String} date
+		 * @param {Object} format
+		 */
+		getdate: function(date, format) {
+			var now = this.tojsdate(date),
+				year = now.getFullYear(),
+				month = (now.getMonth() + 1),
+				day = now.getDate(),
+				hour = now.getHours(),
+				minute = now.getMinutes(),
+				second = now.getSeconds(),
+				result, fill = function(val) {
+					return (val < 10 ? '0' : '') + val;
+				};
+			month = fill(month);
+			day = fill(day);
+			hour = fill(hour);
+			minute = fill(minute);
+			second = fill(second);
+
+			switch(format) {
+				case 'YY-MM':
+					result = year + '-' + month;
+					break;
+				case 'MM-DD':
+					result = month + '-' + day;
+					break;
+				case 'YY-MM-DD':
+					result = year + '-' + month + '-' + day;
+					break;
+				case 'YY-MM-DD HH:MM:SS':
+					result = year + '-' + month + '-' + day + ' ' + hour + ':' + minute + ':' + second;
+					break;
+				case 'YY-MM-DD HH:MM':
+					result = year + '-' + month + '-' + day + ' ' + hour + ':' + minute;
+					break;
+				case 'YY/MM/DD HH:MM':
+					result = year + '/' + month + '/' + day + ' ' + hour + ':' + minute;
+					break;
+				case 'HH:MM':
+					result = hour + ':' + minute;
+					break;
+				case 'HH:MM:SS':
+					result = hour + ':' + minute + ':' + second;
+					break;
+				default:
+					result = year + '/' + month + '/' + day + ' ' + hour + ':' + minute + ':' + second;
+			}
+			return result;
+		},
+		setcurdate: function(val) {
+			this._date_cur_date = new Date(this.format_date(val));
+		},
+		//以后所有的时间都从这块来, 这块的时间将会配合时间矫正来处理.
+		getcurdate: function() {
+			return new Date(this._date_cur_date);
+		},
+		//转化成为js 的时间
+		tojsdate: function(date) {
+			if (!this.is_date(date)) {
+				return this.getcurdate();
+			}
+			if (typeof date === 'string') {
+				date = date.replace(/-/g, '\/');
+				if (this._date_reg_year_month.test(date)) {
+					date += '/01';
+				}
+			}
+			return new Date(date);
+		},
+		/**
+		 *
+		 * @param {Object|Number|String} oldDate
+		 * @param {String|Number} changeDate
+		 * 					Number+	y|mo|d|h|m|s 分别表示年/月/日/小时/分/秒.  如果没带后缀, 则默认为天.
+		 */
+		getdiffdate: function(oldDate, changeDate, format) {
+			var curDate = this.tojsdate(oldDate);
+			if (/^(-?\d+)y$/.test(changeDate)) {
+				curDate.setYear(curDate.getYear() + (+ RegExp.$1));
+			} else if (/^(-?\d+)mo$/.test(changeDate) && RegExp.$1 != 0) {
+				// 缓存当前的天
+				var _cache_day = curDate.getDate();
+
+				// 重置到月初. 如果当前的 getDate() 大于目标月的最大日期就悲剧了
+				curDate.setDate(1);
+
+				// 设置月份
+				curDate.setMonth(curDate.getMonth() + (+ RegExp.$1));
+				curDate.setDate(_cache_day);
+
+				if (curDate.getDate() != _cache_day) {
+					// 上个月的最后一天
+					curDate.setDate(0);
+				}
+
+			} else if (/^(-?\d+)d$/.test(changeDate)) {
+				curDate.setDate(curDate.getDate() + (+ RegExp.$1));
+			} else if (/^(-?\d+)h$/.test(changeDate)) {
+				curDate.setHours(curDate.getHours() + (+ RegExp.$1));
+			} else if (/^(-?\d+)m$/.test(changeDate)) {
+				curDate.setMinutes(curDate.getMinutes() + (+ RegExp.$1));
+			} else if (/^(-?\d+)s$/.test(changeDate)) {
+				curDate.setSeconds(curDate.getSeconds() + (+ RegExp.$1));
+			}
+			return this.getdate(curDate, format);
+		},
+		format_date: function(date) {
+			if (!date || !this.is_date(date)) {
+				return false;
+			}
+			var reg = this._date_reg_time;
+			if (reg.test(date)) {
+				return date.replace(/-/g, '\/');
+			} else {
+				return this.getdate(date);
+			}
+		},
+		is_date: function(date) {
+			if (!date || date === null) {
+				return false;
+			}
+			if (typeof date === 'string') {
+				return this._date_reg_all.test(date) ||
+							this._date_reg_year_month.test(date) ||
+							this._date_reg_year_month_date.test(date) ||
+							this._date_reg_year_month_date_hour.test(date) ||
+							this._date_reg_year_month_date_hour_minute.test(date);
+			}
+			var newdate = new Date(date);
+			return newdate != 'Invalid Date';
+		}
+	};
+
+
+
+})(window.RayCloud);
+
+
+﻿/**
+ * @author Jerrod
+ */
+/**
+ * @author Jerrod
+ */
+(function(RC) {
+	if (!RC) {
+		window.RayCloud = RC = {};
+	}
+	if (!RC.util) {
+		RC.util = {};
+	}
+
+	// 千牛新版UI
+	// 1. 新版千牛UI $.dialog 被重写
+	// 2. 新版千牛UI 存在 RC.showLoading
+	if (!$.dialog || !$.dialog.tips || RC.showLoading) {
+		return;
+	}
+
+	var _dialog;
+
+	RC.showLoading = function(msg, timeout, callback) {
+		msg = msg || '请稍等, 正在加载中...';
+		timeout = timeout || 1000;
+		callback = callback || function () {};
+		RC.clearShow();
+		_dialog = $.dialog.tips('<div class="ft_20 fm-yahei loading-tips">' + msg +'</div>', timeout, 'loading.gif', callback, true);
+	};
+
+	RC.showSuccess = function(msg, timeout, callback) {
+		msg = msg || '恭喜您, 操作成功!';
+		timeout = timeout || 2;
+		callback = callback || function () {};
+		RC.clearShow();
+		_dialog = $.dialog.tips('<div class="ft_20 fm-yahei fc-ok success-tips">' + msg +'</div>', timeout, 'ok.png', callback, true);
+
+	};
+
+	RC.clearShow = function() {
+		_dialog && (!_dialog.closed && _dialog.close());
+		_dialog = null;
+	};
+
+	RC.showFail = function(msg, callback) {
+		msg = msg || '操作失败, 请重新尝试!';
+		callback = callback || function () {};
+		RC.clearShow();
+		_dialog = $.dialog({
+			title: '操作失败'
+			, content: '<div class="ft_20 fm-yahei fc-error fail-tips">' + msg +'</div>'
+			, id: 'fail'
+			, icon: 'error.png'
+			, fixed: true
+			, lock: true
+			, resize: false
+			, close: callback
+			, buttonsAlign: 'center'
+		});
+	};
+
+	RC.showWarn = function(msg, timeout, callback) {
+		msg = msg || '操作失败, 请重新尝试!';
+		timeout = timeout || 2;
+		callback = callback || function () {};
+		RC.clearShow();
+		_dialog = $.dialog.tips('<div class="ft_20 fm-yahei fc-orange warn-tips">' + msg +'</div>', timeout, 'warn.png', callback, true);
+	};
+
+	RC.dialog = function(opts) {
+		RC.clearShow();
+		var params = {};
+		params.fixed = opts.fixed !== undefined ? opts.fixed : false;
+		params.lock = opts.lock !== undefined ? opts.lock : false;
+		params.resize = opts.resize !== undefined ? opts.resize : false;
+		params.title = opts.title || ' ';
+		params.content = opts.content || ' ';
+		return _dialog = $.dialog(params);
+	};
+})(window.RayCloud);
+
+
+/**
+ * @author Jerrod
+ */
+(function(RC) {
+
+	if (!RC) {
+		window.RayCloud = RC = {};
+	}
+
+	var result_list = {
+		1: 'success',
+		2: '参数异常',
+		3: '服务端运行异常',
+		4: '服务端内部错误',
+		5: '服务端内部调用失败',
+		6: '淘宝服务调用失败',
+		7: '调用内部程序失败',
+		8: '用户没有权限'
+	};
+
+	/**
+	 * params {Object} opt
+	 * 					{String} server: - rc/tb  //选择的server服务, 本地/taobao
+	 * 					{Object} params: - 可选的参数类别, 对应key 与  value.
+	 * 					{String} type:		-可选, 传送的类别, 在server === rc 时特指我们的ajax服务, 他必须和params搭配使用. 即params有数据, 他有效, 否则返回值为get.
+	 * 					{String} url: -可选, 对应的地址类
+	 * params {Function} callback  回调函数
+	 *
+	 */
+	RC.__func_serverCall_upload_error = function(req, rsp) {
+		var rcu_date = this.util.date;
+		var params = {
+			sendMsg: JSON.stringify(req),
+			errMsg: JSON.stringify(rsp),
+			taobaoId: local_data.user_id,
+			taobaoNick: local_data.buyer_nick,
+			apptype: local_data.app_type,
+			time: rcu_date.getdate(new Date(), 'YY-MM-DD HH:MM:SS')
+		};
+		//"/common/uploadErrorLog.do"
+		$(local_data.error_update_urls).each(function(idx, val) {
+			if (!val || val === '') {
+				return;
+			}
+			$.post(val, params, function(data) {
+				if (data == "1") {
+					console.info("upload error log success!");
+				} else {
+					console.info("upload error log failed!");
+				}
+			});
+		});
+	};
+
+	var local_data = {};
+
+	/**
+	 *
+	 * @Param {Object} opt			传入的参数
+	 * 这里是对于serverCall的构造器, 用于实现servercall 的主要流程, 主要是servercall 里我们需要做一些数据操作的甄别判断.
+	 */
+	RC.serverCall_init = function(opt) {
+		local_data.app_type = opt.app_type;
+		local_data.is_qn_app = opt.is_qn_app;
+		local_data.buyer_nick = opt.buyer_nick;
+		local_data.user_id = opt.user_id;
+		local_data.error_update_urls = opt.error_update_urls;
+	};
+
+	RC.serverCall = function(opt, callback, fail, is_need_loading_noti, is_need_success_noti, is_need_fail_noti) {
+		var params = {}, timeout = 20000, that = this;
+
+		// 默认显示加载提示
+		// undefined --> true
+		// true --> true
+		// false --> false
+		is_need_loading_noti = !(is_need_loading_noti === false);
+
+		// 默认隐藏成功提示
+		// undefined --> false
+		// true --> true
+		// false --> false
+		is_need_success_noti = is_need_success_noti === true;
+
+		// 默认显示错误提示
+		// undefined --> true
+		// true --> true
+		// false --> false
+		is_need_fail_noti = !(is_need_fail_noti === false);
+
+		if (is_need_loading_noti) {
+			RC.showLoading();
+		}
+
+		if (opt.server === 'rc') { //光云内部call, ajax.
+			var url = opt.url,
+				ajaxParam = {
+					dataType: opt.dataType || 'json',
+					timeout: timeout,
+					beforeSend: function() {
+					},
+					success: function(data) {
+
+						if (ajaxParam.jsonp && ajaxParam.jsonpCallBack) { //增加对jsonp 的处理
+							if (is_need_loading_noti) {
+								RC.clearShow();
+							}
+
+							if (is_need_success_noti) {
+								RC.showSuccess();
+							}
+							callback && callback(data);
+							return;
+						}
+
+						try {
+							data = JSON.parse(data);
+						} catch(e) { }
+						if (/^1/.test(data.result)) {//success
+
+							if (is_need_loading_noti) {
+								RC.clearShow();
+							}
+
+							if (is_need_success_noti) {
+								RC.showSuccess();
+							}
+
+							callback && callback(data);
+						}
+						else if (/^8/.test(data.result) && !~$.inArray(opt.params.api_name, ['get_user_info', 'post_user_login'])) {
+							RC.clearShow();
+							location.href = 'http://login.taosj.com/?redirectURL='+encodeURIComponent(window.location.href);
+						} else {
+							if (is_need_loading_noti) {
+								RC.clearShow();
+							}
+
+							if (is_need_fail_noti) {
+								RC.showFail(data.message || result_list[(data.result + '').slice(0, 1)]);
+							}
+
+							fail && fail(data);
+						}
+					},
+					complete: function(xhr, rq_status) {
+						//RC.showLoading(false);
+						var data;
+						try {
+							data = JSON.parse(xhr.responseText);
+						} catch(e) { }
+
+						/**
+						 * ========================
+						 * complete 将会在error 或者 success之后启动
+						 * 我们将在complete 里执行错误系列操作.
+						 * ========================
+						 */
+
+						if (!data || !data.result || /^1\d*$/.test(data.result)) {
+							return;
+						}
+						that.__func_serverCall_upload_error(opt, data);
+
+						//只有非千牛应用， 出错了才会做这样的处理
+						if (!local_data.is_qn_app) {
+							// session 失效的话, 跳转到登录页面
+							if (data.result == '701') {
+								window.location.href = 'http://f.superboss.cc/noSession.jsp';
+							} else if (/^6\d*$/.test(data.result)) { //用户没有该权限
+								RC.pub && RC.pub('api.load.error.no_session', data.message || '您没有权限，请重新登录');
+							}
+						}
+					},
+					error: function(json) {
+						//如果是abort的数据, 则我们不弹出错误提示
+						if (json.readyState === 0) {
+							// RC.showWarn('请求失败',0.6);
+							return;
+						}
+						if (is_need_loading_noti) {
+							RC.clearShow();
+						}
+
+						if (is_need_fail_noti) {
+							RC.showFail();
+						}
+						that.__func_serverCall_upload_error(opt, json);
+						fail && fail();
+						//抛出一个错误
+					}
+					, async: opt.async === false ? false : true
+				};
+			if (opt.params) {
+				if (!opt.type || opt.type === 'get') { //get 模式
+					var i, arr = [], params = opt.params, encode = encodeURIComponent, _getChildParam = function(param) {
+						if (typeof param !== 'object') {
+							return param;
+						}
+						var i, arr = [];
+						for (i in param) {
+							arr.push(i + '=' + encode(param[i]));
+						}
+						return arr.join('&');
+					};
+					for (i in params) { //我们只会对应最多2层的对象, 超过2层的对象建议使用post 传递.
+						arr.push(i + '=' + encode(_getChildParam(params[i])));
+					}
+					url += (/\?|\#/.test(url) ? '&' : '?') + arr.join('&');
+					ajaxParam.type = 'get';
+				} else { //post 模式
+					ajaxParam.type = 'post';
+					ajaxParam.data =  opt.params;
+				}
+			} else {
+				ajaxParam.type = 'get';
+			}
+			ajaxParam.url = url;
+			//添加jsonp 调用
+			if (opt.jsonp && opt.jsonpCallBack) {
+				ajaxParam.jsonp = opt.jsonp;
+				ajaxParam.jsonpCallBack = opt.jsonpCallBack;
+			}
+			return $.ajax(ajaxParam);
+		}
+
+		var cmd = opt.params.method;
+		delete opt.params.method;
+		return QN.top.invoke({
+			cmd: cmd,
+			param: opt.params,
+			method: 'post',
+			success: function(rsp, categroy, cmd, param) {
+				if (is_need_loading_noti) {
+					RC.clearShow();
+				}
+				if (is_need_success_noti === undefined || is_need_success_noti === true) {
+					RC.showSuccess();
+				} else {
+					RC.clearShow();
+				}
+				callback && callback(rsp);
+			},
+			error : function(error_data, categroy, cmd, param) {
+				console.log(arguments);
+				that.__func_serverCall_upload_error(opt, error_data);
+				(is_need_fail_noti === undefined || is_need_fail_noti === true) && RC.showFail(error_data.msg + (error_data.sub_msg ? '<br >' + error_data.sub_msg : ''));
+				fail && fail(error_data, 'error');
+			}
+		});
+	};
+})(window.RayCloud);
+
+
+/**
+ * @author Jerrod
+ */
+(function(RC) {
+
+	if (!RC) {
+		window.RayCloud = RC = {};
+	}
+	if (!RC.modules) {
+		RC.modules = {};
+	}
+
+	RC.modules = {//所有的挂载的模块集合
+		_data_mdul_list: {},
+		_data_mdul_order_list: [],
+		load: function(name, hashs, callback) { //模块异步加载
+			var i = 0, dmol = this._data_mdul_order_list, ni = dmol.length, it;
+			//FIX, 修改成有序执行的方式.
+			if (name === '' || !name) {
+				callback && callback();
+				return;
+			}
+			for (; i < ni; i++) {
+				it = dmol[i];
+				RegExp('^' + name).test(it.name) && it.init && it.init(hashs);
+			}
+			callback && callback();
+		},
+		get: function(name) { //得到一个模块
+			return this._data_mdul_list[name] || false;
+		},
+		_delete: function(name) {
+			if (this._data_mdul_list[name]) {
+				delete this._data_mdul_list[name];
+				return true;
+			}
+			return false;
+		},
+		//去掉dom 内的一些绑定, 如select, input[type=date] 会增加div 一样.
+		_fn_act_clear_dom_bind: function($dom) {
+			if (!$dom || !$dom[0]) {
+				return;
+			}
+			var $ele;
+			$dom.find('select').each(function (i, ele) {
+				$ele = $(ele);
+				if ($ele.data && $ele.data('iSelect') && $ele.data('iSelect').destroy) {
+					$ele.data('iSelect').destroy();
+				}
+			});
+			$dom.find('.date-picker').each(function (i, ele) {
+				$ele = $(ele);
+				if ($ele.data && $ele.data('datepicker') && $ele.data('datepicker').destroy) {
+					$ele.data('datepicker').destroy();
+				}
+			});
+		},
+		_fn_act_func_bind: function(mdul) {
+			//给mdul绑定一些没有的参数，减少开发者对于这一块的调用;
+			mdul.__status_is_mdul_active = false;
+			if (typeof mdul.disabled === 'function') {
+				mdul.func_disabled = function() {
+					this.__status_is_mdul_active = false;
+					this.disabled.apply(this, arguments);
+				};
+			}
+			if (typeof mdul.update === 'function') {
+				mdul.func_update = function() {
+					this.__status_is_mdul_active = true;
+					this.update.apply(this, arguments);
+				};
+			}
+			if (!mdul.init) {
+				mdul.init = function() {};
+			}
+			if (mdul.depend === undefined) {
+				mdul.depend = '';
+			}
+			mdul.is_mdul_active = function() {
+				return !!this.__status_is_mdul_active;
+			};
+			return mdul;
+		},
+		define: function(name, mdul) {
+			var list = this._data_mdul_list;
+			if (!name || list[name]) {
+				//错误或者已存在
+				return;
+			}
+			list[name] = this._fn_act_func_bind(mdul);
+			this._data_mdul_order_list.push(list[name]);
+		},
+		init: function() {
+			//初始化的时候目前不在处理业务模块的初始化, 而只处理基础模块.
+			var list = this._data_mdul_order_list, i = 0, ni = list.length, routes = RC.route_conf.cp_list;
+			for (; i < ni; i++) {
+				if (list[i].type && list[i].type === 'basic') {
+					list[i].init &&  list[i].init(routes[list[i].name] || {});// 有配置的传入, 没有不需要.
+				}
+			}
+			// this._data_mdul_order_list = [];
+		},
+		/**
+		 *
+ 		 * @param {Object} mdul							模块
+ 		 * 用于清除模块中的状态和对元素的引用
+		 */
+		clear: function(mdul) {
+			if (mdul) {
+				mdul.__status_is_mdul_active = false; //设置active状态为空
+				var i;
+				for (i in mdul) {
+					if (RegExp('^_status_').test(i)) { //所有有状态标示的, 都应该还原
+						mdul[i] = false;
+					}
+					if (RegExp('^_elm_').test(i)) { //所有的元素指定, 都会被删除, 如有需要下次再建立
+						delete mdul[i];
+					}
+				}
+			}
+		},
+		/**
+		 *
+		 * @param {String} depend					depend是依赖的模块的名称
+		 */
+		destroy: function(depend) { //根据依赖条件删除相关模块
+			if (!depend) {
+				return;
+			}
+			var list = this._data_mdul_list, i, he;
+			for (i in list) {
+				he = list[i];
+				if (he.depend === depend && he.destroy) {
+					//RC.template && RC.template.deleteTemp(he.name);  //暂时不删除template, 以备下次使用.
+
+					he.getContainer() && this._fn_act_clear_dom_bind(he.getContainer()); //将dom中的select, input等插入的dom节点给删除.
+
+					he.destroy && he.destroy();
+					//暂时注释掉，卖家网在用旧框架的时候有很多自定义的_elm 和 _status字段
+					// this.clear(he); //清楚mdul的一些已经存在的内存变量
+					//this._delete(he.name);  //暂时不彻底删除之前的模块, 仅仅把事件等消掉. 自己处理remove事件等.
+				}
+			}
+			//RC.template && RC.template.deleteTemp(depend);
+			list[depend] && list[depend].destroy();
+			//this._delete(depend); //暂时不彻底删除之前的模块, 仅仅把事件等消掉. 自己处理remove事件等.
+		}
+	};
+})(window.RayCloud);
+
+
+﻿;(function(RC) {
+	if (!RC) {
+		window.RayCloud = RC = {};
+	}
+	if (!RC.template) {
+		RC.template = {};
+	}
+	var template = {
+		_temp_list: {},
+
+		_data_reg_chk_have_any_expression: /(<\w+[^>]*(act-if|act-loop|act-if-loop)="([^"]*)"|\{\{[^}]*\}\}|(<\!--include temp=("[^"]+")-->))/,
+		_data_reg_chk_expression_is_act_if: /<(\w+)[^>]*act-if="([^"]*)"/,
+		_data_reg_chk_expression_is_act_loop: /<(\w+)[^>]*act-loop="([^"]*)"/,
+		_data_reg_chk_expression_is_act_if_loop: /<(\w+)[^>]*act-if-loop="([^"]*)"/,
+		_data_reg_chk_expression_is_include_temp: /<\!--include temp="([^"]*)"-->/,
+		_data_reg_chk_expression_is_brace: /\{\{([^\}]*)\}\}/,
+		_data_reg_chk_expression_is_brace_3_expressions: /(.*)\s\?\s(.*)\s\:\s([^\}]*)/,
+		_data_reg_chk_expression_is_brace_act_then: /(.*)\bact-then\b(.*)/,
+		_data_reg_chk_unclosed_tag_list: /^(img|br|hr|meta|input|base|map|link)$/i, //自闭合标签列表
+		_data_reg_remove_block_begin_end: /^\s|\s$/g,
+		_data_reg_remove_filter_flag: /\:(encodeURI|decodeURI|escape|unescape|htmlFilter)/,
+
+		/**
+		 * @Param{String} type				支持act-if || act-loop || act-if-loop || include-temp
+		 * @Param{String} str 				内容字符串
+		 * 得到该类型（type）在该段字符串中的序列（-1表示不存在）
+		 * 	如存在，则返回该内容中相关属性
+		 * 		left_length		序列位置
+		 * 		tag_name			标签名称
+		 * 		expression		表达式内容
+		 * 		name				运算名
+		 */
+		_fn_act_get_index_params_of_expression: function(type, str) {//复用功能，可以一次性获得该节点有关的一些内容
+			var re = {
+				name: type
+			};
+			if (!/^(act-if|act-loop|act-if-loop|include-temp)$/.test(type)) {
+				re.left_length = -1;
+				return re;
+			}
+			var reg = this['_data_reg_chk_expression_is_' + type.replace(/-/g, '_')];
+			if (!reg.test(str)) {
+				re.left_length = -1;
+				return re;
+			}
+			re.left_length = RegExp.leftContext.length;
+			if (type !== 'include-temp') {
+				re.tag_name = RegExp.$1;
+				re.expression = RegExp.$2;
+			} else {
+				re.include_temp = RegExp.$1;
+			}
+			return re;
+		},
+
+		/**
+		 * @Param{String} str 				内容字符串
+		 * 按照找到的表达式的位置，确定我们所要寻找的第一个表达式
+		 */
+		_fn_act_find_first_expression: function(str) {
+			var arr = [];
+			arr.push(this._fn_act_get_index_params_of_expression('act-if', str));
+			arr.push(this._fn_act_get_index_params_of_expression('act-loop', str));
+			arr.push(this._fn_act_get_index_params_of_expression('act-if-loop', str));
+			arr.push(this._fn_act_get_index_params_of_expression('include-temp', str));
+			var i = 0, it, ni = arr.length, min ; //不用array 原生的 sort 排序， 因为我们会有 -1 的情况无法处理
+			for (; i < ni; i++) {
+				it = arr[i];
+				if (!min && it.left_length !== -1) {
+					min = it;
+				}
+				if (i === 0 || it.left_length === -1) {
+					continue;
+				}
+				if (!min || it.left_length < min.left_length) {
+					min = it;
+				}
+			}
+			return min;
+		},
+
+		/**
+		 * @Param{String} temp 								内容字符串
+		 * @Param{Object} data_mapping 				数据mapping
+		 * 返回一个会替换 {{}}中内容的字符串，其中我们支持
+		 * 			act-if 				- 传统的 if then 的模式
+		 * 			? : 					- 三元表达式
+		 * 			xx						- 最基础的模式
+		 */
+		_fn_act_replace_brace_value: function(temp, data_mapping) {
+			if (this._data_reg_chk_expression_is_brace.test(temp)) {
+				var expression_base = RegExp.$1;
+				if (this._data_reg_chk_expression_is_brace_3_expressions.test(expression_base)) {
+					//满足3元表达式的
+					var exp_ck = RegExp.$1,
+						exp_first = this._fn_act_get_string_replace_begin_end_block(RegExp.$2),
+						exp_second= this._fn_act_get_string_replace_begin_end_block(RegExp.$3);
+					var result = this._fn_act_get_result_of_calc_formula(exp_ck, data_mapping);
+					var v_first = this._fn_act_get_string_by_replace_requirement(exp_first, data_mapping, true),
+						v_second = this._fn_act_get_string_by_replace_requirement(exp_second, data_mapping, true);
+					if (result) {
+						return temp.replace(this._data_reg_chk_expression_is_brace, v_first);
+					}
+					return temp.replace(this._data_reg_chk_expression_is_brace, v_second);
+				} else if (this._data_reg_chk_expression_is_brace_act_then.test(expression_base)) {
+					//满足act-then这一要求的
+					var exp_ck = RegExp.$1,
+						exp_then = this._fn_act_get_string_replace_begin_end_block(RegExp.$2);
+
+					var result = this._fn_act_get_result_of_calc_formula(exp_ck, data_mapping);
+					var v_then = this._fn_act_get_string_by_replace_requirement(exp_then, data_mapping, true);
+					if (result) {
+						return temp.replace(this._data_reg_chk_expression_is_brace, v_then);
+					}
+					return temp.replace(this._data_reg_chk_expression_is_brace, '');
+				}
+				//通用型, 只是修改内容的
+				var v_base = this._fn_act_get_string_by_replace_requirement(expression_base, data_mapping);
+				return temp.replace(this._data_reg_chk_expression_is_brace, v_base);
+			}
+			return temp;
+		},
+
+		/**
+		 * @Param{Object} data				传入一个对象
+		 * @Param{String} name				该对象有引用关系的名称
+		 * 返回一个新的一维数组序列对象
+		 */
+		_fn_act_get_data_mapping: function(data, name) {
+			if (data === undefined) {
+				return false;
+			}
+			var i, it, it_name, name = name || '', is_array = data instanceof Array, j, jt, re = {};
+			for (i in data) {
+				if (!data.hasOwnProperty(i)) {
+					continue;
+				}
+				it = data[i];
+				it_name = name === '' ? i : name + (is_array ? '[' + i + ']' : '.' + i);
+				re[it_name] = it;
+				if (typeof it === 'object') {
+					if (it instanceof Array) {
+						re[it_name + '.length'] = it.length;
+					}
+					jt = this._fn_act_get_data_mapping(it, it_name);
+					for (j in jt) {
+						if (!jt.hasOwnProperty(j)) {
+							continue;
+						}
+						re[j] = jt[j];
+					}
+					continue;
+				}
+			}
+			return re;
+		},
+
+		/**
+		 * @Param{String} keywords				需要替换的内容
+		 * 在放入RegExp之前, 字符串都需要经过一些处理才可以得到正常的识别
+		 */
+		_fn_act_get_string_replace_words_before_exp: function(keywords) {
+			return keywords ? keywords.replace(/([?\[\]|$^.+{}*#!()\\"'])/g, '\\$1') : '';
+		},
+
+		/**
+		 * @Param{String} keywords				需要替换的内容
+		 * 返回一个替换前后空格的内容
+		 */
+		_fn_act_get_string_replace_begin_end_block: function(keywords) {
+			return keywords.replace(this._data_reg_remove_block_begin_end, '');
+		},
+
+		/**
+		 * @Param{String} keyword				需要查找的内容
+		 * @Param{Object} data_mapping		data_mapping
+		 * 根据是否含有如
+		 * 	:htmlFilter
+		 * :escape
+		 * :unescape
+		 * :encodeURI
+		 * :decodeURI
+		 * 来转化目前输出的内容块
+		 */
+		_fn_act_get_string_by_replace_requirement: function(keyword, data_mapping, is_not_filter) {
+			var _escape = /\:escape$/,
+				_unescape = /\:unescape$/,
+				_encodeURI = /\:encodeURI$/,
+				_decodeURI = /\:decodeURI$/,
+				_htmlFilter = /\:htmlFilter$/,
+				_htmlFilter2 = /\:htmlFilter2$/;
+			if (_escape.test(keyword)) {
+				return this._fn_act_get_string_by_replace_keyword(keyword, _escape, data_mapping, escape);
+			}
+			if (_unescape.test(keyword)) {
+				return this._fn_act_get_string_by_replace_keyword(keyword, _unescape, data_mapping, unescape);
+			}
+			if (_encodeURI.test(keyword)) {
+				return this._fn_act_get_string_by_replace_keyword(keyword, _encodeURI, data_mapping, encodeURIComponent);
+			}
+			if (_decodeURI.test(keyword)) {
+				return this._fn_act_get_string_by_replace_keyword(keyword, _decodeURI, data_mapping, decodeURIComponent);
+			}
+			if (_htmlFilter.test(keyword)) {
+				return this._fn_act_get_string_by_replace_keyword(keyword, _htmlFilter, data_mapping, function(val) {
+					return val.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+				});
+			}
+			if (_htmlFilter2.test(keyword)) {
+				return this._fn_act_get_string_by_replace_keyword(keyword, _htmlFilter2, data_mapping, function(val) {
+					return val.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '\\"');
+				});
+			}
+			if (is_not_filter) {
+				return data_mapping !== undefined && data_mapping[keyword] !== undefined && typeof data_mapping[keyword] !== 'object' ? data_mapping[keyword] : keyword;
+			}
+			return data_mapping !== undefined ? ((data_mapping[keyword] !== undefined && typeof data_mapping[keyword] !== 'object') ? data_mapping[keyword] : '') : keyword;
+		},
+
+		/**
+		 * @Param{String} keyword				需要替换的标注
+		 * @Param{RegExp} reg						执行操作的正则
+		 * @Param{Object} data_mapping		data_mapping
+		 * @Param{Function} func					执行替换操作的函数
+		 * 返回一个经过替换并且匹配之后的值
+		 * 进入该操作里，必须会有诉求，即将内容替换
+		 */
+		_fn_act_get_string_by_replace_keyword: function(keyword, reg, data_mapping, func) {
+			if (data_mapping === undefined) {
+				return func(keyword.replace(reg, ''));
+			}
+			var key = keyword.replace(reg, ''),
+				val = data_mapping[key];
+			if (val === undefined || typeof val === 'object') {
+				return func(key);
+			}
+			return func(val);
+		},
+
+		/**
+		 * @Param{Object} o_exp				含有指向性的对象，含 name (act-if, acf-loop, acf-if-loop), expression, tag_name
+		 * @Param{String} temp					传入的模板字符串
+		 * 返回一个包含一个html片段的内容区域
+		 */
+		_fn_act_get_html_clip_by_o_exp: function(o_exp, temp) {
+
+			var reg_tag_container,
+				act_name = o_exp.name,
+				tag_name = o_exp.tag_name,
+				expression = o_exp.i_filter === undefined || o_exp.i_filter === true ? this._fn_act_get_string_replace_words_before_exp(o_exp.expression) : o_exp.expression;
+
+			if (this._data_reg_chk_unclosed_tag_list.test(tag_name)) {
+				//如果这一段是一个自闭合标签
+				reg_tag_container = RegExp('<' + tag_name + '[^>]*' + act_name + '=\\"' + expression +'\\".*?\/?>');
+				if (!reg_tag_container.test(temp)) {
+					return false;
+				}
+				return temp.match(reg_tag_container)[0];
+			}
+
+			reg_tag_container = RegExp('<' + tag_name + '[^>]*' + act_name + '=\\"' + expression +'\\"[^>]*>(.*)<\/' + tag_name + '>');
+			if (!reg_tag_container.test(temp)) {
+				return false;
+			}
+			var str_all = temp.match(reg_tag_container)[0],
+				str_test = '',
+				len_str_all = str_all.length,
+				mark_num_left = 1,
+				mark_num_right = 0,
+				mark_pos = 0,
+				mark_tag_left = '<' + tag_name,
+				mark_tag_right = '</' + tag_name + '>',
+				reg_tag_right = '<\/' + tag_name + '[^>]*>',
+				len_tag_right = mark_tag_right.length,
+				outerHTML = '';
+			try {
+				while(mark_num_left !== mark_num_right) {
+					mark_pos += str_all.slice(mark_pos, len_str_all).indexOf(mark_tag_right) + len_tag_right;
+					str_test = str_all.slice(0, mark_pos);
+					mark_num_left = str_test.match(RegExp(mark_tag_left, 'ig')).length;
+					mark_num_right = str_test.match(RegExp(reg_tag_right, 'ig')).length;
+					if (mark_num_left === mark_num_right) {
+						outerHTML = str_test;
+					}
+				}
+			} catch(e) {
+				return false;
+			}
+			return outerHTML;
+		},
+
+		/**
+		 * @Param{String} k0								申明的第一个变量
+		 * @Param{String} k1								第一个变量的值
+		 * @Param{String} k2								申明的第二个变量
+		 * @Param{String} k3								第二个变量的值
+		 * @Param{String} str								需要替换的内容
+		 * @Param{Object} data_mapping				data_mapping
+		 * 如果对方是 loop to 的表达式模式，返回一个结果转化的新的字符串内容
+		 */
+		_fn_act_get_temp_by_loop_to: function(k0, k1, k2, k3, str, data_mapping) {
+			//循环里需要将 一些当前的在 act-if, act-loop, act-if-loop 里的值, 给替换成目前对象里的值.
+			var i = k1, ni = k3, temp = str, templist = [], _str;
+			for (; i <= ni; i++) {
+				_str = temp + '';
+				_str = _str.replace(RegExp('\\{\\{' + k0 + '\\}\\}', 'g'), i);
+				_str = _str.replace(RegExp('\\{\\{' + k2 + '\\}\\}', 'g'), ni);
+				_str = _str.replace(/act-(if|loop|if-loop)="([^"]*)"/g, function(a, b, c) {
+					return a.replace(c, function(_a, _b) {
+						return _a.replace(RegExp('\\b(' + k0 + '|' + k2 + ')\\b', 'g'), function(__a, __b) {
+							return __a.replace(RegExp(__b, 'g'), __b == k0 ? i : ni);
+						});
+					});
+				});
+				templist.push(_str);
+			}
+			return templist.join('');
+		},
+
+		/**
+		 * @Param{String} k0								申明的第一个变量
+		 * @Param{String} k1								申明的第二个变量
+		 * @Param{String} str								需要替换的内容
+		 * @Param{Object} data_mapping				data_mapping
+		 * 如果对方是 loop in 的表达式模式，返回一个结果转化的新的字符串内容
+		 */
+		_fn_act_get_temp_by_loop_in: function(k0, k1, str, data_mapping) {
+			var temp = str, templist = [], _str;
+			var i, it, nd = data_mapping[k1], ni = nd.length, is_array = nd instanceof Array, rk, rv, _rk, that = this;
+			for (i in nd) {
+				if (!nd.hasOwnProperty(i)) {
+					continue;
+				}
+				it = nd[i];
+				_str = temp + '';
+				//{{a.xxxx}}这些给做些转化
+				_str = _str.replace(RegExp('\\{\\{((' + k0 + ')\\.([^\\}]*))\\}\\}', 'g'), function(a, b, c, d) {
+					_rk = k1 + '[' + i + '].' + d;
+					if (_rk in data_mapping) {
+						return that._fn_act_get_string_by_replace_requirement(_rk, data_mapping);
+					}
+					return a.replace(RegExp(k0 + '(\\.[^\\s,;\\}]*)?', 'g'), function(_a, _b) {
+						if (!_b) {
+							return _a;
+						}
+						return k1 + '[' + i + ']' + (_b || '');
+					});
+				});
+				//增加一个可以获得当前index的方法用于帮助用户获得相关属性
+				_str = _str.replace(/\{\{([^\}]*)\}\}/g, function(a, b) {
+					if (RegExp('^' + k0 + '\\:(index|length)$').test(b)) {
+						return RegExp.$1 === 'index' ? i :ni;
+					}
+					if (RegExp('\\b' + k0 + '\\:(index|length)\\b').test(b)) {
+						return a.replace(RegExp('\\b' + k0 + '\\:(index|length)\\b', 'g'), function(_a, _b) {
+							return _b === 'index' ? i : ni;
+						});
+					}
+					return a;
+				});
+				if (typeof it !== 'object') {
+					_str = _str.replace(RegExp('\\{\\{(' + k0 + ')(\\:(encodeURI|decodeURI|escape|unescape|htmlFilter))?\\}\\}', 'g'), function(a, b, c, d) {
+						return that._fn_act_get_string_by_replace_requirement(it + (c || ''));
+					});
+				}
+				_str = _str.replace(/act-(if|loop|if-loop)="([^"]*)"/g, function(a, b, c) {
+					return a.replace(c, function(_a, _b) {
+						return _a.replace(RegExp('\\b' + k0 + '([\\.\\:][^;\\s]*)?\\b', 'g'), function(__a, __b) {
+							if (/\:(index|length)$/.test(__a)) {
+								return RegExp.$1 === 'index' ? i : ni;
+							}
+							rk = k1 + '[' + i + ']' + (__b !== undefined ? __b : '');
+							rv = data_mapping[rk];
+							return rk in data_mapping ? typeof rv === 'object' ? rk : rv+':replaced' : __a;
+						});
+					});
+				});
+				//增加一次回归事件, 用于等我们上一条的递归完成之后, 在回归测试下看是否有满足条件的需求需要处理
+				_str = _str.replace(/\{\{([^\}]*)\}\}/g, function(a, b) {
+					return a.replace(RegExp(that._fn_act_get_string_replace_words_before_exp(b)), function(_a, _b) {
+						return _a.replace(RegExp('\\b' + k0 + '([\\.\\:][^;\\s]*)?\\b', 'g'), function(__a, __b) {
+							if (/\:(index|length)$/.test(__a)) {
+								return RegExp.$1 === 'index' ? i : ni;
+							}
+							rk = k1 + '[' + i + ']' + (__b !== undefined ? __b : '');
+							rv = data_mapping[rk];
+							return rk in data_mapping ? typeof rv === 'object' ? rk : rv+':replaced' : __a;
+						});
+					});
+				});
+
+				templist.push(_str);
+			}
+			return templist.join('');
+		},
+
+
+		/**
+		 * @Param{String} temp							输入的字符串
+		 * @Param{Object} o_exp							输入的表达式对象
+		 * 返回一个将include_temp替换成正常模板的字符串
+		 * 从模板库中找到可以替代的include_temp的内容
+		 */
+		_fn_act_replace_with_include_temp: function(temp, o_exp) {
+			var it_temp = this._temp_list[o_exp.include_temp];
+			return temp.replace(this._data_reg_chk_expression_is_include_temp, it_temp || '');
+		},
+
+		/**
+		 * @Param{String} temp							输入的字符串
+		 * @Param{Object} o_exp							输入的表达式对象
+		 * @Param{Object} data_mapping				data_mapping
+		 * 返回一个经过判断的act-if 对象的字符串
+		 */
+		_fn_act_replace_with_act_if: function(temp, o_exp, data_mapping) {
+			var result = this._fn_act_get_result_of_calc_formula(o_exp.expression, data_mapping),
+				html_clip = this._fn_act_get_html_clip_by_o_exp(o_exp, temp);
+			if (!result) {
+				return temp.replace(RegExp(this._fn_act_get_string_replace_words_before_exp(html_clip)), '');
+			}
+			return temp.replace(RegExp('\\s?\\b' + o_exp.name + '=\"' + this._fn_act_get_string_replace_words_before_exp(o_exp.expression) +'\"'), '');
+		},
+
+		/**
+		 * @Param{String} temp							输入的字符串
+		 * @Param{Object} o_exp							输入的表达式对象
+		 * @Param{Object} data_mapping				data_mapping
+		 * 返回一个经过判断的act-loop 对象的字符串
+		 * 	包括 loop-in, loop-to
+		 * 所有 loop 的入口
+		 */
+		_fn_act_replace_with_act_loop: function(temp, o_exp, data_mapping) {
+			/**
+			 * =========================
+			 * loop 允许两种状态
+			 * 		1. a = 1, b = 5; a to b //必须模式, 这样才可以获得idx 与length
+			 * 			里面的1, 5 也可以替换成data_mapping里的变量
+			 * 		2. a in b
+			 * loop 会产生1个或者2个临时变量， 如1 里面的a, b, 或者2 里面的a.
+			 * 临时变量会层层递归交替下去.
+			 * 对于loop的, 优先尝试临时变量, 而后是data_mapping
+			 * =========================
+			 */
+			var reg_check_expression_to = /(\w+) = (.*), (\w+) = (.*); (\w+) to (\w+)/,
+				reg_check_expression_in = /(\w+) in (.*)/;
+			var expression = o_exp.expression;
+			var html_clip = this._fn_act_get_html_clip_by_o_exp(o_exp, temp);
+			var is_num = function(val) {
+				return /^\s?\d+\s?$/.test(val);
+			};
+			var mark_html_clip = this._fn_act_get_string_replace_words_before_exp(html_clip);
+
+			if (reg_check_expression_to.test(expression)) {
+				var k0 = RegExp.$1,
+					k1 = RegExp.$2,
+					k2 = RegExp.$3,
+					k3 = RegExp.$4,
+					k4 = RegExp.$5,
+					k5 = RegExp.$6;
+				//不满足替换逻辑
+				if (k0 != k4 || k2 != k5) {
+					//删除该操作
+					return temp.replace(RegExp(mark_html_clip), '');
+				}
+				//k1, k3有可能是表达式，这里也需要将这些可能的表达式给计算掉
+				k1 = this._fn_act_get_value_after_formula(k1, data_mapping);
+				k3 = this._fn_act_get_value_after_formula(k3, data_mapping);
+
+				//判断是否是可以循环的数字 (k1, k3), 才可以放入循环里面
+				if ( (is_num(k1) || is_num(data_mapping[k1])) && (is_num(k3) || is_num(data_mapping[k3])) ) {
+					var n0 = is_num(k1) ? +k1 : data_mapping[k1],
+						n1 = is_num(k3) ?  +k3 : data_mapping[k3],
+						new_str = this._fn_act_get_temp_by_loop_to(k0, n0, k2, n1, html_clip.replace(/\s?\bact-(if-)?loop="([^"]*)"/, ''), data_mapping);
+
+					return temp.replace(RegExp(mark_html_clip), new_str);
+				}
+				//否则删除
+				return temp.replace(RegExp(mark_html_clip), '');
+			} else if (reg_check_expression_in.test(expression)) {
+				var k0 = RegExp.$1,
+					k1 = RegExp.$2,
+					nd = data_mapping[k1];
+				//for in 的模式就必须得是有在data_mapping里有数据才可以继续下去的
+				if (nd === undefined || !(nd instanceof Array || nd instanceof Object)) {
+					return temp.replace(RegExp(mark_html_clip), '');
+				}
+				var new_str = this._fn_act_get_temp_by_loop_in(k0, k1, html_clip.replace(/\s?\bact-(if-)?loop="([^"]*)"/, ''), data_mapping);
+				return temp.replace(RegExp(mark_html_clip), new_str);
+			} else {
+				//不存在，则删除之前的那段内容
+				return temp.replace(RegExp(mark_html_clip), '');
+			}
+		},
+
+		/**
+		 * @Param{String} temp							输入的字符串
+		 * @Param{Object} o_exp							输入的表达式对象
+		 * @Param{Object} data_mapping				data_mapping
+		 * 返回一个经过判断的act-if-loop 对象的字符串
+		 * 他会将自己判断转化后，变成普通的 act-loop, 等待下一次的转化
+		 */
+		_fn_act_replace_with_act_if_loop: function(temp, o_exp, data_mapping) {
+			/**
+			 * =================================
+			 * 这部分就是用于区分两种了，act-then之前的 表达式部分，与后面的loop部分
+			 * 所以，没有act-then的，都可以过滤掉了
+			 * =================================
+			 */
+			var expression = o_exp.expression,
+				reg_check_act_then = /(.*)\bact-then\b(.*)/;
+			var html_clip = this._fn_act_get_html_clip_by_o_exp(o_exp, temp);
+			var mark_html_clip = this._fn_act_get_string_replace_words_before_exp(html_clip);
+
+			if (reg_check_act_then.test(expression)) {
+				var ex = RegExp.$1,
+					loop = RegExp.$2;
+				var result = this._fn_act_get_result_of_calc_formula(ex, data_mapping);
+				if (result) {
+					loop = this._fn_act_get_string_replace_begin_end_block(loop);
+					return temp.replace(RegExp(mark_html_clip), html_clip.replace(/\b(act-if-loop)="([^"]*)"/, 'act-loop="' + loop + '"'));
+				}
+				return temp.replace(RegExp(mark_html_clip), '');
+			}
+			//不符合该需求的，过滤掉
+			return temp.replace(RegExp(mark_html_clip), '');
+
+		},
+
+		/**
+		 * @Param{String} temp							输入的字符串
+		 * @Param{Object} data							输入的对象
+		 * 按照输入的temp，返回一个结果处理的字符串
+		 */
+		_fn_act_get_replaced_html: function(temp, data) {
+			var reg_chk_have_any_expression = this._data_reg_chk_have_any_expression,
+				data_mapping = this._fn_act_get_data_mapping(data),
+				first_expression;
+			try {
+				//死循环则退出循环
+				while (reg_chk_have_any_expression.test(temp)) {
+					first_expression = this._fn_act_find_first_expression(temp);
+					//先执行表达式，然后执行该表达式所属的内容
+					//第一个入口即是这里，由此入口引申到其他的入口去, 带几个变量下去，1：当前字符块，2：当前操作数据块，3：总体数据块
+					if (first_expression) {
+						switch(first_expression.name) {
+							case 'act-if':
+								temp = this._fn_act_replace_with_act_if(temp, first_expression, data_mapping);
+								break;
+							case 'act-loop':
+								temp = this._fn_act_replace_with_act_loop(temp, first_expression, data_mapping);
+								break;
+							case 'act-if-loop':
+								temp = this._fn_act_replace_with_act_if_loop(temp, first_expression, data_mapping);
+								break;
+							case 'include-temp':
+								temp = this._fn_act_replace_with_include_temp(temp, first_expression);
+								break;
+						}
+					} else {
+						//执行替换模式
+						temp = this._fn_act_replace_brace_value(temp, data_mapping);
+					}
+				}
+			} catch(e) {
+				console.log('error:001');
+			}
+			return temp;
+		},
+
+		/**
+		 * @Param{String} str				含有表达式的字符串
+		 * 这里用意是拆分表达式，得到一个新的计算对象
+		 * 只适应于 act-if 或者 acf-if-loop的前置模块（在act-then之前）
+		 */
+		_fn_act_get_result_of_calc_formula: function(str, data_mapping) { //计算表达式汇总
+			if (/\|\|/.test(str) && /\&\&/.test(str)) {
+				//不允许同时存在 || 或者 &&　的情况，因为我们暂时也不支持到括号
+				return false;
+			}
+			//表达式又按照||，&& 等的关系划分成不同的区块
+			//多例条件
+			if (/(\|\||\&\&)/.test(str)) {
+				var relation = RegExp.$1; //关系， || 或者 &&
+
+				//按关系来切割模块
+				var opeartor_list = str.split(relation), i = 0, ni = opeartor_list.length, is_or = relation === '||';
+
+				var result;
+				for (; i < ni; i++) {
+					result = this._fn_act_get_result_of_formula(opeartor_list[i], data_mapping);
+
+					//对于 或来说，只要一个满足了条件，即可算是满足了条件
+					if (is_or && result) {
+						return true;
+					} else if (!result && !is_or) {
+						return false;
+					}
+				}
+				//最终的结果，如果是 或，说明没有一个满足了条件，则返回false，如果是 且，则说明都满足了条件，可以返回true了
+				return !is_or;
+			}
+			//单例条件
+			return this._fn_act_get_result_of_formula(str, data_mapping);
+		},
+
+		/**
+		 * @Param {String} val						传入想要计算的内容字符串
+		 * @Param {Data} data_mapping		数据mapping对应表
+		 * @Param {Function} func_check_formula_match		用于判断该值是否已经被转化用的一个回调
+		 * 返回一个结果计算的合并的值出来
+		 */
+		_fn_act_get_value_after_formula: function(val, data_mapping, func_check_formula_match) {
+			var reg_arithmetic_operator_first = /\s?([^\s]*)\s([\*\/\%])\s([^\s]*)/,
+				reg_arithmetic_operator_second = /\s?([^\s]*)\s([\+\-])\s([^\s]*)/;
+			val = this._fn_act_get_formula_of_arithmetic_operator_replace(val, reg_arithmetic_operator_first, data_mapping, func_check_formula_match);
+			val = this._fn_act_get_formula_of_arithmetic_operator_replace(val, reg_arithmetic_operator_second, data_mapping, func_check_formula_match);
+			return val;
+		},
+
+		/**
+		 * @Param {String} formula_str			计算表达式字符串
+		 * @Param {Data} data_mapping		数据mapping对应表
+		 * 返回一个表达式的结果
+		 */
+		_fn_act_get_result_of_formula: function(formula_str, data_mapping) {
+			// 以 ==, ===, >, >=, <, <=, !=, !== 来拆分 这里是比较运算符
+			// 支持 +，-，*，/，% 5种算数运算符
+			var reg_comparison_operator = /(==|===|>=|<=|\!=|\!==|>|<)/;
+
+			if (!reg_comparison_operator.test(formula_str)) {
+				//必须包含比较运算符才可以
+				return false;
+			}
+
+			//在这个里面来按等式区分两边判断
+			var comparison_operator = RegExp.$1;
+
+			var formula_all = formula_str.split(comparison_operator),
+				formula_left = this._fn_act_get_string_replace_begin_end_block(formula_all[0]),
+				formula_right = this._fn_act_get_string_replace_begin_end_block(formula_all[1]);
+
+			var is_formula_left_had_replace = false,
+				is_formula_right_had_replace = false;
+			var func_check_left_replaced = function(key, data_mapping) {
+				if (data_mapping !== undefined && (key in data_mapping || /\:replaced$/.test(key))) {
+					is_formula_left_had_replace = true;
+				}
+			};
+			var func_check_right_replaced = function(key, data_mapping) {
+				if (data_mapping !== undefined && (key in data_mapping || /\:replaced$/.test(key))) {
+					is_formula_right_had_replace = true;
+				}
+			};
+
+			/*
+			 * ======================================
+			 * 分别对左右的内容做递归处理
+			 * 优先级是先 /*%, 后+-, 所以每边各有2次回归
+			 * 等式两边分别递归. 最终得到最后的答案然后做判断
+			 *
+			 * 最后利用等式两边，含义转化来做对比
+			 * ======================================
+			 */
+
+			//按优先级多轮替换计算相应的数据
+			formula_left = this._fn_act_get_value_after_formula(formula_left, data_mapping, func_check_left_replaced);
+			formula_right = this._fn_act_get_value_after_formula(formula_right, data_mapping, func_check_right_replaced);
+
+			//再次去掉多余空格
+			formula_left = this._fn_act_get_string_replace_begin_end_block(formula_left);
+			formula_right = this._fn_act_get_string_replace_begin_end_block(formula_right);
+
+			//再次和data_mapping里的数据做对比，获得最终的数据
+			formula_left = this._fn_act_get_result_of_checking_value(formula_left, data_mapping, func_check_left_replaced);
+			formula_right = this._fn_act_get_result_of_checking_value(formula_right, data_mapping, func_check_right_replaced);
+
+			//console.log(formula_str + '\n' + formula_left + comparison_operator + formula_right);
+
+			//如果左/右 存在 undefined, 的判断, 必须要经过 data_mapping 的验证才可以,
+			if (/^undefined$/.test(formula_left) || /^undefined$/.test(formula_right)) {
+				if (/^undefined$/.test(formula_left) && /^undefined$/.test(formula_right)) {
+					return this._fn_act_get_result_of_calc(undefined, undefined, comparison_operator);
+				} else if (/^undefined$/.test(formula_left) && !/^undefined$/.test(formula_right)) {
+					if (is_formula_right_had_replace) {
+						// 右边已经经过了转化的
+						return this._fn_act_get_result_of_calc(formula_left, formula_right, comparison_operator);
+					} else {
+						return this._fn_act_get_result_of_calc(formula_left, undefined, comparison_operator);
+					}
+				} else {
+					if (is_formula_left_had_replace) {
+						// 左边已经经过了转化的
+						return this._fn_act_get_result_of_calc(formula_left, formula_right, comparison_operator);
+					} else {
+						return this._fn_act_get_result_of_calc(undefined, formula_right, comparison_operator);
+					}
+				}
+			}
+
+			return this._fn_act_get_result_of_calc(formula_left, formula_right, comparison_operator);
+		},
+
+		/**
+		 * @Param {String} formula_str						输入的表达式的字符串
+		 * @Param {Object} reg									验证的正则表达式
+		 * @Param {Object} data_mapping					带入的数据mapping表
+		 * @Param {Function} func_check_formula_match		用于判断该值是否已经被转化用的一个回调
+		 * 将传入的formula_str的内容, 和传递的正则序列替换并且返回新组成的数据
+		 */
+		_fn_act_get_formula_of_arithmetic_operator_replace: function(formula_str, reg, data_mapping, func_check_formula_match) {
+			var result_0, result_1, arithmetic;
+			while(reg.test(formula_str)) {
+				result_0 = RegExp.$1;
+				result_1 = RegExp.$3;
+				arithmetic = RegExp.$2;
+				result_0 = this._fn_act_get_result_of_checking_value(result_0, data_mapping, func_check_formula_match);
+				result_1 = this._fn_act_get_result_of_checking_value(result_1, data_mapping, func_check_formula_match);
+				formula_str = formula_str.replace(reg, ' ' + this._fn_act_get_result_of_calc(result_0, result_1, arithmetic));
+			}
+			return formula_str;
+		},
+
+		/**
+		 * @Param {String||Number} key_0			第一个值
+		 * @Param {String||Number} key_1			第二个值
+		 * @Param {String} arithmetic					计算式
+		 * 返回一个计算式的结果
+		 */
+		_fn_act_get_result_of_calc: function(key_0, key_1, arithmetic, is_need_skip_covert) {
+			var result = 0;
+			if (!is_need_skip_covert) {
+				key_0 = this._fn_act_get_result_of_covert_value(key_0);
+				key_1 = this._fn_act_get_result_of_covert_value(key_1);
+			}
+			switch(arithmetic) {
+				case '+':
+					result = key_0 + key_1;
+					break;
+				case '-':
+					result = key_0 - key_1;
+					break;
+				case '*':
+					result = key_0 * key_1;
+					break;
+				case '/':
+					result = key_0 / key_1;
+					break;
+				case '%':
+					result = key_0 % key_1;
+					break;
+				case '==':
+					result = key_0 == key_1;
+					break;
+				case '===':
+					result = key_0 === key_1;
+					break;
+				case '!=':
+					result = key_0 != key_1;
+					break;
+				case '!==':
+					result = key_0 !== key_1;
+					break;
+				case '>':
+					result = key_0 > key_1;
+					break;
+				case '>=':
+					result = key_0 >= key_1;
+					break;
+				case '<':
+					result = key_0 < key_1;
+					break;
+				case '<=':
+					result = key_0 <= key_1;
+					break;
+			}
+			return result;
+		},
+
+		/**
+		 * @Param {String||Number} value			传入的值
+		 * 返回一个匹配的结果，包括如果是boolean就返回boolean，null则null，undefined则undefined，数字则数字，其他都为字符串
+		 * 允许小数的存在
+		 */
+		_fn_act_get_result_of_covert_value: function(value) {
+			if (typeof value === 'object') {
+				return value;
+			}
+			if (/^true|false$/.test(value)) {
+				return /true/.test(value);
+			} else if (/^null$/.test(value)) {
+				return null;
+			} else if (/^undefined$/.test(value)) {
+				return undefined;
+			} else if (/^(\s?(\d+\.\d+)|(\d+)\s?)$/.test(value)) {
+				return + value;
+			}
+			return value;
+		},
+
+		/**
+		 * @Param {String||Number} value			传入的key
+		 * @Param {Object} data_mapping		传入的data_mapping 值
+		 * @Param {Function} func_check_formula_match		用于判断该值是否已经被转化用的一个回调
+		 * 我们需要在表达式里事先判断是否是数字，如果是数字则不做处理，如果不是数字，则去我们的data_mapping里取数据;
+		 * 允许小数的存在
+		 */
+		_fn_act_get_result_of_checking_value: function(value, data_mapping, func_check_formula_match) {
+			if (/^(\s?(\d+\.\d+)|(\d+)\s?)$/.test(value)) {
+				return +value;
+			}
+			func_check_formula_match && func_check_formula_match(value, data_mapping);
+			if (data_mapping) {
+				if (/\:replaced$/.test(value)) {
+					value = value.replace(/\:replaced$/, '');
+					if (value === '') {
+						return 'undefined';
+					}
+				}
+				return value in data_mapping ? data_mapping[value] : value;
+			}
+			return value;
+		},
+
+		/**
+		 * @Param {String} act_name					选择的类别
+		 * @Param {String} expression			里面的表达式
+		 * @Param {String} str						输入源字符串
+		 * ======================================
+		 * FIXME
+		 * 这个模块将之为老的get_node 服务，他将提供工具tp，key返回一个与该tp，key有关的数组
+		 * ======================================
+		 */
+		_fn_act_get_nodes_by_tp_key_from_html: function(act_name, expression, str) {
+			if (!act_name || !expression || !str) {
+				return false;
+			}
+			var reg_txt_header_chk = '<(\\w+)[^>]*' + act_name + '=\\"(' + expression + ')\\"[^>]*>',
+				reg_find_tag = new RegExp(reg_txt_header_chk);
+			if (!reg_find_tag.test(str)) { //判断是否有找到我们的act有关的内容区
+				return false;
+			}
+			var result_arr = [],
+				reg_check_exp = RegExp(reg_txt_header_chk, 'g'),
+				result_match_arr = str.match(reg_check_exp),
+				result_match_arr_len = result_match_arr.length,
+				result_mark_idx = 0,
+				result_mark_pos = 0,
+				result_mark_pre_pos,
+				result_t_tag_name,
+				result_t_exp,
+				result_t_str_co,
+				result_s_str_co = str.slice(str.indexOf(result_match_arr[0]), str.length),
+				result_len_s_str_co = result_s_str_co.length;
+			var c_expression;
+			while (result_match_arr[result_mark_idx]) {
+				if (result_mark_idx >=1 && result_match_arr[result_mark_idx - 1] === result_match_arr[result_mark_idx]) {
+					//如果本次和上次的值一样, 则将上次移动的位置还原
+					result_mark_pos += 1;
+				}
+				result_mark_pre_pos = result_mark_pos;
+				if (result_mark_idx + 1 !== result_match_arr_len) {
+					//需要应对本次和下次匹配的值是完全一样的情况
+					result_mark_pos += result_s_str_co.slice(result_mark_pre_pos + (result_match_arr[result_mark_idx + 1] === result_match_arr[result_mark_idx] ? 1 : 0), result_len_s_str_co).indexOf(result_match_arr[result_mark_idx + 1]);
+				} else {
+					result_mark_pos = result_len_s_str_co;
+				}
+				result_t_str_co = 	result_s_str_co.slice(result_mark_pre_pos, result_mark_pos +(result_match_arr[result_mark_idx + 1] === result_match_arr[result_mark_idx] ? 1 : 0));
+				RegExp('^' + reg_txt_header_chk).test(result_t_str_co);
+				result_t_tag_name = RegExp.$1;
+				result_t_exp = RegExp.$2;
+				result_mark_idx++;
+				//FIXME，新版之后，老板的get_node 将只支持到 loop-in 的程度.
+				result_arr.push({
+					expression: result_t_exp,
+					outerHTML: this._fn_act_get_html_clip_by_o_exp({
+						expression: expression,
+						tag_name: result_t_tag_name,
+						name: act_name,
+						i_filter: false
+					}, result_t_str_co)
+				});
+			}
+			return result_arr;
+		},
+
+		/**
+		 * @Param {Object | Array} obj				对象或者数组
+		 * 返回一个对象|数组 的长度
+		 */
+		_fn_act_get_object_item_length: function(obj) {
+			if (!obj) {
+				return 0;
+			}
+			var is_array = obj instanceof Array;
+			if (is_array) {
+				return obj.length;
+			} else {
+				var i, ni = 0;
+				for (i in obj) {
+					if (!obj.hasOwnProperty(i)) {
+						continue;
+					}
+					ni++;
+				}
+				return ni;
+			}
+		},
+
+		/**
+		 * @Param {String} name									模板的名称
+		 * @Param {Object} data									传入的数据
+		 * @Param {Boolean} is_need_filter					是否需要过滤掉
+		 * 传入模板的name，搜索在模板list里的模板，返回一个经过/未经过 处理的模板字符串
+		 */
+		get: function(name, data, is_need_filter) { //输入模块的名称
+			var html = this._temp_list[name];
+			if (!html) {
+				return '';
+			}
+			if (html instanceof Array) {
+				html = html.join('');
+			}
+			return (data !== undefined && data instanceof Object) || is_need_filter ? this._fn_act_get_replaced_html(html, data) : html;
+		},
+
+		/**
+		 * @param {String} expression					    -- 对应的表达式
+		 * @param {Object} data 							    -- 数据
+		 * 根据对应的表达式 获得一个特定的值
+		 */
+		get_calc_formula: function(expression, data) {
+			return this._fn_act_get_result_of_calc_formula(expression, data !== undefined ? this._fn_act_get_data_mapping(data) : null);
+		},
+
+		/**
+		 * @param {String} temp_name					    -- 查找对应的模板库中已经存在的模板
+		 * @param {String} act_name 					    -- 对应的搜索条件，如act-if, act-loop, act-if-loop等
+		 * @param {String} expression					    -- 表达式的内容
+		 * @param {Object} data							    -- 需要去查找的字符串
+		 * @param {Number} idx							    -- 需要去查找的字符串
+		 * 这个是为了保存之前的get_node 方法仍然可以用, 而推出的替代方案.
+		 */
+		get_clip: function(temp_name, act_name, expression, data, idx) {
+			var html = this.get(temp_name);
+			if (!html) {
+				return '';
+			}
+			expression = this._fn_act_get_string_replace_words_before_exp(expression);
+			var node_arr = this._fn_act_get_nodes_by_tp_key_from_html(act_name, expression, html);
+			var i = 0, ni = node_arr.length, it, arr = [], data_mapping = data !== undefined ? this._fn_act_get_data_mapping(data) : null;
+			for (; i < ni; i++) {
+				it = node_arr[i];
+				if (this._fn_act_get_result_of_calc_formula(it.expression, data_mapping)) {
+					arr.push(it.outerHTML);
+				}
+			}
+			if (idx === undefined) {
+				idx = 0;
+			}
+			if (arr.length === 0 || !arr[idx]) {
+				return '';
+			}
+			return this._fn_act_get_replaced_html(arr[idx], data);
+		},
+
+		/**
+		 * @param {String} tp    -- if | loop 当前只有这两个
+		 * @param {String} key   -- 之前设定的data 里的key 值
+		 * @param {Object} data  -- 传入的data的值。
+		 * @param {String} str  -- 需要去查找的字符串
+		 * @param {Boolean} is_need_filter  -- 是否需要过滤值。
+		 * get_node 是从已经存在的模板里去抽取一些比如循环类的内容, 然后处理完成之后返回.
+		 */
+		get_node: function(tp, key, data, str, idx, is_need_filter) {
+			if (!tp || !key || !data || !str) {
+				return '';
+			}
+			var is_if = tp === 'if',
+				node_arr = this._fn_act_get_nodes_by_tp_key_from_html('act-' + tp, is_if ? key + ' (==|===|\!=|!==|\>|\<|\>=|\<=) ([^"]*)' : '([^\\s]*) (in|to) ' + key, str);  //返回的是一个数组, 里面包含所有可能的队列
+			if (!node_arr) {
+				return '';
+			}
+			var _val = data[key];
+			if (!is_if && _val === undefined) {
+				//loop 不能够接受任意null, undefined 等值. if 可以做为判断
+				return '';
+			}
+			var _html, _str;
+			if (is_if) {
+				//如果是if，则需要筛选出符合需求的数据
+				var _arr = [], i = 0, ni = node_arr.length, it;
+				var data_mapping = this._fn_act_get_data_mapping(data);
+				for (; i < ni; i++) {
+					it = node_arr[i];
+					if (!it) {
+						continue;
+					}
+					if (this._fn_act_get_result_of_calc_formula(it.expression, data_mapping)) {
+						_arr.push(it.outerHTML);
+					}
+				}
+				if (_arr.length === 0 || (idx && !_arr[idx])) {
+					return '';
+				}
+				_html = idx ? _arr[idx] : _arr[0];
+			} else {
+				_html = node_arr[node_arr[idx] ? idx : 0].outerHTML;
+			}
+			return (data !== undefined && data instanceof Object) || is_need_filter ? this._fn_act_get_replaced_html(_html, data) : _html;
+		},
+
+		/**
+		 * @Param {String} name									模板的名称
+		 * @Param {String} temp									模板的内容
+		 * 向模板list中添加新的模板内容
+		 */
+		addTemp: function(name, temp) {
+			if (this._temp_list[name]) {
+				return;
+			}
+			this._temp_list[name] = temp;
+		},
+
+		/**
+		 * @Param {String} name									模板的名称
+		 * 向模板list中删除名字为name的模板内容
+		 */
+		deleteTemp: function(name) {
+			if (!this._temp_list[name]) {
+				return;
+			}
+			delete this._temp_list[name];
+		},
+
+		/**
+		 * @Param {String} name									模板的名称
+		 * 按队列删除一系列模板
+		 */
+		deleteQueueTemp: function(arr) {
+			var i = 0, ni = arr.length;
+			for (; i < ni; i++) {
+				this.deleteTemp(arr[i]);
+			}
+		}
+	};
+	RC.template = template;
+})(window.RayCloud);
+
+
+/**
+ * @author Jerrod
+ */
+(function(RC) {
+	/**
+	 * controls  是指的框架里的可以的公有部分
+	 * 目前的controls都将很简单, 我们在不同的项目里各自定义他所需要的controls, 将之使用起来, 而不会影响到框架部分.
+	 */
+	if (!RC) {
+		window.RayCloud = RC = {};
+	}
+	if (!RC.controls) {
+		RC.controls = {};
+	}
+	function ctrls(params) {
+		var fn = function(opts) {
+			if (this.init) { //允许一些初始化的执行操作, 但是不返回结果.
+				return this.init(opts);
+			}
+			return this;
+		}, i;
+		for (i in params) {
+			fn.prototype[i] = params[i];
+		}
+		return fn;
+	}
+	RC.controls = {//所有的挂载的controls集合
+		_data_controls_list: {},
+		define: function(name, params) {
+			var list = this._data_controls_list;
+			if (!name || list[name]) {
+				//错误或者已存在
+				return;
+			}
+			var i;
+			list[name] = ctrls(params);
+		},
+		get: function(name, params) {
+			if (this._data_controls_list[name]) {
+				return new this._data_controls_list[name](params);
+			}
+			return false;
+		}
+	};
+})(window.RayCloud);
+
+
+// @koala-prepend '../../../raycloud-framework-pc-qn-v0/js/raycloud.js',
+// @koala-prepend '../../../raycloud-framework-pc-qn-v0/js/raycloud.events.js',
+// @koala-prepend '../../../raycloud-framework-pc-qn-v0/js/raycloud.localcache.js',
+// @koala-prepend '../../../raycloud-framework-pc-qn-v0/js/raycloud.pages.js',
+// @koala-prepend '../../../raycloud-framework-pc-qn-v0/js/raycloud.pages.hashchange.js',
+// @koala-prepend '../../../raycloud-framework-pc-qn-v0/js/raycloud.user.js',
+// @koala-prepend '../../../raycloud-framework-pc-qn-v0/js/raycloud.util.js',
+// @koala-prepend '../../../raycloud-framework-pc-qn-v0/js/raycloud.util.noti.js',
+// @koala-prepend '../../../raycloud-framework-pc-qn-v0/js/raycloud.servercall.js',
+// @koala-prepend '../../../raycloud-framework-pc-qn-v0/js/raycloud.modules.js',
+// @koala-prepend '../../../raycloud-framework-pc-qn-v0/js/raycloud.template.js',
+// @koala-prepend '../../../raycloud-framework-pc-qn-v0/js/raycloud.controls.js'

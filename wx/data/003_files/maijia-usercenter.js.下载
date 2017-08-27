@@ -1,0 +1,106 @@
+;/*!components/maijia-usercenter-header/src/person-header.js*/
+define('components/maijia-usercenter-header/src/person-header', function(require, exports, module) {
+
+  /**
+   * @require "components/maijia-usercenter-header/src/person-header.less"
+   */
+  var $ = require('components/jquery/jquery'),
+  	layout_html = "<div class=\"c-person-header\" id=\"c_maijia_uc_header\">\r\n\t<div class=\"inner\">\r\n\t\t<div class=\"header-logo clearfix\">\r\n\t\t\t<a href=\"http://www.maijia.com\" class=\"fl\">\r\n\t\t\t\t<img src=\"//cdn.maijia.com/maijia-common/components/maijia-usercenter-header/src/img/logo.png\" width=\"112\"  height=\"28\" alt=\"\">\r\n\t\t\t</a>\r\n\t\t\t<div class=\"fl tt\">\r\n\t\t\t\t个人中心<br>\r\n\t\t\t\t<span class=\"ln\">User Center</span>\r\n\t\t\t</div>\r\n\t\t</div>\r\n\t</div>\r\n</div>\r\n";
+  
+  
+  module.exports = {
+  	renderTo: function($dom){
+  		if($dom){
+  			this.$el = $(layout_html).appendTo($dom);
+  		}else{
+  			$('#c_maijia_uc_header').html($(layout_html).html());
+  			this.$el = $('#c_maijia_uc_header');
+  		}
+  	}
+  }
+
+});
+
+;/*!components/maijia-usercenter-menu/src/index.js*/
+define('components/maijia-usercenter-menu/src/index', function(require, exports, module) {
+
+  /**
+   * @require "components/maijia-usercenter-menu/src/index.less"
+   */
+  
+  var pushList = [],status = 0;
+  
+  var clearPush = function(){
+      var i = 0,l = pushList.length;
+      if(l>0){
+          for(;i<l;i++){
+              var item = pushList[i];
+              item.fn&&item.content&&item.fn.apply(item.content,item.params);
+          }
+          pushList = [];
+      }
+  }
+  
+  
+  var html = "<div class=\"personal-aside\" id=\"c_maijia_uc_menu\">\r\n    <dl>\r\n        <dt data-appname=\"user_vip\">\r\n            <a href=\"http://www.maijia.com/activity/user/vip/index.html\">会员功能</a>\r\n        </dt>\r\n    </dl>\r\n    <dl class=\"J_menu\">\r\n        <dt>\r\n            <a target=\"_blank\" href=\"http://www.maijia.com/index.html#/index/\">淘数据</a>\r\n            <div class=\"arr J_arr iconfont\" style=\"display:none\">&#xe6a3;</div>\r\n        </dt>\r\n        <div class=\"J_sub\">\r\n            <dd data-appname=\"shop\" class=\"J_data_menu\" >\r\n                <a href=\"http://www.taosj.com/index.html#/user/index/\">我监控的店铺</a>\r\n            </dd>\r\n            <dd data-appname=\"industry\" class=\"J_data_menu\" >\r\n                <a href=\"http://www.taosj.com/index.html#/user/index/?type=industry\">我监控的行业</a>\r\n            </dd>\r\n            <dd data-appname=\"item\" class=\"J_data_menu\" >\r\n                <a href=\"http://www.taosj.com/index.html#/user/index/?type=item\">我监控的宝贝</a>\r\n            </dd>\r\n            <!--\r\n            <div class=\"sp-c\">\r\n                <div class=\"sp\"></div>\r\n            </div>\r\n            <dd class=\"J_data_menu\" >\r\n                <a target=\"_blank\" href=\"http://www.maijia.com/industry/index.html\">行业数据</a>\r\n            </dd>\r\n            <dd class=\"J_data_menu\" >\r\n                <a target=\"_blank\" href=\"http://www.maijia.com/index.html#/shop/list/\">店铺监控</a>\r\n            </dd>\r\n            <dd class=\"J_data_menu\" >\r\n                <a target=\"_blank\" href=\"http://www.maijia.com/index.html#/shop/list/\">宝贝监控</a>\r\n            </dd>\r\n            <dd class=\"J_data_menu\" >\r\n                <a target=\"_blank\" href=\"http://www.maijia.com/tool/tool.htm#/shop/\">店铺诊断</a>\r\n            </dd>\r\n            <dd class=\"J_data_menu\" >\r\n                <a target=\"_blank\" target=\"_blank\" href=\"http://www.maijia.com/tool/tool.htm#/equities/\">宝贝排名</a>\r\n            </dd>\r\n            <dd class=\"J_data_menu\" >\r\n                <a target=\"_blank\" href=\"http://www.maijia.com/tool/tool.htm#/optimize_market/title/\">标题诊断</a>\r\n            </dd>\r\n            <dd class=\"J_data_menu\" >\r\n                <a target=\"_blank\" href=\"http://www.maijia.com/tool/tool.htm#/reduce_weight/\">隐形降权</a>\r\n            </dd>\r\n            -->\r\n            <dd data-appname=\"recharge_sms\" class=\"J_data_menu\" >\r\n                <a href=\"http://www.taosj.com/index.html#/user/warnconfig/\">短信邮件购买</a>\r\n            </dd>\r\n        </div>\r\n    </dl>\r\n\r\n    <dl>\r\n        <dt>\r\n            <a target=\"_blank\" href=\"http://xueyuan.maijia.com/\">卖家学院</a>\r\n            <div class=\"arr J_arr iconfont\" style=\"display:none\">&#xe6a3;</div>\r\n        </dt>\r\n        <div class=\"J_sub\">\r\n            <dd data-appname=\"xueyuan_courses\">\r\n                <a href=\"http://xueyuan.maijia.com/user/attend\">我报名的课程</a>\r\n            </dd>\r\n        </div>\r\n    </dl>\r\n    <dl>\r\n        <dt>\r\n            <a target=\"_blank\" href=\"http://www.maijia.com/news/\">卖家资讯</a>\r\n            <div class=\"arr J_arr iconfont\" style=\"display:none\">&#xe6a3;</div>\r\n        </dt>\r\n        <div class=\"J_sub\">\r\n            <dd data-appname=\"news_collection\">\r\n                <a href=\"http://www.maijia.com/news/user/collection\">收藏管理</a>\r\n            </dd>\r\n            <dd data-appname=\"news_subscribe\">\r\n                <a href=\"http://www.maijia.com/news/user/subscribe\">订阅管理</a>\r\n            </dd>\r\n            <dd data-appname=\"news_contribute\">\r\n                <a href=\"http://www.maijia.com/news/user/contribute\">投稿管理</a>\r\n            </dd>\r\n        </div>\r\n    </dl>\r\n    <dl>\r\n        <dt data-appname=\"order_list\">\r\n            <a href=\"http://order.maijia.com/index.html#/list/\">购买记录</a>\r\n        </dt>\r\n    </dl>\r\n    <dl>\r\n        <dt data-appname=\"i_message\">\r\n            <a href=\"http://i.maijia.com/index.html#/user/message/\">消息提醒</a>\r\n        </dt>\r\n    </dl>\r\n    <dl>\r\n        <dt data-appname=\"i_info\">\r\n            <a href=\"http://i.maijia.com/index.html\">个人设置</a>\r\n        </dt>\r\n    </dl>\r\n    <dl>\r\n        <dt data-appname=\"hognbao_list\">\r\n            <a href=\"http://hongbao.maijia.com/index.html#/list/\">我的红包</a>\r\n        </dt>\r\n    </dl>\r\n</div>",
+      $ = require('components/jquery/jquery');
+  
+  var returnPJ = {
+      renderTo:function(dom,opt){
+          var _this = this;
+          if(dom){
+              this.$el = $(html).appendTo(dom);
+          }else{
+              $('#c_maijia_uc_menu').html($(html).html());
+               this.$el = $('#c_maijia_uc_menu');
+          }
+          if(opt){
+              _this.update(opt);
+          }
+          this.bindEvent();
+      },
+      bindEvent:function(){
+          this.$el.find('.J_arr').on('click',function(e){
+              var dom = $(e.target);
+              if(dom.hasClass('close')){
+                  $(e.target).parents('dl').eq(0).find('.J_sub').slideDown();
+                  dom.removeClass('close');
+              }else{
+                  $(e.target).parents('dl').eq(0).find('.J_sub').slideUp();
+                  dom.addClass('close');
+              }
+          });
+      },
+      update:function(opt){
+          // if(status!=2){
+          //     pushList.push({
+          //         fn:this.update,
+          //         content:this,
+          //         params:arguments
+          //     });
+          //     return;
+          // }
+          if(opt.current){
+              $('#c_maijia_uc_menu').find('dd,dt').removeClass('active');
+              $('#c_maijia_uc_menu').find('dd[data-appname='+opt.current+']').addClass('active');
+              $('#c_maijia_uc_menu').find('dt[data-appname='+opt.current+']').addClass('active');
+          }
+          if(opt.showlist){
+              //目前用于处理job的菜单  -- job下线啦
+              // $('#c_maijia_uc_menu').find('.J_job').find('dt i').removeClass('down');
+              // $('#c_maijia_uc_menu').find('.hide').hide();
+              // if(typeof opt.showlist !== 'string'){
+              //     var i=0,l = opt.showlist.length;
+              //     for(;i<l;i++){
+              //         $('#c_maijia_uc_menu').find('dd[data-appname='+opt.showlist[i]+']').show();
+              //         $('#c_maijia_uc_menu').find('dt[data-appname='+opt.showlist[i]+']').show();
+              //     }
+              //     $('#c_maijia_uc_menu').find('.J_job').find('dt i').addClass('down');
+              // }
+          }
+      }
+  }
+  
+  module.exports = returnPJ;
+
+});

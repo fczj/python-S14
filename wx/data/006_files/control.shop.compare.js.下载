@@ -1,0 +1,278 @@
+define('controls/control.shop.compare', function(require, exports, module) {
+
+  /**
+   * @author xukang
+   */
+  ;(function($,RC){
+  	
+  
+  	var control = {
+  		_list:[],
+  		_status_is_show: false,
+  		_callbacks: null,
+  		_monitor_shop_list: [],
+  		init: function(opt) {
+  			opt = $.extend({
+                  add: function () {},
+                  remove: function() {}
+              }, opt);
+  
+  			this.addCallback = opt.add;
+  			this.removeCallback = opt.remove;
+  			this._fn_get_monitor_shop_list();
+  		},
+  		render: function(callbacks) {
+  			if(this._elm_dom_container){
+  				return;
+  			}
+  
+  			this._elm_dom_container = $('<div></div>').appendTo('body');
+  			this._elm_dom_container.html(RC.template.get('template.control.shop.compare'));
+  			this._fn_act_re_render();
+  			if (this.get().length) {
+  				this._elm_dom_container.find('.bd').show();
+  				this._status_is_show = true;
+  			}
+  			this._fn_event_bind();
+  		},
+  		get: function(){
+  			this._load();
+  			return this._list.slice(0);
+  		},
+  		add: function(params, callback){
+  			this._load();
+  
+  			var list = this._list, 
+  				idx = -1,
+  				index = -1,
+  				id = params.id;
+  
+  			for(var i=0; i<list.length; i++){
+  				if(list[i].id == id){
+  					idx = i;
+  					break;
+  				}
+  			}
+  			if(idx>-1){
+  				callback && callback();
+  				return;
+  			}
+  			this._list.push({id: id, name: params.name});
+  			this._save();
+  			this._fn_act_re_render(true);
+  			if ((index = this._fn_is_in_monitor_list(id)) > -1) {
+  				this._monitor_shop_list.splice(index, 1);
+  			}
+  			callback && callback();
+  		},
+  		remove: function(id, callback){
+  			this._load();
+  
+  			var list = this._list, idx = -1;
+  			for(var i=0; i<list.length; i++){
+  				if(list[i].id == id){
+  					idx = i;
+  					break;
+  				}
+  			}
+  			if(idx>-1){
+  				this._monitor_shop_list.push(this._list.splice(idx,1)[0]);
+  				this._save();
+  				this._fn_act_re_render();
+  			}
+  			callback && callback();
+  		},
+  		
+  		hide: function(){
+  			if(this._elm_dom_container){
+  				this._elm_dom_container.empty().html(''); 
+  			}
+  			return this;
+  		},
+  		clean: function(){
+  			this._list = [];
+  			$.cookie('__compare','',{expires: -1});
+  		},
+  		destroy: function(){
+  			if(this._elm_dom_container){
+  				this._fn_event_unbind();
+  				this.hide();
+  				this._elm_dom_container.empty().remove();
+  				this._elm_dom_container = null;
+  				this.addCallback = null;
+  				this.removeCallback = null;
+  				this._monitor_shop_list = [];
+  			}
+  			
+  		},
+  		_save: function(){
+  			$.cookie('__compare', JSON.stringify(this._list));
+  		},
+  		_load: function(){
+  			if(this._list.length){
+  				return;
+  			}
+  			if($.cookie('__compare')){
+  				try{
+  					this._list = JSON.parse($.cookie('__compare'));
+  				}catch(e){
+  					this._list = [];
+  				}
+  			}
+  		},
+  		_fn_act_re_render: function(isShow){
+  			var list = this.get(),
+  				ids = [];
+  
+  			$.each(list, function(idx, item){
+  				list[idx]._idx = idx+1;
+  				ids.push(item.id);
+  			});
+  			
+  			var data = {
+  				list: list,
+  				shopIds: ids.join(','),
+  				empty: new Array(5 - list.length)
+  			};
+  
+  			//这个只是为了使用模板引擎构造的数组
+  			for (var i = 0; i < data.empty.length; i++) {
+  				data.empty[i] = {e: i};
+  			}
+  			
+  			this._elm_dom_container.html(RC.template.get('template.control.shop.compare', data));
+  		    
+  		    if (this._status_is_show || isShow) {
+  		    	this._elm_dom_container.find('.bd').show();
+  		    }
+  			delete data.empty;
+  			return this;
+  		},
+  		//内部使用的add和remove,执行render传入的callback
+  		_fn_act_and: function(params) {
+  
+  			this.add(params);
+  			this.addCallback(params.id);
+  		},
+  		_fn_act_remove: function(id) {
+  			this.remove(id);
+  			this.removeCallback(id);
+  		},
+  		
+  		_fn_is_in_monitor_list: function(id) {
+  			var i = 0,
+  				monitor_shop_list = this._monitor_shop_list,
+  				l = this._monitor_shop_list.length;
+  
+  			for (; i < l; i++) {
+  				if (id == monitor_shop_list[i].id) {
+  					return i;
+  				}
+  			}
+  			return -1;
+  		},
+  		_fn_event_bind: function(){
+  			this._elm_dom_container.on('click', '.J_Compare', this._fn_event_handler_compare_proxy = $.proxy(this._fn_event_handler_compare, this));
+  			this._elm_dom_container.on('click', '.J_Remove', this._fn_event_remove_shop_proxy = $.proxy(this._fn_event_remove_shop, this));
+  			this._elm_dom_container.on('click', '.shop-pk-side-bar .hd', this._fn_event_toggle_compare_proxy =  $.proxy(this._fn_event_toggle_compare, this));
+  			this._elm_dom_container.on('click', '.J_Select', this._fn_event_select_shop_proxy =  $.proxy(this._fn_event_select_shop, this));
+  			this._elm_dom_container.on('click', '.J_Clean', this._fn_event_clean_proxy =  $.proxy(this._fn_event_clean, this));
+  		},
+  		_fn_event_unbind: function(){
+  			this._elm_dom_container.off('click', '.J_Compare', this._fn_event_handler_compare_proxy);
+  			this._elm_dom_container.off('click', '.J_Remove', this._fn_event_remove_shop_proxy);
+  			this._elm_dom_container.off('click', '.shop-pk-side-bar .hd', this._fn_event_toggle_compare_proxy);
+  			this._elm_dom_container.off('click', '.J_Select', this._fn_event_select_shop_proxy);
+  			this._elm_dom_container.off('click', '.J_Clean', this._fn_event_clean_proxy);
+  		},
+  		_fn_event_handler_compare: function(e){
+  			if (!this._list.length) {
+  				e.preventDefault();
+  			}
+  		},
+  		_fn_event_remove_shop: function(e) {
+  			this._fn_act_remove($(e.target).data('shopId'));
+  			this._fn_act_re_render();
+  		},
+  		_fn_event_toggle_compare: function() {
+  			this._elm_dom_container.find('.bd').toggle();
+  			this._status_is_show = !this._status_is_show;
+  		},
+  		_fn_event_select_shop: function(e) {
+  			var _this = this,
+  				$target = $(e.target),
+  				$selectPop = $(RC.template.get('template.control.shop.compare.select', {list: this._monitor_shop_list}));
+  			
+  			if (!_this._monitor_shop_list.length || $target.data('isclicked')) {
+  				return;
+  			}
+  			$target.data('isclicked', true);
+  			$target.after($selectPop);
+  			$(e.target).addClass('click');
+  
+  			var closeSelect = function() {
+  				$target.removeClass('click');
+  				$target.removeData('isclicked');
+  				$selectPop.off('click');
+  				$selectPop.parent().off('mouseleave');
+  				$selectPop.remove();
+  			};
+  			$selectPop.parent().on('mouseleave', function() {
+  				closeSelect();
+  			});
+  
+  			$selectPop.on('click', '.J_SelectClick', function(select_e) {
+  				var $target_sl = $(select_e.target),
+  					id = $target_sl.data('shopId'),
+  					monitor_shop_list = _this._monitor_shop_list;
+  
+  				_this._fn_act_and({id: id, name: $target_sl.text()});
+  				for(var i in monitor_shop_list) {
+  					if (monitor_shop_list[i].id === id) {
+  						monitor_shop_list.splice(i, 1);
+  						break;
+  					}
+  				}
+  				closeSelect();
+  			});
+  		},
+  		_fn_event_clean: function(e) {
+  			var list = this.get(),
+  				i = 0;
+  			for(; i < list.length; i++) {
+  				this._fn_act_remove(list[i].id);
+  			}
+  		},
+  		_fn_get_monitor_shop_list: function() {
+  			this._load();
+  
+  			var _this = this,
+  				list = _this._list;
+  			if (RC.user.get('_login_status')) {
+  				API.user_monitor_shop_list({}, function(json) {
+  					var objectList = {},
+  						i = 0;
+  
+  					for (; i < list.length; i++) {
+  						objectList[list[i].id] = list[i].name;
+  					}
+  					_this._monitor_shop_list = [];
+  					$.each(json.data.list, function(i, o) {
+  						if (objectList[o.id] || !o.name) {
+  							return;
+  						}
+  						_this._monitor_shop_list.push({
+  							id: o.id,
+  							name: o.name
+  						});
+  					});
+  				}, function() {}, false, false, false);
+  			}
+  			
+  		}
+  	};
+  
+  	RC.controls.define('control.shop.compare', control);
+  })(jQuery,RayCloud);
+
+});

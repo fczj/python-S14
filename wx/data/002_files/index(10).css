@@ -1,0 +1,66 @@
+.help-tip {
+  display: inline-block;
+  height: 20px;
+  width: 20px;
+  position: relative;
+  z-index: 100;
+  float: left;
+  top: 2px;
+}
+.help-tip:after {
+  display: table;
+  content: "";
+  clear: both;
+}
+.help-tip .help-icon {
+  background-image: url("//cdn.taosj.com/data-www-shop/modules/shop/detail/title/optimize/table/help-tips/help.png");
+  background-repeat: no-repeat;
+  height: 16px;
+  position: relative;
+  top: -1px;
+  float: left;
+  cursor: pointer;
+  display: inline-block;
+  width: 16px;
+}
+.help-tip:hover div.help-tip_body {
+  display: inline-block;
+  position: absolute;
+  left: 2px;
+  top: 0;
+}
+.help-tip .help-tip_body {
+  float: left;
+  top: 0px;
+  margin-top: 10px;
+  margin-left: 8px;
+  display: none;
+}
+.help-tip .arrow-top {
+  height: 0;
+  width: 0;
+  border: 6px solid;
+  opacity: .7;
+  margin-left: -8px;
+  border-color: transparent transparent #000;
+  display: block;
+}
+.help-tip p {
+  text-indent: 0;
+  word-break: normal;
+  margin: 0;
+  -moz-box-shadow: 0 0;
+  position: relative;
+  left: -45%;
+  width: 165px;
+  border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  line-height: 1.5em;
+  text-align: left;
+  background: #000;
+  opacity: .7;
+  font-size: 12px;
+  color: #FDF8F6;
+  padding: 10px 2px 10px 10px;
+}

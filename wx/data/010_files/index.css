@@ -1,0 +1,230 @@
+.modules-shop-title-optimize .hottable-con .page-con {
+  padding: 20px 20px;
+}
+.modules-shop-title-optimize .hottable-con img {
+  border: 1px solid #eee;
+  height: 80px;
+  width: 80px;
+}
+.modules-shop-title-optimize .hottable-con td,
+.modules-shop-title-optimize .hottable-con th {
+  text-indent: 10px;
+}
+.modules-shop-title-optimize .hottable-con .th-text {
+  float: left;
+}
+.modules-shop-title-optimize .hottable-con .loading {
+  height: 100px;
+  background: url(//cdn.taosj.com/data-www-shop/modules/shop/detail/title/optimize/hottable/img/loading.gif) no-repeat 50px center;
+}
+.modules-shop-title-optimize .hottable-con table {
+  border: none;
+  border-top: 1px solid #eee;
+}
+.modules-shop-title-optimize .hottable-con .addtitle-button {
+  padding: 0px 10px;
+  display: inline-block;
+  min-width: 60px;
+  color: #fff;
+  border-radius: 3px;
+  line-height: 30px;
+  text-align: center;
+  text-indent: 0;
+  font-size: 14px;
+  cursor: pointer;
+  background-color: #3bac8a;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination {
+  *zoom: 1;
+  text-align: left;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination:after {
+  content: "";
+  display: table;
+  height: 0;
+  clear: both;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination.ui-pagination-center {
+  text-align: center;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination.ui-pagination-right {
+  text-align: right;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination .ui-pages {
+  display: inline-block;
+  *display: inline;
+  vertical-align: middle;
+  text-align: center;
+  *zoom: 1;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination .ui-pages:after {
+  content: "";
+  display: table;
+  height: 0;
+  clear: both;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination .ui-page-no {
+  display: inline;
+  float: left;
+  margin-left: 10px;
+  line-height: 30px;
+  font-size: 18px;
+  padding: 0 10px;
+  color: #999999;
+  background: #f5f5f5;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination .ui-page-no:hover {
+  background: #f87720;
+  color: #fff;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination .ui-page-no.ui-page-cur {
+  background: transparent;
+  color: #f87720;
+  cursor: default;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination .ui-page-no.ui-page-prev,
+.modules-shop-title-optimize .hottable-con .ui-pagination .ui-page-no.ui-page-next {
+  width: 9px;
+  height: 30px;
+  color: transparent;
+  font-size: 0;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination .ui-page-no.ui-page-prev {
+  background: #f5f5f5 url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAMCAYAAACulacQAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyhpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDY3IDc5LjE1Nzc0NywgMjAxNS8wMy8zMC0yMzo0MDo0MiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTUgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6NEYzNkM2Nzk5RDgxMTFFNTk3QTBGNjA0RDMwOEY0RDQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6NEYzNkM2N0E5RDgxMTFFNTk3QTBGNjA0RDMwOEY0RDQiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo0RjM2QzY3NzlEODExMUU1OTdBMEY2MDREMzA4RjRENCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo0RjM2QzY3ODlEODExMUU1OTdBMEY2MDREMzA4RjRENCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pvjv/fYAAABfSURBVHjaYvz//z8DMpg1a5YMkNoDxH8YkSWhEgeAWBmIb8Il0STuArEDCy6JtLS0J8xSUlJYJUCamKCWY0jAJHECkKQLVBdI9wGo/RBJqDEO2BTg9QpxgYAt+AACDADoKEDoRzgsYgAAAABJRU5ErkJggg==) no-repeat center center;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination .ui-page-no.ui-page-prev:hover {
+  background: #f87720 url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAMCAYAAACulacQAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyhpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDY3IDc5LjE1Nzc0NywgMjAxNS8wMy8zMC0yMzo0MDo0MiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTUgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6NEYzNkM2N0Q5RDgxMTFFNTk3QTBGNjA0RDMwOEY0RDQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6NEYzNkM2N0U5RDgxMTFFNTk3QTBGNjA0RDMwOEY0RDQiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo0RjM2QzY3QjlEODExMUU1OTdBMEY2MDREMzA4RjRENCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo0RjM2QzY3QzlEODExMUU1OTdBMEY2MDREMzA4RjRENCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pgxs784AAABGSURBVHjaYvz//z8DGpAB4j1A/IcBJImEZYD4zn8IuIFLAkTL4JQAW4dLAiZ5A5sECDMx4AOEjMXrIIJewRoIjPiCDyDAANoh3/EPiw8/AAAAAElFTkSuQmCC) no-repeat center center;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination .ui-page-no.ui-page-next {
+  background: #f5f5f5 url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAMCAYAAACulacQAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAEFkb2JlIEltYWdlUmVhZHlxyWU8AAADKGlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS42LWMwNjcgNzkuMTU3NzQ3LCAyMDE1LzAzLzMwLTIzOjQwOjQyICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxNSAoTWFjaW50b3NoKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo0RjM2QzY3OTlEODExMUU1OTdBMEY2MDREMzA4RjRENCIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo0RjM2QzY3QTlEODExMUU1OTdBMEY2MDREMzA4RjRENCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjRGMzZDNjc3OUQ4MTExRTU5N0EwRjYwNEQzMDhGNEQ0IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjRGMzZDNjc4OUQ4MTExRTU5N0EwRjYwNEQzMDhGNEQ0Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8++O/99gAAAHxJREFUKFN9j70NgCAUhJ/oFMTOwjUsmIWdYBYLhrCxsHMME7wzSIKol3x5Cd/x1zjnFhHpgLHW7pg5ClCMIHjvey7eoTRgAwMoCiodNYGq0MQYOSUtBMACi1OWzKOw8s7P/B577XwTfGirtX4VmNc/Z1AJhvIAKyiEiMgJReo5BLFtQ6sAAAAASUVORK5CYII=) no-repeat center center;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination .ui-page-no.ui-page-next:hover {
+  background: #f87720 url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAMCAYAAACulacQAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAEFkb2JlIEltYWdlUmVhZHlxyWU8AAADKGlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS42LWMwNjcgNzkuMTU3NzQ3LCAyMDE1LzAzLzMwLTIzOjQwOjQyICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxNSAoTWFjaW50b3NoKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo0RjM2QzY3RDlEODExMUU1OTdBMEY2MDREMzA4RjRENCIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo0RjM2QzY3RTlEODExMUU1OTdBMEY2MDREMzA4RjRENCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjRGMzZDNjdCOUQ4MTExRTU5N0EwRjYwNEQzMDhGNEQ0IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjRGMzZDNjdDOUQ4MTExRTU5N0EwRjYwNEQzMDhGNEQ0Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+DGzvzgAAAFBJREFUKFN9kMEJACAMA4tzuP9EPny4S809FCvVQAKaq0jN3Zvc5Spz3iYo0JADQHBBgQKwqBRYZQqc5Q30Yj+JyKbCs88PpQUmvkt4rM9tAmVBA8JmAXSaAAAAAElFTkSuQmCC) no-repeat center center;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination .ui-page-no.disabled {
+  color: #999999;
+  background: #f5f5f5;
+  cursor: default;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination .ui-page-no:first-child {
+  margin-left: 0;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination .ui-page-more {
+  float: left;
+  margin-left: 10px;
+  height: 30px;
+  width: 16px;
+  text-align: center;
+  line-height: 30px;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination.ui-page-size {
+  float: left;
+  color: #999999;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination form {
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 30px;
+  color: #999999;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination form input {
+  width: 3em;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination-complex {
+  color: #666;
+  *zoom: 1;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination-complex:after {
+  content: "";
+  display: table;
+  height: 0;
+  clear: both;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination-complex .ui-pagination-pagesize {
+  display: inline;
+  float: left;
+  line-height: 30px;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination-complex .ui-pagination-pagesize span {
+  vertical-align: middle;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination-complex .ui-pagination-pagesize select {
+  padding: 5px 0;
+  margin: 0 3px;
+  line-height: 20px;
+  border: 1px solid #dddddd;
+  vertical-align: middle;
+  outline: 0;
+  color: #666666;
+  border-radius: 2px;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination-complex .ui-pagination {
+  display: inline;
+  float: right;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination-complex .ui-pagination-pagetotal {
+  display: inline;
+  float: right;
+  line-height: 30px;
+  margin-left: 20px;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination-complex .ui-pagination-pagetotal span {
+  vertical-align: middle;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination-complex .ui-pagination-pagetotal .ui-pagination-pagenum {
+  -webkit-transition: width 0.2s, border-color 0.4s, box-shadow 0.4s;
+  transition: width 0.2s, border-color 0.4s, box-shadow 0.4s;
+  width: 3em;
+  margin: 0 3px;
+  border: 1px solid #dddddd;
+  vertical-align: middle;
+  outline: 0;
+  color: #666666;
+  box-sizing: border-box;
+  height: 30px;
+  *height: auto;
+  line-height: 20px;
+  padding: 5px 6px;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination-complex .ui-pagination-pagetotal .ui-pagination-pagenum:focus {
+  width: 5em;
+  border-color: #5ea6c2;
+  outline: 0;
+  box-shadow: 0 0 2px 2px rgba(94, 166, 194, 0.2);
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination-complex .ui-pagination-ok {
+  min-width: 3.2em;
+  font-size: 14px;
+  line-height: 28px;
+  display: inline-block;
+  *display: inline;
+  *zoom: 1;
+  padding: 0 3px;
+  margin-bottom: 0;
+  margin-left: 10px;
+  text-align: center;
+  vertical-align: middle;
+  background-image: none;
+  cursor: pointer;
+  color: #666;
+  background-color: #fbfbfb;
+  border: 1px solid #eee;
+  white-space: nowrap;
+  word-break: keep-all;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  text-decoration: none;
+  box-sizing: content-box;
+  overflow: visible;
+}
+.modules-shop-title-optimize .hottable-con .ui-pagination-complex .ui-pagination-ok:hover {
+  background-color: #f87720;
+  border-color: #f87720;
+  color: #fff;
+}
