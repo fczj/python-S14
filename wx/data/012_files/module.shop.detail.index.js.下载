@@ -1,0 +1,1735 @@
+define('modules/shop/detail/index/module.shop.detail.index', function(require, exports, module) {
+
+  /**
+   @author xukang
+   */
+  ;(function ($, RC) {
+      var Shop = RC.controls.get('control.shop.model'),
+          querystring = RC.controls.get('control.querystring');
+      var dateutils = require('widget/dateutils');
+      var date_list = [];
+      var today = new Date();
+      date_list.push({
+          name: '最近30天',
+          value: '1'
+      });
+      if (today.getDate() > 15) {
+          today = dateutils.add(dateutils.DAY, today, -10);
+      }
+      for (var i = 0; i < 6; i++) {
+          var date = dateutils.add(dateutils.MONTH, today, -(i + 1));
+          date_list.push({
+              name: dateutils.format(date, 'YYYY/MM'),
+              value: new Date(dateutils.format(date, 'YYYY/MM') + "/01").getTime()
+          });
+      }
+      var deepClone = function (data) {
+          if (!_.isArray(data) && !_.isObject(data)) {
+              return data;
+          }
+          var o = _.isArray(data) ? [] : {};
+          _.each(data, function (value, key) {
+              if (_.isArray(value) || _.isObject(value)) {
+                  o[key] = deepClone(value);
+              } else {
+                  o[key] = value;
+              }
+          });
+          return o;
+      };
+  
+      var servicePromiseMap = [];
+      servicePromiseMap.push({name: "信用卡支付", code: 1001, "class": "c_1_1", pay: 1});
+      servicePromiseMap.push({name: "货到付款", code: 1002, "class": "c_1_2", pay: 1});
+      servicePromiseMap.push({name: "支付宝", code: 1003, "class": "c_1_4", pay: 1});
+      servicePromiseMap.push({name: "集分宝", code: 1004, "class": "c_1_5", pay: 1});
+      servicePromiseMap.push({name: "余额宝", code: 1005, "class": "c_1_6", pay: 1});
+      servicePromiseMap.push({name: "余额宝分期付款", code: 1006, "class": "c_1_7", pay: 1});
+      servicePromiseMap.push({name: "运费险", code: 1007, "class": "c_2_1"});
+      servicePromiseMap.push({name: "质量安全", code: 1008, "class": "c_2_4"});
+      servicePromiseMap.push({name: "品牌授权", code: 1009, "class": "c_2_5"});
+      servicePromiseMap.push({name: "第三方质检认证", code: 1010, "class": "c_2_6"});
+      servicePromiseMap.push({name: "小时发货", code: 1011, append: 1, "class": "c_4_2"});
+      servicePromiseMap.push({name: "7天无理由退货", code: 1012, "class": "c_4_3"});
+      servicePromiseMap.push({name: "假一罚三", code: 1013, "class": "c_4_4"});
+      servicePromiseMap.push({name: "消费者保障服务", code: 1014, "class": "c_4_5"});
+      servicePromiseMap.push({name: "破损补寄", code: 1015, "class": "c_4_6"});
+      servicePromiseMap.push({name: "品质承诺", code: 1016, "class": "c_4_7"});
+      servicePromiseMap.push({name: "天退货", code: 1017, append: 1, "class": "c_4_8"});
+      servicePromiseMap.push({name: "免费换新", code: 1018, "class": "c_4_9"});
+      servicePromiseMap.push({name: "海外直邮", code: 1019, "class": "c_4_10"});
+      servicePromiseMap.push({name: "新品", code: 1020, "class": "c_5_1"});
+      servicePromiseMap.push({name: "公益宝贝", code: 1021, "class": "c_6_1"});
+      servicePromiseMap.push({name: "淘宝充值平台", code: 1022, "class": "c_6_2"});
+      servicePromiseMap.push({name: "品质保证", code: 1023, "class": "c_6_3"});
+      servicePromiseMap.push({name: "鞋类三包", code: 1024, "class": "c_3_8"});
+  
+      var mdul = {
+          name: 'shop.detail.index',
+          depend: 'shop',
+          _elem_root: '#main',
+          _elem_template_name: 'template.shop.detail.index',
+          _dsr_json_data: null,
+          // dom init
+          _fn_dom_render: function (hashs) {
+              if (this.$el) {
+                  return;
+              }
+              // init
+              hashs._status_list_list = 0;
+              this.$el = $(RC.template.get(this._elem_template_name, hashs)).appendTo(this._elem_root);
+              this.$el.find(".J_panel_sale_detail").html($(RC.template.get(this._elem_template_unsale_content, hashs)));
+              this._fn_event_bind();
+              // window.location.reload();
+          },
+          // translate dsr for template
+          _fn_data_format_dsr: function (dsr) {
+              dsr = dsr || '';
+              dsr = dsr.replace(/^\{/, '');
+              if (dsr.indexOf("}") == dsr.length - 1) {
+                  dsr = dsr.substring(0, dsr.length - 1);
+              }
+              dsr = dsr.split(';');
+              var o = {};
+              _.each(dsr, function (item, idx) {
+                  var x = item.split(':'),
+                      key = x[0],
+                      value = x[1];
+                  if (key) {
+                      o[key] = value;
+                  }
+  
+              });
+  
+              if (o.sgr) {
+                  o.sgr = o.sgr.replace(/\%$/, '') - 0;
+              }
+              if (o.mg) {
+                  o.mg = o.mg.replace(/\%$/, '') - 0;
+              }
+              if (o.sg) {
+                  o.sg = o.sg.replace(/\%$/, '') - 0;
+              }
+              if (o.cg) {
+                  o.cg = o.cg.replace(/\%$/, '') - 0;
+              }
+  
+              return o;
+          },
+          _fn_data_translate_dsr_new: function (dsr_str) {
+              var dsr = this._fn_data_format_dsr(dsr_str);
+              dsr.rate_num = dsr.rate_num || 0;
+              _dsr_json_data = dsr;
+              var data = {
+                  mas: '---',
+                  mg: '---',
+                  sas: '---',
+                  sg: '---',
+                  cas: '---',
+                  cg: '---'
+              };
+              data.rate_num = dsr.rate_num;
+              data.mas = dsr.mas || data.mas;
+              if (dsr.mg > 0) {
+                  data.mg = '高于同行业 <nobr><span style="display:inline-block;width:40px;color:#e6283e;" >' + dsr.mg + '%</span></nobr>';
+              } else if (dsr.mg == 0) {
+                  data.mg = '持平同行业 <nobr><span style="display:inline-block;width:40px;color:#b31102;" > - - -</span></nobr>';
+              } else {
+                  data.mg = '低于同行业 <nobr><span style="display:inline-block;width:40px;color:#1f7700;" >' + Math.abs(dsr.mg) + '%</span></nobr>';
+              }
+              data.sas = dsr.sas || data.sas;
+              if (dsr.sg > 0) {
+                  data.sg = '高于同行业 <nobr><span style="display:inline-block;width:40px;color:#e6283e;" class="fc-red">' + dsr.sg + '%</span></nobr>';
+              } else if (dsr.sg == 0) {
+                  data.sg = '持平同行业 <nobr><span style="display:inline-block;width:40px;color:#b31102;" class="fc-red"> - - -</span></nobr>';
+              } else {
+                  data.sg = '低于同行业 <nobr><span style="display:inline-block;width:40px;color:#1f7700;" class="fc-green">' + Math.abs(dsr.sg) + '%</span></nobr>';
+              }
+              data.cas = dsr.cas || data.cas;
+              if (dsr.cg > 0) {
+                  data.cg = '高于同行业 <nobr><span style="display:inline-block;width:40px;color:#e6283e;" class="fc-red">' + dsr.cg + '%</span></nobr>';
+              } else if (dsr.cg == 0) {
+                  data.cg = '持平同行业 <nobr><span style="display:inline-block;width:40px;color:#b31102;" class="fc-red"> - - -</span></nobr>';
+              } else {
+                  data.cg = '低于同行业 <nobr><span style="display:inline-block;width:40px;color:#1f7700;" class="fc-green">' + Math.abs(dsr.cg) + '%</span></nobr>';
+              }
+              if (!isNaN(data.mas)) {
+                  data.mas = parseFloat(data.mas).toFixed(5);
+              }
+              if (!isNaN(data.sas)) {
+                  data.sas = parseFloat(data.sas).toFixed(5);
+              }
+              if (!isNaN(data.cas)) {
+                  data.cas = parseFloat(data.cas).toFixed(5);
+              }
+              return data;
+          },
+          _fn_data_translate_dsr: function (dsr) {
+              var dsr = this._fn_data_format_dsr(dsr);
+  
+              var data = {
+                  mas: '-',
+                  mg: '-',
+                  sas: '-',
+                  sg: '-',
+                  cas: '-',
+                  cg: '-'
+              };
+  
+              if (dsr.mg) {
+                  data.mas = dsr.mas || data.mas;
+                  if (dsr.mg > 0) {
+                      data.mas = '<span class="fc-red">' + data.mas + ' <i class="icon icon-sign-up"></i></span>';
+                      data.mg = '高于 ' + dsr.mg + ' %';
+                  } else if (dsr.mg == 0) {
+                      data.mas = '<span class="fc-blue">' + data.mas + ' <i class="icon icon-sign-eq"></i></span>';
+                      data.mg = '持平';
+                  } else {
+                      data.mas = '<span class="fc-green">' + data.mas + ' <i class="icon icon-sign-down"></i></span>';
+                      data.mg = '低于 ' + Math.abs(dsr.mg) + ' %';
+                  }
+              }
+  
+              if (dsr.sg) {
+                  data.sas = dsr.sas || data.sas;
+                  if (dsr.sg > 0) {
+                      data.sas = '<span class="fc-red">' + data.sas + ' <i class="icon icon-sign-up"></i></span>';
+                      data.sg = '高于 ' + dsr.sg + ' %';
+                  } else if (dsr.sg == 0) {
+                      data.sas = '<span class="fc-blue">' + data.sas + ' <i class="icon icon-sign-eq"></i></span>';
+                      data.sg = '持平';
+                  } else {
+                      data.sas = '<span class="fc-green">' + data.sas + ' <i class="icon icon-sign-down"></i></span>';
+                      data.sg = '低于 ' + Math.abs(dsr.sg) + ' %';
+                  }
+              }
+  
+              if (dsr.cg) {
+                  data.cas = dsr.cas || data.cas;
+                  if (dsr.cg > 0) {
+                      data.cas = '<span class="fc-red">' + data.cas + ' <i class="icon icon-sign-up"></i></span>';
+                      data.cg = '高于 ' + dsr.cg + ' %';
+                  } else if (dsr.cg == 0) {
+                      data.cas = '<span class="fc-blue">' + data.cas + ' <i class="icon icon-sign-eq"></i></span>';
+                      data.cg = '持平';
+                  } else {
+                      data.cas = '<span class="fc-green">' + data.cas + ' <i class="icon icon-sign-down"></i></span>';
+                      data.cg = '低于 ' + Math.abs(dsr.cg) + ' %';
+                  }
+              }
+  
+              return data;
+          },
+          _elem_template_unsale_content: 'template.shop.detail.sale_detail_content',
+          _fn_ctrl_match_compare: function (id) {
+              if (!$.cookie) {
+                  return false;
+              }
+              var _list = null;
+              if ($.cookie('__compare')) {
+                  try {
+                      _list = JSON.parse($.cookie('__compare'));
+                  } catch (e) {
+                      _list = [];
+                  }
+                  for (var i = 0, len = _list.length; i < len; i++) {
+                      if (id == _list[i].id) {
+                          return true;
+                      }
+                  }
+              }
+              return false;
+          },
+          // 更新DOM,店铺基本信息
+          _fn_dom_update_info: function (data, hashs) {
+              // translate data for template
+              data = _.extend({
+                  "favor": "-",
+                  "name": "-",
+                  "sellerNick": "-",
+                  //"amount30": "-",
+                  //"price30" : "-",
+                  "catCount": "-",
+                  "brandCount": "-",
+                  "itemCount": "-",
+                  "isMonitor": 0,
+                  "catName": "",
+                  _status_info: 1
+              }, data);
+              var dateUtil = RC.util.date;
+              // dateUtil.getdate(shopInfo.__updateTime, 'YY-MM-DD'),
+              if (data.createDate) {
+                  data.createDate_d = dateUtil.getdate(new Date(data.createDate), 'YY-MM-DD');
+              }
+              _.extend(data, this._fn_data_translate_dsr(data.dsr));
+              data._is_compare = this._fn_ctrl_match_compare(data.id) ? 1 : 0;
+              data._from_banner = hashs.from === 'banner';
+  
+              this._fn_prosime_str_parser(data);
+  
+              this.$el.find('.J_Shop_Info').html(RC.template.get_node('if', '_status_info', data, RC.template.get(this._elem_template_name), 0));
+          },
+          _fn_prosime_str_parser: function (data) {
+              if (!data || !data.servicePromise) {
+                  data.pay_html = 1;
+                  data.promise_html = 1;
+                  return;
+              }
+              var promise_arr = data.servicePromise.split(",");
+              var promise_html = '';
+              var pay_html = '';
+              $(promise_arr).each(function (index, item) {
+                  var code = 0;
+                  var val = undefined;
+                  if (item.indexOf(":") != -1) {
+                      code = item.split(":")[0];
+                      val = item.split(":")[1]
+                  } else {
+                      code = item;
+                  }
+                  var text = '';
+                  var b_class = '';
+                  var pay = undefined;
+                  for (var i = 0, length = servicePromiseMap.length; i < length; i++) {
+                      if (servicePromiseMap[i].code == code) {
+                          if (servicePromiseMap[i].append == 1 && val) {
+                              text = val + servicePromiseMap[i].name;
+                          } else {
+                              text = servicePromiseMap[i].name;
+                          }
+                          b_class = servicePromiseMap[i]["class"];
+                          pay = servicePromiseMap[i].pay;
+                          break;
+                      }
+                  }
+                  if (text && text != '') {
+                      var itemHtml = '<div style="display:inline-block;margin-right:20px;"><span style="color:#666;font: 12px/1.5 \'lucida grande\',tahoma,arial,sans-serif;"><b class="shop_info_service_promission_icon ' + b_class + '"></b>&nbsp;' + text + '</span></div>';
+                      if (pay) {
+                          pay_html += itemHtml;
+                      } else {
+                          promise_html += itemHtml;
+                      }
+                  }
+              });
+              if (!pay_html || pay_html == '') {
+                  pay_html = 1;
+              }
+              if (!promise_html || promise_html == '') {
+                  promise_html = 1;
+              }
+              data.pay_html = pay_html;
+              data.promise_html = promise_html;
+              // servicePromiseMap
+          },
+          _fn_dom_update_info_compare: function (text) {
+              this.$el.find('.J_AddCompare').html(text);
+          },
+          //dsr
+          _fn_dom_update_dsr: function (hashs, data) {
+              // translate data for template
+              data._avg_price = data.price30 && data.offer30 ? (data.price30 / data.offer30).toFixed(2) : '-';
+              data = _.extend({
+                  "offer30": "-",
+                  "amount30": "-",
+                  "price30": "-",
+                  _status_dsr: 1
+              }, data);
+              // data.drsJson = this._fn_drs_map(data.dsr);
+              data.drsJson = this._fn_data_translate_dsr_new(data.dsr);
+              // render
+              data.__status = Shop.getModel(hashs.id).data_shop_info_dsr();
+              data.__status_html = Shop.getModel(hashs.id).data_shop_info_dsr_html();
+              this.$el.find('.J_Shop_Dsr').html(RC.template.get_node('if', '_status_dsr', data, RC.template.get(this._elem_template_name), 0));
+          },
+          _fn_drs_map: function (drs_str) {
+              // {srn:10833369;sgr:100.00%;mas:4.90;mg:31.62%;sas:4.85;sg:26.50%;cas:4.89;cg:48.84%;encryptedUserId:UvFkLOFkGOFvb}
+              var arr = drs_str.split(";");
+              var obj = {};
+              var length = arr.length;
+              for (var i = 0; i < length; i++) {
+                  if (arr[i]) {
+                      var arr_2_ = arr[i].split(":");
+                      if (arr_2_[0] && arr_2_[1]) {
+                          if (!isNaN(arr_2_[1])) {
+                              obj[arr_2_[0]] = parseFloat(arr_2_[1]).toFixed(5);
+                          } else {
+                              obj[arr_2_[0]] = arr_2_[1];
+                          }
+                      }
+                  }
+              }
+              return obj;
+          },
+          //最近30天店铺概况
+          _fn_dom_update_overview: function (data) {
+              // translate data for template
+              data._avg_price = data.price30 && data.offer30 ? (data.price30 / data.offer30).toFixed(2) : '-';
+              if (data.amount30) {
+                  data.avg_amount = (data.amount30 / 30).toFixed(0);
+              } else {
+                  data.amount30 = "-";
+              }
+              if (data.price30 && data.amount30) {
+                  data.avg_a_price = (data.price30 / data.amount30).toFixed(2);
+              }
+              if (data.price30) {
+                  data.avg_price = (data.price30 / 30).toFixed(0);
+                  if (data.price30 > 10000) {
+                      data.price30 = (data.price30 / 10000).toFixed(2) + "万元";
+                  } else {
+                      data.price30 = data.price30 + "元";
+                  }
+                  if (data.avg_price > 10000) {
+                      data.avg_price = (data.avg_price / 10000).toFixed(2) + "万元";
+                  } else {
+                      data.avg_price = data.avg_price + "元";
+                  }
+              } else {
+                  data.price30 = "-元";
+              }
+              data = _.extend({
+                  "offer30": "-",
+                  "avg_price": "-元",
+                  "avg_a_price": "-",
+                  "avg_amount": "-",
+                  "amount30": "-",
+                  "price30": "-",
+                  _status_overview: 1
+              }, data);
+  
+              var dsr_o = this._fn_data_format_dsr(data.refundDetail);
+              if (dsr_o.avgRefund_localVal) {
+                  dsr_o.avgRefund_localVal += "天";
+              } else {
+                  dsr_o.avgRefund_localVal = "-";
+              }
+  
+              if (dsr_o.ratRefund_localVal) {
+                  dsr_o.ratRefund_localVal += "%";
+              } else {
+                  dsr_o.ratRefund_localVal = "-";
+              }
+  
+              if (dsr_o.complaints_localVal) {
+                  dsr_o.complaints_localVal += "%";
+              } else {
+                  dsr_o.complaints_localVal = "-";
+              }
+  
+              if (dsr_o.punish_localVal) {
+              } else {
+                  dsr_o.punish_localVal = "-";
+              }
+              data = _.extend(dsr_o, data);
+              // dsr_o.
+              this.$el.find('.J_Shop_Overview').html(RC.template.get_node('if', '_status_overview', data, RC.template.get(this._elem_template_name), 0));
+          },
+          //
+          _fn_dom_update_data_shop_item_ontxn_time_list: function (data) {
+              data._stauts_data_shop_item_ontxn_time_list = 1;
+              data.list = data.list || [];
+              data._list_length = data.list.length;
+              //render
+              this.$el.find('.J_Index_data_shop_item_ontxn_time_list').html(RC.template.get_node('if', '_stauts_data_shop_item_ontxn_time_list', data, RC.template.get(this._elem_template_name), 0));
+              var $elem = this.$el.find('.J_Index_data_shop_item_ontxn_time_list').find('.J_Charts');
+              if ($elem && $elem.length) {
+                  this._fn_dom_update_data_shop_item_ontxn_time_list_charts(data.list, $elem);
+              }
+          },
+          _fn_dom_update_data_shop_item_ontxn_time_list_charts: function (list, $elem) {
+              if (!$elem.highcharts) {
+                  return;
+              }
+              var chartColor = RC.controls.get('control.config').chartColor;
+              var categories = [], data = [];
+              for (var i = 0; i < list.length; i++) {
+                  categories.push(list[i].hour);
+                  data.push(list[i].price);
+              }
+              var opt = {
+                  title: {text: ' '},
+                  xAxis: {categories: categories},
+                  yAxis: {title: {text: ' '}, min: 0},
+                  tooltip: {valueSuffix: '元', headerFormat: '{point.key}时<br>',},
+                  legend: false,
+                  series: [{
+                      name: '销售额',
+                      data: data,
+                      color: chartColor[0]
+                  }]
+              };
+              $elem.highcharts(opt);
+          },
+          //最近30天成交类目分析
+          _fn_dom_update_analysis_anatxncat_30: function (data, type) {
+              //translate for template
+              data._status_anatxncat_30 = 1;
+              data.type = type;
+              //render
+              // this.$el.find('.J_Analysis_Anatxncat_30').html(RC.template.get_node('if','_status_anatxncat_30',data,RC.template.get(this._elem_template_name),0));
+              // <option act-loop="item in date_list" value="{{item.value}}">{{item.name}}</option>
+              this.$el.find('.J_Analysis_Anatxncat_30').html(RC.template.get('template.shop.detail.sale_detail_content_cat', data));
+              if (data.cur_date) {
+                  this.$el.find('.J_cat_select').val(data.cur_date);
+              }
+              var a = 1;
+              this._fn_dom_update_analysis_anatxncat_30_charts(data.list || []);
+          },
+          _fn_dom_update_analysis_anatxncat_30_charts: function (data) {
+              if (!data.length) {
+                  this.$el.find('.J_Analysis_Anatxncat_30').find('.J_Charts').html('<div class="ft-center" style="line-height:430px;">暂无数据</div>');
+                  return;
+              }
+              var $elem = this.$el.find('.J_Analysis_Anatxncat_30').find('.J_Charts');
+              if (!$elem.highcharts) {
+                  return;
+              }
+              var chartColor = RC.controls.get('control.config').chartColor;
+              var chartLength = chartColor.length;
+              var r = [];
+              $.each(data, function (idx, item) {
+                  // r.push([item.name, item.ratio]);
+                  if (idx > chartLength - 1) {
+                      idx = idx - chartLength + 1;
+                  }
+                  r.push({color: chartColor[idx], name: item.name, y: item.ratio});
+              });
+  
+              var opt = {
+                  chart: {
+                      plotBackgroundColor: null,
+                      plotBorderWidth: null,
+                      plotShadow: false
+                  },
+                  credits: {
+                      enabled: false
+                  },
+                  exporting: {
+                      enabled: false
+                  },
+                  title: {
+                      text: ' ',
+                      align: 'left'
+                  },
+                  tooltip: {
+                      pointFormat: '{series.name}: <b>{point.percentage:.2f}%</b>'
+                  },
+                  plotOptions: {
+                      pie: {
+                          allowPointSelect: true,
+                          cursor: 'pointer',
+                          dataLabels: {
+                              enabled: true,
+                              color: '#000000',
+                              distance: 5,
+                              connectorColor: '#000000',
+                              format: '<b>{point.name}</b>: {point.percentage:.2f} %'
+                          }
+                      }
+                  },
+                  series: [{
+                      type: 'pie',
+                      name: '成交类目',
+                      data: r
+                  }]
+              };
+              $elem.highcharts && $elem.highcharts(opt);
+          },
+          //最近30天成交品牌分析
+          _fn_dom_update_analysis_anatxnbrand_30: function (data, type) {
+              //translate for template
+              data._status_anatxnbrand_30 = 1;
+              data.type = type;
+              //render
+              this.$el.find('.J_Analysis_Anatxnbrand_30').html(RC.template.get_node('if', '_status_anatxnbrand_30', data, RC.template.get(this._elem_template_name), 0));
+              // todo: 暂无数据，写在模板中， 是否要插入图表， 以图表容器元素是否存在， 经及是否支持图表JS(如SEO之类的)， 为准.
+              if (data.cur_date) {
+                  this.$el.find('.J_brand_select').val(data.cur_date);
+              }
+              this._fn_dom_update_analysis_anatxnbrand_30_charts(data.list || []);
+          },
+          _fn_dom_update_analysis_anatxnbrand_30_charts: function (data) {
+              if (!data.length) {
+                  this.$el.find('.J_Analysis_Anatxnbrand_30').find('.J_Charts').html('<div class="ft-center" style="line-height:430px;">暂无数据</div>');
+                  return;
+              }
+              var $elem = this.$el.find('.J_Analysis_Anatxnbrand_30').find('.J_Charts');
+              if (!$elem.highcharts) {
+                  return;
+              }
+  
+              var chartColor = RC.controls.get('control.config').chartColor;
+              var r = [];
+              $.each(data, function (idx, item) {
+                  // r.push([item.name, item.ratio]);
+                  r.push({color: chartColor[idx], name: item.name, y: item.ratio});
+              });
+  
+              var opt = {
+                  chart: {
+                      plotBackgroundColor: null,
+                      plotBorderWidth: null,
+                      plotShadow: false
+                  },
+                  credits: {
+                      enabled: false
+                  },
+                  exporting: {
+                      enabled: false
+                  },
+                  title: {
+                      text: ' ',
+                      align: 'left'
+                  },
+                  tooltip: {
+                      pointFormat: '{series.name}: <b>{point.percentage:.2f}%</b>'
+                  },
+                  plotOptions: {
+                      pie: {
+                          allowPointSelect: true,
+                          cursor: 'pointer',
+                          dataLabels: {
+                              enabled: true,
+                              color: '#000000',
+                              distance: 5,
+                              connectorColor: '#000000',
+                              format: '<b>{point.name}</b>: {point.percentage:.2f} %'
+                          }
+                      }
+                  },
+                  series: [{
+                      type: 'pie',
+                      name: '成交品牌',
+                      data: r
+                  }]
+              };
+  
+              $elem.highcharts(opt);
+          },
+          // event
+          _fn_event_bind: function () {
+              this.$el.on('change', '.J_OfferList_Charts .dateRangePicker,.J_OfferList_List .dateRangePicker', $.proxy(function (e) {
+                  var value = $.trim($(e.currentTarget).val()).split(/\s*-\s*/),
+                      hashs = this._status_hashs,
+                      offer = hashs.offer ? decodeURIComponent(hashs.offer) : '';
+                  offer = querystring.parse(offer);
+                  offer.startDate = value[0].replace(/\//g, '-');
+                  offer.endDate = value[1].replace(/\//g, '-');
+                  offer.pageNo = '1';
+                  offer.sort = 'date';
+                  offer.order = 'desc';
+                  RC.pages.modifyCurHash({offer: encodeURIComponent(querystring.stringify(offer))});
+              }, this));
+              this.$el.on('click', '.J_OfferList_List .J_Order', $.proxy(function (e) {
+                  var shopData = Shop.getModel(this._status_hashs.id).toJSON();
+                  if (!RC.user.get('_login_status')) {
+                      RC.pub('global.login.pop');
+                      return;
+                  }
+                  if (shopData.__level !== 'senior') {
+                      RC.pub('module.shop.detail.no_permisson_sort');
+                      return;
+                  }
+                  var $target = $(e.currentTarget),
+                      hashs = this._status_hashs,
+                      offer = hashs.offer ? decodeURIComponent(hashs.offer) : '';
+                  offer = querystring.parse(offer);
+                  offer.sort = $target.attr('data-sort');
+                  offer.order = $target.attr('data-order');
+                  offer.pageNo = '1';
+                  RC.pages.modifyCurHash({offer: encodeURIComponent(querystring.stringify(offer))});
+              }, this));
+              this.$el.on('change', '.J_OfferList_List .pageSize', $.proxy(function (e) {
+                  var hashs = this._status_hashs,
+                      offer = hashs.offer ? decodeURIComponent(hashs.offer) : '';
+                  offer = querystring.parse(offer);
+                  offer.pageSize = $(e.currentTarget).val();
+                  offer.pageNo = '1';
+                  RC.pages.modifyCurHash({offer: encodeURIComponent(querystring.stringify(offer))});
+              }, this));
+              //page change
+              //todo: class不对外开放，监听事件
+              this.$el.on('click', '.J_OfferList_Pages .J_page_jump', $.proxy(function (e) {
+                  e.preventDefault();
+                  if ($(e.currentTarget).hasClass('page-cur')) {
+                      return;
+                  }
+                  var pageNo = $(e.currentTarget).attr('data-key'),
+                      hashs = this._status_hashs,
+                      offer = hashs.offer ? decodeURIComponent(hashs.offer) : '';
+                  offer = querystring.parse(offer);
+                  offer.pageNo = pageNo;
+                  RC.pages.modifyCurHash({offer: encodeURIComponent(querystring.stringify(offer))});
+              }, this));
+              this.$el.on('change', '.J_Analysis_Anatxncat_30 .J_Type', function (e) {
+                  RC.pages.modifyCurHash({
+                      anatxncat: e.currentTarget.value,
+                      position: $('html').scrollTop() || $('body').scrollTop()
+                  });
+              });
+              this.$el.on('change', '.J_Analysis_Anatxnbrand_30 .J_Type', function (e) {
+                  RC.pages.modifyCurHash({
+                      anatxnbrand: e.currentTarget.value,
+                      position: $('html').scrollTop() || $('body').scrollTop()
+                  });
+              });
+              // 权限变更(登录/等级变化)
+              RC.sub('control.shop.model.permission_change', this._fn_event_handler_shopModelPermissionChange_proxy = $.proxy(this._fn_event_handler_shopModelPermissionChange, this));
+              RC.sub('module.shop.detail.add_compare', this._fn_event_handler_addCompare_proxy = $.proxy(function (id) {
+                  // 这里不论当前模块是否disabled， 都更新. 简单处理.
+                  if (id == this._status_hashs.id) {
+                      this._fn_dom_update_info_compare('取消对比');
+                  }
+              }, this));
+              RC.sub('module.shop.detail.remove_compare', this._fn_event_handler_removeCompare_proxy = $.proxy(function (id) {
+                  if (id == this._status_hashs.id) {
+                      this._fn_dom_update_info_compare('加入对比');
+                  }
+              }, this));
+              var gthis = this;
+              this.$el.on('click', '#calculate_btn', function (e) {
+                  //计算dsr
+                  gthis.$el.find("#calculate_mesg").text("");
+                  var all_empty = true;
+                  var j_this = $(this);
+                  $(this).parent().find("li").each(function (index) {
+                      var _this = $(this);
+                      var except_mark = _this.find(".mind_input").val();
+                      if (!except_mark) {
+                          return;
+                      }
+                      all_empty = false;
+                      if (_dsr_json_data.rate_num <= 0) {
+                          gthis.$el.find("#calculate_mesg").text("评价人数为空,无法计算");
+                          j_this.parent().find("li").each(function () {
+                              $(this).find(".mind_input_long").val('');
+                          });
+                          return false;
+                      }
+                      if (isNaN(except_mark)) {
+                          gthis.$el.find("#calculate_mesg").text("预期分值必须为数字");
+                          j_this.parent().find("li").each(function () {
+                              $(this).find(".mind_input_long").val('');
+                          });
+                          return false;
+                      }
+                      var target_mark = index == 0 ? _dsr_json_data.mas : (index == 1 ? _dsr_json_data.sas : _dsr_json_data.cas);
+                      if (except_mark <= target_mark || except_mark >= 5) {
+                          gthis.$el.find("#calculate_mesg").text("预期分值需大于当前值，并小于5");
+                          j_this.parent().find("li").each(function () {
+                              $(this).find(".mind_input_long").val('');
+                          });
+                          return false;
+                      }
+                      var result = (except_mark - target_mark) * _dsr_json_data.rate_num / (5 - except_mark);
+                      _this.find(".mind_input_long").val(Math.ceil(result));
+                  });
+                  if (all_empty) {
+                      gthis.$el.find("#calculate_mesg").text("请输入预期分值");
+                      j_this.parent().find("li").each(function () {
+                          $(this).find(".mind_input_long").val('');
+                      });
+                  }
+              });
+              this.$el.on('change', '.J_brand_select', function (e) {
+                  var vl = e.target.value;
+                  vl = vl == 1 ? '' : vl;
+                  RC.pages.modifyCurHash({brand_date: vl, position: $('html').scrollTop() || $('body').scrollTop()});
+              });
+              this.$el.on('change', '.J_cat_select', function (e) {
+                  var vl = e.target.value;
+                  vl = vl == 1 ? '' : vl;
+                  RC.pages.modifyCurHash({cat_date: vl, position: $('html').scrollTop() || $('body').scrollTop()});
+              });
+              this.$el.on('click', '.J_OfferList_Charts .chart-tab-btn', $.proxy(function (e) {
+                  var $target = $(e.currentTarget),
+                      hashs = this._status_hashs,
+                      offer = hashs.offer ? decodeURIComponent(hashs.offer) : '';
+                  if ($target.hasClass('chart-tab-active')) {
+                      return;
+                  }
+                  offer = querystring.parse(offer);
+                  offer.stat = $target.attr('data-by');
+                  RC.pages.modifyCurHash({offer: encodeURIComponent(querystring.stringify(offer))});
+              }, this));
+          },
+          _fn_event_unbind: function () {
+              this.$el.off('change', '.J_OfferList_Charts .dateRangePicker,.J_OfferList_List .dateRangePicker');
+              this.$el.off('click', '.J_OfferList_List .J_Order');
+              this.$el.off('change', '.J_OfferList_List .pageSize');
+              this.$el.off('click', '.J_OfferList_Pages .J_page_jump');
+              this.$el.off('change', '.J_Analysis_Anatxncat_30 .J_Type');
+              this.$el.off('change', '.J_Analysis_Anatxnbrand_30 .J_Type');
+              this.$el.off('click', '#calculate_btn');
+              RC.removeSub('control.shop.model.permission_change', this._fn_event_handler_shopModelPermissionChange_proxy);
+              RC.removeSub('module.shop.detail.add_compare', this._fn_event_handler_addCompare_proxy);
+              RC.removeSub('module.shop.detail.remove_compare', this._fn_event_handler_removeCompare_proxy);
+  
+              this.$el.off('change', '.J_brand_select');
+              this.$el.off('change', '.J_cat_select');
+              this.$el.off('click', '.J_OfferList_Charts .chart-tab-btn');
+          },
+          _fn_event_handler_shopModelPermissionChange: function (e) {
+              if (e.id != this._status_hashs.id) {
+                  return;
+              }
+              this._status_shop_stauts_changed = true;
+              if (this._status_module_active === true) {
+                  this.update(this._status_hashs, null, true);
+              }
+          },
+          // interface
+          init: function () {
+          },
+          getContainer: function () {
+              return this.$el;
+          },
+          // status
+          _status_hashs: {},
+          _status_shop_stauts_changed: false,
+          _status_module_active: false,
+          disabled: function () {
+              this._status_module_active = false;
+          },
+          /**
+           * @method update
+           */
+          update: function (hashs, afterload, refresh) {
+              // 实现 module.is_active
+              this._status_module_active = true;
+              // 参数是否和原先一致
+              if (this._status_shop_stauts_changed !== true && refresh != true && querystring.stringify(hashs) === querystring.stringify(this._status_hashs)) {
+                  afterload && afterload();
+                  return;
+              }
+              // 初始化结构, 插入基本DOM结构
+              this._fn_dom_render({
+                  _status_info: 0,
+                  _status_dsr: 0,
+                  _status_overview: 0,
+                  _status_list_charts: 0,
+                  _status_list_list: 0,
+                  _stauts_data_shop_item_ontxn_time_list: 0,
+                  _status_anatxncat_30: 0,
+                  _status_anatxnbrand_30: 0,
+                  _price_item_sale_rate_pie: 0,
+                  _price_item_rate_pie: 0
+              });
+              afterload && afterload();
+              // 加载店铺基本信息
+              Shop.getModel(hashs.id).getData(_.bind(function (data) {
+                  // console.log("店铺基本信息:"+JSON.stringify(data));
+                  //console.log(data)
+                  this._fn_dom_update_dsr(hashs, data);
+                  // copy hash保存, _status_hashs只用作对比， 处理过的HASHS只传给调用者，不记录
+                  var newHashs = _.extend({}, hashs);
+  
+                  // render info
+                  // id不同，权限变更，重新渲染基本信息
+                  if (this._status_shop_stauts_changed === true || refresh === true || hashs.id != this._status_hashs.id) {
+                      this._fn_dom_update_info(data, hashs);
+                  }
+                  // todo: 多图表，同时插入， 页面渲染慢
+                  // todo: 实现response_end for nodejs
+                  // update 最近30天店铺概况
+                  // this._fn_dom_update_dsr(hashs,data,refresh);
+                  this.update_overview(hashs, data, refresh);
+                  // 最近30天成交时间段分布
+                  this.update_data_shop_item_ontxn_time_list(hashs, refresh);
+                  // 最近30天成交类目分析
+                  this.update_analysis_anatxncat(hashs, data, refresh, this._status_hashs);
+                  // 最近30天成交品牌分析
+                  this.update_analysis_anatxnbrand(hashs, data, refresh, this._status_hashs);
+  
+                  this.update_price_item_rate_pie(hashs, data, refresh);
+  
+                  this.update_offer_list(_.extend({}, hashs), data, refresh, this._status_hashs);
+  
+                  // cache只是为了下次进来做比较
+                  this._status_hashs = newHashs;
+                  this._status_shop_stauts_changed = false;
+                  this.$el.find('#calculate_btn').click();
+                  if (hashs.position) {
+                      $('html,body').scrollTop(hashs.position);
+                      // $('html, body').animate({scrollTop:hashs.position}, 'fast');
+                  }
+                  afterload && afterload();
+              }, this));
+          },
+          update_price_item_rate_pie: function (hashs, data, refresh) {
+              if (this._status_hashs.id == hashs.id) {
+                  return;
+              }
+              var _this = this;
+              Shop.getModel(hashs.id).get_price_item_rate_pie_data(
+                  {
+                      shopId: hashs.id
+                  },
+                  function (data) {
+                      // console.log('data:'+JSON.stringify(data));
+                      _this.render_price_item_rate_pie(data);
+                      _this.render_price_item_sale_rate_pie(data);
+                  }
+              );
+          },
+  
+  
+          render_price_item_rate_pie: function (data) {
+              //J_price_item_rate_pie
+              data._price_item_rate_pie = 1;
+              //render
+              this.$el.find('.J_price_item_rate_pie').html(RC.template.get_node('if', '_price_item_rate_pie', data, RC.template.get(this._elem_template_name), 0));
+              if (data.__status != 3) {
+                  return;
+              }
+              if (!data.list.length) {
+                  this.$el.find('.J_price_item_rate_pie').find('.J_Charts').html('<div class="ft-center" style="line-height:430px;">暂无数据</div>');
+                  return;
+              }
+              var $elem = this.$el.find('.J_price_item_rate_pie').find('.J_Charts');
+              if (!$elem.highcharts) {
+                  return;
+              }
+              // data.list.sort(function(a,b){
+              // 	return a.itemCount-b.itemCount;
+              // });
+              var r = [];
+              var chartColor = RC.controls.get('control.config').chartColor;
+              $.each(data.list, function (idx, item) {
+                  r.push({color: chartColor[idx], name: item.name, y: item.itemCount});
+              });
+              var opt = {
+                  chart: {
+                      plotBackgroundColor: null,
+                      plotBorderWidth: null,
+                      plotShadow: false
+                  },
+                  credits: {
+                      enabled: false
+                  },
+                  exporting: {
+                      enabled: false
+                  },
+                  title: {
+                      text: ' ',
+                      align: 'left'
+                  },
+                  tooltip: {
+                      pointFormat: '{series.name}: <b>{point.percentage:.2f}%</b>'
+                  },
+                  plotOptions: {
+                      pie: {
+                          allowPointSelect: true,
+                          cursor: 'pointer',
+                          dataLabels: {
+                              enabled: true,
+                              color: '#000000',
+                              distance: 5,
+                              connectorColor: '#000000',
+                              format: '<b>{point.name}</b>: {point.percentage:.2f} %'
+                          }
+                      }
+                  },
+                  series: [{
+                      type: 'pie',
+                      name: '宝贝数',
+                      data: r
+                  }]
+              };
+  
+              $elem.highcharts(opt);
+          },
+          render_price_item_sale_rate_pie: function (data) {
+              //
+              data._price_item_sale_rate_pie = 1;
+              //render
+              this.$el.find('.J_price_item_sale_rate_pie').html(RC.template.get_node('if', '_price_item_sale_rate_pie', data, RC.template.get(this._elem_template_name), 0));
+              if (data.__status != 3) {
+                  return;
+              }
+              if (!data.list.length) {
+                  this.$el.find('.J_price_item_sale_rate_pie').find('.J_Charts').html('<div class="ft-center" style="line-height:430px;">暂无数据</div>');
+                  return;
+              }
+              var $elem = this.$el.find('.J_price_item_sale_rate_pie').find('.J_Charts');
+              if (!$elem.highcharts) {
+                  return;
+              }
+              // data.list.sort(function(a,b){
+              // 	return a.amount-b.amount;
+              // });
+              var r = [];
+              var chartColor = RC.controls.get('control.config').chartColor;
+              $.each(data.list, function (idx, item) {
+                  r.push({color: chartColor[idx], name: item.name, y: item.amount});
+              });
+  
+              var opt = {
+                  chart: {
+                      plotBackgroundColor: null,
+                      plotBorderWidth: null,
+                      plotShadow: false
+                  },
+                  credits: {
+                      enabled: false
+                  },
+                  exporting: {
+                      enabled: false
+                  },
+                  title: {
+                      text: ' ',
+                      align: 'left'
+                  },
+                  tooltip: {
+                      pointFormat: '{series.name}: <b>{point.percentage:.2f}%</b>'
+                  },
+                  plotOptions: {
+                      pie: {
+                          allowPointSelect: true,
+                          cursor: 'pointer',
+                          dataLabels: {
+                              enabled: true,
+                              color: '#000000',
+                              distance: 5,
+                              connectorColor: '#000000',
+                              format: '<b>{point.name}</b>: {point.percentage:.2f} %'
+                          }
+                      }
+                  },
+                  series: [{
+                      type: 'pie',
+                      name: '销量',
+                      data: r
+                  }]
+              };
+  
+              $elem.highcharts(opt);
+          },
+          update_overview: function (hashs, data, refresh) {
+              // id相同，权限未变更, 不是强制刷新时不更新
+              if (this._status_shop_stauts_changed !== true && refresh !== true && hashs.id === this._status_hashs.id) {
+                  return;
+              }
+              // 走接口， 只是为了权限，方便模板渲染
+              // 接口中做数据缓存,请求同步
+              Shop.getModel(hashs.id).data_shop_info({}, _.bind(function (data) {
+                  this._fn_dom_update_overview(data);
+              }, this));
+          },
+          update_data_shop_item_ontxn_time_list: function (hashs, refresh) {
+              // 功能暂无
+              this.$el.find('.J_Index_data_shop_item_ontxn_time_list').parent().remove();
+              return;
+  
+              if (this._status_shop_stauts_changed !== true && refresh !== true && this._status_hashs.id == hashs.id) {
+                  return;
+              }
+              // var debug = 1;
+              // load data then render dom
+              Shop.getModel(hashs.id).data_shop_item_ontxn_time_list({}, _.bind(function (data) {
+                  this._fn_dom_update_data_shop_item_ontxn_time_list(data);
+              }, this));
+          },
+          update_analysis_anatxncat: function (hashs, shopInfo, refresh, oldHashs) {
+              if (this._status_shop_stauts_changed !== true && refresh !== true && oldHashs.id == hashs.id && oldHashs.anatxncat == hashs.anatxncat && oldHashs.cat_date == hashs.cat_date) {
+                  return;
+              }
+              RayCloud.showLoading();
+              var anatxncat = hashs.anatxncat,
+                  dateUtil = RC.util.date,
+                  startDate = dateUtil.getdiffdate(shopInfo.__updateTime, '-29d', 'YY-MM-DD'),
+                  endDate = dateUtil.getdate(shopInfo.__updateTime, 'YY-MM-DD');
+              if (_.indexOf(['1', '2', '3'], anatxncat) === -1) {
+                  anatxncat = '1';
+              }
+              var cur_date = new Date(),
+                  month = cur_date.getMonth();
+              month = 0 == month ? "12" : month + "";
+              month = month.length < 2 ? "0" + month : month;
+              // load data then render dom
+              Shop.getModel(hashs.id).data_shop_catratio_list({
+                  type: anatxncat,
+                  date: hashs.cat_date || ''
+              }, _.bind(function (data) {
+                  data.date_list = date_list;
+                  data.cur_date = hashs.cat_date || '';
+                  this._fn_dom_update_analysis_anatxncat_30(data, anatxncat);
+                  anatxncat = null;
+                  RayCloud.clearShow();
+              }, this));
+          },
+          update_analysis_anatxnbrand: function (hashs, shopInfo, refresh, oldHashs) {
+              if (this._status_shop_stauts_changed !== true && refresh !== true && oldHashs.id == hashs.id && oldHashs.anatxnbrand == hashs.anatxnbrand && oldHashs.brand_date == hashs.brand_date) {
+                  return;
+              }
+              RayCloud.showLoading();
+              var anatxnbrand = hashs.anatxnbrand,
+                  dateUtil = RC.util.date,
+                  startDate = dateUtil.getdiffdate(shopInfo.__updateTime, '-29d', 'YY-MM-DD'),
+                  endDate = dateUtil.getdate(shopInfo.__updateTime, 'YY-MM-DD');
+              if (_.indexOf(['1', '2', '3'], anatxnbrand) === -1) {
+                  anatxnbrand = '1';
+              }
+  
+              var cur_date = new Date(),
+                  month = cur_date.getMonth();
+              month = 0 == month ? "12" : month + "";
+              month = month.length < 2 ? "0" + month : month;
+              // load data then render dom
+              // data_shop_item_anatxnbrand_chart_list
+              Shop.getModel(hashs.id).data_shop_brandratio_list({
+                  type: anatxnbrand,
+                  date: hashs.brand_date || ''
+              }, _.bind(function (data) {
+                  data.date_list = date_list;
+                  data.cur_date = hashs.brand_date || '';
+                  this._fn_dom_update_analysis_anatxnbrand_30(data, anatxnbrand);
+                  anatxnbrand = null;
+                  RayCloud.clearShow();
+              }, this));
+          },
+          //最近30天数据图
+          _fn_dom_update_offer_charts: function (data, hashs) {
+              // translate for template
+              data._status_list_charts = 1;
+              data._minDate = data._minDate ? data._minDate.replace(/-/g, '/') : '';
+              data._maxDate = data._maxDate ? data._maxDate.replace(/-/g, '/') : '';
+              data.hashs_startDate_ = hashs.startDate.replace(/-/g, '/');
+              data.hashs_endDate_ = hashs.endDate.replace(/-/g, '/');
+              data.__byMonth = hashs.stat == 'month';
+              // render dom
+  
+              this.$el.find('.J_OfferList_Charts').html(RC.template.get_node('if', '_status_list_charts', data, RC.template.get(this._elem_template_unsale_content), 0));
+              if (data.__status != 3) {
+                  return;
+              }
+              // 没有权限不插入图表
+              // todo: 暂无数据，写在模板中， 是否要插入图表， 以图表容器元素是否存在， 经及是否支持图表JS(如SEO之类的)， 为准.
+              if (data.list) {
+                  var fnName = data.__byMonth ? '_fn_dom_update_offer_charts_charts_month' : '_fn_dom_update_offer_charts_charts';
+                  this[fnName](data.list, {startDate: hashs.startDate, endDate: hashs.endDate});
+              }
+          },
+          _fn_dom_update_offer_charts_charts_month: function (data, dateRange) {
+              var $elem = this.$el.find('.J_OfferList_Charts').find('.J_Charts');
+              if (!data.length) {
+                  $elem.html('<div class="ft-center" style="line-height:400px;">暂无数据</div>');
+                  return;
+              }
+              if (!$elem.highcharts) {
+                  return;
+              }
+              var chartColor = RC.controls.get('control.config').chartColor;
+              var price = [], amount = [];
+              var dateObj = RC.util.date;
+              //营销推广文案
+              var yxiaoMap = {};
+  
+              //图里营销推广图标控制
+              var yxiaoTextMap = {
+                  p4p: {color: '#00a0e9', txt: '<i class="icon_marketing icon-s-i p4p_new active"></i>'},
+                  zuanzhan: {color: '#4789e5', txt: '<i class="icon_marketing icon-s-i zuanzhan_new active"></i>'},
+                  sales: {color: '#c40000', txt: '<i class="icon_marketing icon-s-i sales_new active"></i>'},
+                  juhuasuan: {color: '#f42e64', txt: '<i class="icon_marketing icon-s-i juhuasuan_new active"></i>'},
+                  taoke: {color: '#f42e64', txt: '<i class="icon_marketing icon-s-i taoke_new active"></i>'},
+                  tbouter: {color: '#f42e64', txt: '<i class="icon_marketing icon-s-i tbouter_new active"></i>'},
+              };
+              data.sort(function (a, b) {
+                  if (a.date < b.date) return -1;
+                  //如果时间相等，使用后面的
+                  else return 1;
+              });
+              var getMonth = function (date) {
+                      return dateObj.tojsdate(date).getMonth();
+                  },
+                  getFullYear = function (date) {
+                      return dateObj.tojsdate(date).getFullYear();
+                  },
+                  dayNumOfMonth = function (year, month) {
+                      return 32 - new Date(year, month, 32).getDate();
+                  },
+                  formatDate = function (time) {
+                      var date = new Date(time);
+                      return date.getFullYear() + '.' + (date.getMonth() + 1) + '.' + date.getDate();
+                  },
+                  startTime = dateObj.tojsdate(dateRange.startDate).getTime(),
+                  endTime = dateObj.tojsdate(dateRange.endDate).getTime(),
+                  getMonthRange = function (date, hasBr) {
+                      var year = getFullYear(date), month = getMonth(date),
+                          lastTime = dateObj.tojsdate(year + '-' + (month + 1) + '-' + dayNumOfMonth(year, month)).getTime(),
+                          start = startTime > date ? startTime : date,
+                          end = endTime < lastTime ? endTime : lastTime;
+                      return formatDate(start) + '-' + (hasBr ? '<br>' : '') + formatDate(end);
+                  },
+                  getStartFirst = function () {
+                      var startYear = getFullYear(dateRange.startDate),
+                          startMonth = getMonth(dateRange.startDate);
+                      return dateObj.tojsdate(startYear + '-' + (startMonth + 1) + '-1').getTime();
+                  };
+  
+              var t = getStartFirst();
+              var i = 0, l = data.length;
+              var temp = data[i], tempMonth, tYear, tMonth;
+              while (t <= endTime) {
+                  tYear = getFullYear(t);
+                  tMonth = getMonth(t);
+                  tempYear = getFullYear(temp.date);
+                  tempMonth = getMonth(temp.date);
+                  if (tYear == tempYear && tMonth == tempMonth) {
+                      price.push([temp.date, temp.price === undefined ? null : temp.price]);
+                      amount.push([temp.date, temp.amount === undefined ? null : temp.amount]);
+                      var str = [];
+                      $.each(yxiaoTextMap, function (key, item) {
+                          if (temp[key]) {
+                              str.push('<span style="color:{color}"> {txt} </span>'.replace('{color}', item.color).replace('{txt}', item.txt));
+                          }
+                      });
+                      if (str.length) {
+                          yxiaoMap[temp.date] = '营销推广: ' + str.join('');
+                      }
+                      if (i < l - 1) {
+                          temp = data[++i];
+                      }
+                  } else {
+                      price.push([t, null]);
+                      amount.push([t, null]);
+                  }
+                  t = dateObj.tojsdate(dateObj.getdiffdate(t, '1mo')).getTime();
+              }
+  
+              var opt = {
+                  chart: {
+                      height: 400,
+                      type: 'area'
+                  },
+                  exporting: {
+                      enabled: false
+                  },
+                  credits: {
+                      enabled: false
+                  },
+                  title: {
+                      text: ' '
+                  },
+                  rangeSelector: {
+                      enabled: false
+                  },
+                  navigator: {
+                      enabled: false
+                  },
+                  scrollbar: {
+                      enabled: false
+                  },
+                  legend: {
+                      align: 'center',      //水平居中
+                      verticalAlign: 'top', //在顶部
+                      margin: 35,
+                      enabled: true,
+                      symbolWidth: 20,
+                      symbolHeight: 8
+                  },
+                  plotOptions: {
+                      area: {
+                          fillOpacity: 0.05,
+                          lineWidth: 1.5
+                      }
+                  },
+                  xAxis: {
+                      type: 'datetime',
+                      title: {text: null},
+                      labels: {
+                          formatter: function () {
+                              return getMonthRange(this.value, true);
+                          },
+                          staggerLines: 1,  //水平轴label不会换行
+                          step: 1
+                      },
+                      gridLineWidth: 1,  //网格线
+                      tickLength: 0,     //伸出水平轴的长度
+                      lineWidth: 2,       //x轴的宽度
+                      tickInterval: 24 * 60 * 60 * 1000 * 30,
+                      startOnTick: true,
+                      endOnTick: true
+                  },
+                  tooltip: {
+                      useHTML: true,
+                      formatter: function () {
+                          var str = '<ul>';
+                          $.each(this.points, function (idx, point) {
+                              var series = point.series || {},
+                                  color = series.color,
+                                  name = series.legendItem && series.legendItem.textStr || '';
+                              str += '<li><span style="color:' + color + '">● </span>' + name + ': ' + point.y + '</li>';
+                          });
+                          str += '</ul>';
+                          return getMonthRange(this.x) + str;
+                      }
+                  },
+                  yAxis: [{
+                      // min: 0,
+                      labels: {
+                          // y: 3,
+                          // x: -25,
+                          style: {
+                              color: chartColor[0]
+                          },
+                          opposite: false
+                      },
+                      // showLastLabel: true,
+                      title: {
+                          text: null
+                      },
+                      lineWidth: 2,
+                      opposite: false
+  
+                  }, {
+                      // min: 0,
+                      labels: {
+                          // y: 3,
+                          // x: 20,
+                          opposite: true,
+                          style: {
+                              color: chartColor[1]
+                          }
+                      },
+                      opposite: true,
+                      // showLastLabel: true,
+                      title: {
+                          text: null
+                      },
+                      lineWidth: 2
+  
+                  }],
+                  series: [{
+                      name: '销量',
+                      color: chartColor[0],
+                      data: amount,
+                      //yAxis: 1,
+                      marker: {
+                          enabled: true,
+                          radius: 2.5
+                      }
+                  }, {
+                      name: '销售额',
+                      color: chartColor[1],
+                      data: price,
+                      yAxis: 1,
+                      marker: {
+                          enabled: true,
+                          radius: 2.5
+                      }
+                  }]
+              };
+  
+              $elem.highcharts('StockChart', opt);
+          },
+          _fn_dom_update_offer_charts_charts: function (data, dateRange) {
+              var $elem = this.$el.find('.J_OfferList_Charts').find('.J_Charts');
+              if (!data.length) {
+                  $elem.html('<div class="ft-center" style="line-height:400px;">暂无数据</div>');
+                  return;
+              }
+              if (!$elem.highcharts) {
+                  return;
+              }
+              var chartColor = RC.controls.get('control.config').chartColor;
+              var date = [], price = [], amount = [], offer = [], yxiao = [], _avg_price = [];
+              var dateObj = RC.util.date;
+              //营销推广文案
+              var yxiaoMap = {};
+  
+              //图里营销推广图标控制
+              var yxiaoTextMap = {
+                  p4p: {color: '#00a0e9', txt: '<i class="icon_marketing icon-s-i p4p_new active"></i>'},
+                  zuanzhan: {color: '#4789e5', txt: '<i class="icon_marketing icon-s-i zuanzhan_new active"></i>'},
+                  sales: {color: '#c40000', txt: '<i class="icon_marketing icon-s-i sales_new active"></i>'},
+                  juhuasuan: {color: '#f42e64', txt: '<i class="icon_marketing icon-s-i juhuasuan_new active"></i>'},
+                  taoke: {color: '#f42e64', txt: '<i class="icon_marketing icon-s-i taoke_new active"></i>'},
+                  tbouter: {color: '#f42e64', txt: '<i class="icon_marketing icon-s-i tbouter_new active"></i>'},
+              };
+              data.sort(function (a, b) {
+                  if (a.date < b.date) return -1;
+                  //如果时间相等，使用后面的
+                  else return 1;
+              });
+  
+              var s = dateObj.tojsdate(dateRange.startDate).getTime(),
+                  e = dateObj.tojsdate(dateRange.endDate).getTime(),
+                  t = s;
+              var i = 0, l = data.length;
+              var temp = data[i], lastDate;
+              while (t <= e) {
+                  if (i < l - 1) {
+                      //按时间去重
+                      if (temp.date == lastDate) {
+                          temp = data[++i];
+                          temp.date = dateObj.tojsdate(dateObj.getdate(temp.date, 'YY-MM-DD')).getTime();
+                          continue;
+                      }
+                      lastDate = temp.date;
+                  }
+                  if (t == temp.date) {
+                      price.push([t, temp.price === undefined ? null : temp.price]);
+                      amount.push([t, temp.amount === undefined ? null : temp.amount]);
+                      offer.push([t, temp.offer === undefined ? null : temp.offer]);
+                      _avg_price.push([t, temp._avg_price === undefined ? null : temp._avg_price]);
+                      var str = [];
+                      $.each(yxiaoTextMap, function (key, item) {
+                          if (temp[key]) {
+                              str.push('<span style="color:{color}"> {txt} </span>'.replace('{color}', item.color).replace('{txt}', item.txt));
+                          }
+                      });
+                      if (str.length) {
+                          yxiaoMap[temp.date] = '营销推广: ' + str.join('');
+                      }
+                      if (i < l - 1) {
+                          temp = data[++i];
+                          //去掉小时、分、秒
+                          temp.date = dateObj.tojsdate(dateObj.getdate(temp.date, 'YY-MM-DD')).getTime();
+                      }
+                  } else {
+                      price.push([t, null]);
+                      amount.push([t, null]);
+                      offer.push([t, null]);
+                      _avg_price.push([t, null]);
+                      lastDate = null;
+                  }
+                  t = dateObj.tojsdate(dateObj.getdiffdate(t, '1d')).getTime();
+              }
+              //10天一个单位
+              var step = e > s ? Math.ceil((e - s) / (10 * 24 * 60 * 60 * 1000)) : 3;
+  
+              var opt = {
+                  chart: {
+                      height: 400,
+                      type: 'area'
+                  },
+                  exporting: {
+                      enabled: false
+                  },
+                  credits: {
+                      enabled: false
+                  },
+                  title: {
+                      text: ' '
+                  },
+                  rangeSelector: {
+                      enabled: false
+                  },
+                  navigator: {
+                      height: 20,
+                      xAxis: {
+                          plotBands: [{from: 4.5, to: 6.5, color: 'rgba(68, 170, 213, .2)'}],
+                          dateTimeLabelFormats: {
+                              day: '%m.%d',
+                              week: '%m.%d',
+                              month: '%m.%d',
+                              year: '%m.%d'
+                          }
+                      }
+                  },
+                  legend: {
+                      align: 'center',      //水平居中
+                      verticalAlign: 'top', //在顶部
+                      margin: 35,
+                      enabled: true,
+                      symbolWidth: 20,
+                      symbolHeight: 8
+                      // useHTML: true,
+                      // labelFormatter: function() {
+                      //     var color = [shopColor, ztcColor];
+                      //     return html = '<span style="color:' + color[this.index] + '"><span style="display:inline-block;width:20px;height:2px;margin-right:5px;vertical-align: 3px;background:' + color[this.index] + '"></span>' + this.name + '</span>';
+                      // }
+                  },
+                  plotOptions: {
+                      area: {
+                          fillOpacity: 0.05,
+                          lineWidth: 1.5
+                      }
+                  },
+                  xAxis: {
+                      type: 'datetime',
+                      title: {text: null},
+                      labels: {
+                          formatter: function () {
+                              return dateObj.getdate(this.value, 'YY-MM-DD').replace(/-/g, '\/');
+                          },
+                          staggerLines: 1,  //水平轴label不会换行
+                          step: step,
+                      },
+                      gridLineWidth: 1,  //网格线
+                      tickLength: 0,     //伸出水平轴的长度
+                      lineWidth: 2,       //x轴的宽度
+                      tickInterval: 24 * 60 * 60 * 1000,
+                      startOnTick: true,
+                      endOnTick: true
+                  },
+                  tooltip: {
+                      useHTML: true,
+                      formatter: function () {
+                          var date = this.x,
+                              str = '',
+                              //amount = this.points[0] && this.points[0].y,
+                              //price = this.points[1] && this.points[1].y,
+                              //src = this.points[2] && this.points[2].y,
+                              time = RC.util.date.getdate(date, 'YY-MM-DD'),
+                              day = (new Date(date)).getDay(),
+                              str = '<ul>';
+                          var days = ['日', '一', '二', '三', '四', '五', '六'], _yxiao = [];
+                          $.each(this.points, function (idx, point) {
+                              var series = point.series || {},
+                                  color = series.color,
+                                  name = series.legendItem && series.legendItem.textStr || '';
+                              str += '<li><span style="color:' + color + '">● </span>' + name + ': ' + point.y + '</li>';
+                          });
+                          if (yxiaoMap[date]) {
+                              str += '<li><span style="color:#000">● </span>' + yxiaoMap[date] + '</li>';
+                          }
+                          str += '</ul>';
+                          return time + ' (周' + days[day] + ')<br>' + str;
+                      }
+                  },
+                  yAxis: [{
+                      // min: 0,
+                      labels: {
+                          // y: 3,
+                          // x: -25,
+                          style: {
+                              color: chartColor[0]
+                          },
+                          opposite: false
+                      },
+                      // showLastLabel: true,
+                      title: {
+                          text: null
+                      },
+                      lineWidth: 2,
+                      opposite: false
+  
+                  }, {
+                      // min: 0,
+                      labels: {
+                          // y: 3,
+                          // x: 20,
+                          opposite: true,
+                          style: {
+                              color: chartColor[1]
+                          }
+                      },
+                      opposite: true,
+                      // showLastLabel: true,
+                      title: {
+                          text: null
+                      },
+                      lineWidth: 2
+  
+                  }],
+                  series: [{
+                      name: '销量',
+                      color: chartColor[0],
+                      data: amount,
+                      //yAxis: 1,
+                      marker: {
+                          enabled: true,
+                          radius: 2.5
+                      }
+                  }, {
+                      name: '销售额',
+                      color: chartColor[1],
+                      data: price,
+                      yAxis: 1,
+                      marker: {
+                          enabled: true,
+                          radius: 2.5
+                      }
+                  }]
+              };
+  
+              $elem.highcharts('StockChart', opt);
+          },
+          //最近30天数据表
+          _fn_dom_update_offer_list: function (data, hashs, allHashs) {
+              // translate data for template
+              data._status_list_list = 1;
+              this.$el.find('.J_OfferList_List').html(RC.template.get_node('if', '_status_list_list', data, RC.template.get(this._elem_template_unsale_content), 0));
+              if (data.__status != 3) {
+                  return;
+              }
+              _.each(hashs, function (value, key) {
+                  data['hashs_' + key] = value;
+              });
+              data._minDate = data._minDate ? data._minDate.replace(/-/g, '/') : '';
+              data._maxDate = data._maxDate ? data._maxDate.replace(/-/g, '/') : '';
+              data.hashs_startDate_ = hashs.startDate.replace(/-/g, '/');
+              data.hashs_endDate_ = hashs.endDate.replace(/-/g, '/');
+              data.__price_count = data.__price_count !== undefined ? data.__price_count.toFixed(2) : '-';
+              data.__amount_count = data.__amount_count !== undefined ? data.__amount_count.toFixed(0) : '-';
+              data.__offer_count = data.__offer_count !== undefined ? data.__offer_count.toFixed(0) : '-';
+              data._hashs_startDate_ = RC.util.date.tojsdate(hashs.startDate).getTime();
+              data._hashs_endDate_ = RC.util.date.tojsdate(hashs.endDate).getTime();
+              var start = (hashs.pageSize - 0 ) * (hashs.pageNo - 1) + 1,
+                  dateUtil = RC.util.date;
+              data.shopId = hashs.id;
+              data.list = data.list || [];
+              data._list_length = data.list.length;
+              _.each(data.list, function (item, key) {
+                  item._idx = start++;
+                  item._date = dateUtil.getdate(item.date, 'YY-MM-DD');
+                  item._avg_price = item._avg_price !== undefined ? item._avg_price.toFixed(2) : '-';
+                  item.price = item.price !== undefined ? item.price.toFixed(2) : '-';
+                  //添加链接地址
+                  //营销推广图标定位,可以有多个图标哦,增加title,点击后到达对应的营销推广统计结果页
+                  item._p4p = item.p4p ? '<a href="#/shop/detail/marketing_ztc/?id=' + hashs.id + '"><i class="icon_marketing icon-s-i p4p_new active" title="直通车"></i></a>' : '';
+                  item._zuanzhan = item.zuanzhan ? '<a href="#/shop/detail/marketing/?type=zszw&id=' + hashs.id + '"><i class="icon_marketing icon-s-i zuanzhan_new active" title="钻石展位"></i></a>' : '';
+                  item._sales = item.sales ? '<a href="#/shop/detail/marketing/?type=innersite&id=' + hashs.id + '"><i class="icon_marketing icon-s-i sales_new active" title="站内活动"></i></a>' : '';
+                  item._juhuasuan = item.juhuasuan ? '<a href="#/shop/detail/marketing/?type=jhs&id=' + hashs.id + '"><i class="icon_marketing icon-s-i juhuasuan_new active" title="聚划算"></i></a>' : '';
+                  item._taoke = item.taoke ? '<a href="#/shop/detail/marketing/?type=tbk&id=' + hashs.id + '"><i class="icon_marketing icon-s-i taoke_new active" title="淘宝客"></i></a>' : '';
+                  item._tbouter = item.tbouter ? '<a href="#/shop/detail/marketing/?type=outersite&id=' + hashs.id + '"><i class="icon_marketing icon-s-i tbouter_new active" title="站外活动"></i></a>' : '';
+                  //'<i class="icon icon-s-i p4p active"></i>';直通车
+                  //'<i class="icon icon-s-i sales active"></i>';促销,
+                  //'<i class="icon icon-s-i zuanzhan active"></i>'; 钻展
+                  //<i class="icon icon-s-i juhuasuan active"></i>聚划算图标
+                  item.titleChange = item.titleChange !== undefined ? item.titleChange : '-';
+                  item.priceChange = item.priceChange !== undefined ? item.priceChange : '-';
+                  item.updateChange = item.updateChange !== undefined ? item.updateChange : '-';
+              });
+  
+              // render dom
+              this.$el.find('.J_OfferList_List').html(RC.template.get_node('if', '_status_list_list', data, RC.template.get(this._elem_template_unsale_content), 0));
+              if (data.__status != 3) {
+                  return;
+              }
+              // render pages
+              var pages = this.$el.find('.J_OfferList_Pages');
+              if (pages && pages.length) {
+                  if (allHashs.root) {
+                      delete allHashs.root;
+                  }
+                  if (allHashs.app) {
+                      delete allHashs.app;
+                  }
+                  if (allHashs.classification) {
+                      delete allHashs.classification;
+                  }
+                  var pagesHtml = RC.controls.get('controls.shop.pagination').getHtml({
+                      lk: function (pageNo) {
+                          hashs.pageNo = pageNo;
+                          allHashs.offer = hashs;
+                          return '#/shop/detail/sale_detail/?' + querystring.stringify(allHashs);
+                      },
+                      pageSize: hashs.pageSize - 0,
+                      pageNo: hashs.pageNo - 0,
+                      maxNo: data.total,
+                      hasTotal: true,
+                      isEnd: true,
+                      goPage: false
+                  });
+                  pages.html(pagesHtml);
+              }
+              //dateRangePicker dom
+  			if(data.__level&&data.__level=='normal'){
+              	$('.dateRangePicker').removeClass('J_level')
+              }else{
+              	$('.dateRangePicker').addClass('J_level')
+              }
+          },
+          update_offer_list: function (hashs, shopInfo, refresh, oldHashs) {
+              // if(oldHashs.id==hashs.id){
+              // 	return;
+              // }
+              var dateUtil = RC.util.date,
+                  offerHashs;
+              //解析参数
+              offerHashs = querystring.parse(hashs.offer ? decodeURIComponent(hashs.offer) : '');
+              // 用外面的id覆盖子模板的id, 外层模块会检查ID合法性
+              offerHashs.id = hashs.id;
+              // 权限，检查参数检查
+              // 服务器最新更新数据时间
+              var maxDate = dateUtil.getdate(shopInfo.__updateTime, 'YY-MM-DD'),
+                  startDate = offerHashs.startDate,
+                  endDate = offerHashs.endDate,
+                  stat = offerHashs.stat,
+                  minDate,
+                  // 要做本地排序， 长度限制一下 365*2
+                  _maxDays = 730;
+              // 用户查询权询，一个月以31天计算，保证足够.
+              switch (shopInfo.__level) {
+                  case 'senior':
+                      minDate = '2000-01-01';
+                      break;
+                  case 'primary':
+                      minDate = dateUtil.getdiffdate(maxDate, '-182d', 'YY-MM-DD');
+                      break;
+                  default:
+                      minDate = dateUtil.getdiffdate(maxDate, '-30d', 'YY-MM-DD');
+              }
+  
+  
+              if (!startDate || !endDate || !dateUtil.is_date(startDate) || !dateUtil.is_date(endDate) || startDate < minDate || endDate > maxDate || startDate > endDate) {
+                  offerHashs.startDate = dateUtil.getdiffdate(shopInfo.__updateTime, '-29d', 'YY-MM-DD');
+                  offerHashs.endDate = dateUtil.getdate(shopInfo.__updateTime, 'YY-MM-DD');
+              }
+              // 排序权限
+              offerHashs.sort = offerHashs.sort || 'date';
+              offerHashs.order = offerHashs.order || 'desc';
+              if (offerHashs.sort !== 'date' && shopInfo.__level !== 'senior') {
+                  offerHashs.sort = 'date';
+                  offerHashs.order = 'desc';
+              }
+              //页码
+              if (!offerHashs.pageNo || !offerHashs.pageNo.match(/^\d+$/)) {
+                  offerHashs.pageNo = '1';
+              }
+              if (!offerHashs.pageSize || !offerHashs.pageSize.match(/^\d+$/) || _.indexOf(['10', '20', '30'], offerHashs.pageSize) === -1) {
+                  offerHashs.pageSize = '10';
+              }
+              // load data then render dom
+              // 先取所有数据， 给图表用， 再按分页获取给列表用
+              Shop.getModel(offerHashs.id).data_shop_offer_list({
+                  startDate: offerHashs.startDate,
+                  endDate: offerHashs.endDate,
+                  sort: 'date',
+                  order: 'asc',
+                  chart: true,
+                  stat: stat
+              }, _.bind(function (data, from_cache) {
+                  this._fn_dom_update_offer_charts(_.extend(data, {
+                      _minDate: minDate,
+                      _maxDate: maxDate,
+                      _maxDays: _maxDays
+                  }), _.extend({}, offerHashs));
+                  Shop.getModel(offerHashs.id).data_shop_offer_list({
+                      startDate: offerHashs.startDate,
+                      endDate: offerHashs.endDate,
+                      pageNo: offerHashs.pageNo,
+                      pageSize: offerHashs.pageSize,
+                      sort: offerHashs.sort,
+                      order: offerHashs.order
+                  }, _.bind(function (data, from_cache) {
+                      this._fn_dom_update_offer_list(_.extend(data, {
+                          _minDate: minDate,
+                          _maxDate: maxDate,
+                          _maxDays: _maxDays
+                      }), offerHashs, hashs);
+                  }, this));
+              }, this));
+          },
+          // destroy
+          destroy: function () {
+              if (this.$el) {
+                  this._status_hashs = {};
+                  this._status_shop_stauts_changed = false;
+                  this._status_module_active = false;
+  
+                  this._fn_event_unbind();
+                  this.$el.empty().remove();
+                  this.$el = null;
+              }
+          }
+      };
+  
+      RC.modules.define(mdul.name, mdul);
+  })(jQuery, RayCloud);
+  
+
+});

@@ -1,0 +1,741 @@
+define('controls/shop/controls.shop.panel', function(require, exports, module) {
+
+  /**
+   * @author chenjiangming
+   */
+  (function($, RC) {
+      var Shop = RC.controls.get('control.shop.model');
+      var ctrls = {
+          name: 'controls.shop.panel',
+          init: function(opt) {
+              this._data_ele_root = opt.root;
+              this._data_box_container = opt.containers;
+              this._data_template_name = opt.templateName;
+              this._data_lastest_hash = '';
+              this._data_page_controls = {};
+              this._status_has_loaded = {};
+          },
+  
+          update: function(hashs, refresh) {
+              if ($.param(this._data_lastest_hash) === $.param(hashs) && !refresh) {
+                  return;
+              }
+  
+              this._fn_dom_render();
+              this._fn_dom_update(hashs, refresh);
+              this._data_lastest_hash = hashs;
+          },
+          destroy: function() {
+              this.$el = null;
+              this._data_lastest_hash = '';
+              this._data_page_controls = {};
+              this._status_has_loaded = {};
+          },
+          _fn_dom_render: function() {
+              if (this.$el) {
+                  return;
+              }
+  
+              this._data_template_all = RC.template.get(this._data_template_name);
+              this.$el = $(RC.template.get(this._data_template_name, {box: 'loading'})).appendTo(this._data_ele_root);
+              this._fn_event_bind();
+          },
+          _fn_is_box_need_reload: function(box, hashs, refresh) {
+              if (!this._status_has_loaded[box] && !this._data_lastest_hash[box]) {
+                  this._status_has_loaded[box] = true;
+                  return true;
+              }
+              if (hashs.id !== this._data_lastest_hash.id) {
+                  return true;
+              }
+              if (this._data_lastest_hash[box] !== hashs[box]) {
+                  return true;
+              }
+              if (refresh) {
+                  return true;
+              }
+              return false;
+          },
+          _fn_set_list_render_data: function(res, box, decodeHash, id) {
+              var list,
+                  renderData = $.extend({
+                      box: box,
+                      nodata: false,
+                      status: res.__status,
+                      status_html:res.__status_html,
+                      level: res.__level,
+                      days:decodeHash.days||3,
+                      amountTotal: res.amountTotal || '-',
+                      offerTotal: res.offerTotal || '-',
+                      priceTotal: res.priceTotal || '-',
+                      hashs_pageSize: decodeHash.pageSize,
+                      hashs_startDate_: '',
+                      hashs_endDate_: '',
+  					hashs_position: decodeHash.position || '',
+                      list: []
+                  }, decodeHash);
+              if (renderData.endDate) {
+                  decodeHash.searchDate = renderData.searchDate = decodeHash.endDate.replace(/-/g, '/');
+              }
+  
+              if (renderData.startDate && renderData.endDate) {
+                  decodeHash.dateRange = renderData.dateRange = decodeHash.startDate.replace(/-/g, '/') + ' - ' + decodeHash.endDate.replace(/-/g, '/');
+                  renderData.hashs_startDate_ = RC.util.date.tojsdate(renderData.startDate).getTime();
+                  renderData.hashs_endDate_ = RC.util.date.tojsdate(renderData.endDate).getTime();
+                  renderData.minDate = renderData.minDate.replace(/-/g, '/');
+                  renderData.maxDate = renderData.maxDate.replace(/-/g, '/');
+              }
+              if ((list = res.list) !== undefined) {
+                  if (list.length === 0) {
+                          (decodeHash.pageNo === '1') && (renderData.nodata = true);
+                  } else {
+                      this._fn_render_data_process[box] && this._fn_render_data_process[box].call(this, list,decodeHash);
+                      renderData.list = list;
+                  }
+              }
+              renderData.id = id;
+              return renderData;
+          },
+          _fn_set_api_params: function(id, data, decodeHash, params) {
+              var resParams;
+              if ($.isPlainObject(params)) {
+                  resParams = params;
+              } else if (typeof params === 'function') {
+                  resParams = params(id, data, decodeHash);
+              } else {
+                  this._fn_act_hashs_verify(data, decodeHash);
+                  resParams = decodeHash;
+              }
+              return resParams;
+          },
+          /**
+           * list类box的dom更新
+           * @param  {string} box      具体的box
+           * @param  {string} api      api的名字
+           * @param  {boolean} refresh 
+           * @param  {object} params  params将来用，表示是否覆盖默认的API调用参数
+           */
+          _fn_dom_update_list: function(box, api, hashs, refresh, params, success) { 
+              var that = this,
+                  decodeHash = this._fn_data_unparams(decodeURIComponent(hashs[box] || ''));
+                  
+              if (!this._fn_is_box_need_reload(box, hashs, refresh)) {
+                  return;
+              }
+  
+  			// if(box === 'ranking'){
+  			// 	decodeHash.days = decodeHash.days || '30';
+  			// }
+  
+              Shop.getModel(hashs.id).getData(function(data) {
+                  params = that._fn_set_api_params(hashs.id, data, decodeHash, params);
+                  Shop.getModel(hashs.id)[api](params, function(res) {
+                      var renderData = that._fn_set_list_render_data(res, box, decodeHash, hashs.id); 
+  					renderData._shopInfo = data; 
+                      var detailContainer = that.$el.find(that._data_box_container[box]);
+                      // console.log(RC.template.get_node('if','box', renderData, that._data_template_all, 0));
+                      //   console.log('renderData:'+JSON.stringify(renderData));
+                      detailContainer.html(RC.template.get_node('if','box', renderData, that._data_template_all, 0));
+                      if (detailContainer.find('.J_Pages_Container').length === 0) {
+                          return;
+                      }
+                      //以下渲染分页
+                      if (!that._data_page_controls[box]) {
+                          that._data_page_controls[box] = RC.controls.get('controls.shop.pagination');
+                      }
+                      that._fn_dom_update_pagination(
+                          that._data_page_controls[box],
+                          detailContainer.find('.J_Pages_Container'), {
+                              tp: box,
+                              href: null /* $.proxy(that._fn_act_cal_detail_pag_href, that) */, 
+                              maxNo: res.total,
+                              pageNo: decodeHash.pageNo,
+                              pageSize: decodeHash.pageSize,
+                              hasTotal: res.__hasTotal,
+                              isEnd: res.__isEnd
+                      });
+                  });
+              });
+          },
+          _fn_dom_update_list_tbk: function(box, api, hashs, refresh, params, success) { 
+              var that = this,
+                  decodeHash = this._fn_data_unparams(decodeURIComponent(hashs[box] || ''));
+                  
+              if (!this._fn_is_box_need_reload(box, hashs, refresh)) {
+                  return;
+              }
+  
+              if(box === 'ranking'){
+                  decodeHash.days = decodeHash.days || '30';
+              }
+  
+              Shop.getModel(hashs.id).getData(function(data) {
+                  params = that._fn_set_api_params(hashs.id, data, decodeHash, params);
+                  Shop.getModel(hashs.id)[api](params, function(res) {
+                      _.each(res.list, function(item){
+                          // translate
+                          item.discount = item.discount?(item.discount*10).toFixed(1):'-';
+                      });
+                      var renderData = that._fn_set_list_render_data(res, box, decodeHash, hashs.id); 
+                      var dateUtil_temp   = RC.util.date;
+                      // console.log('renderData:'+JSON.stringify(renderData));
+                      // if(renderData&&renderData.list){
+                      //     for(var cc = 0;cc<renderData.list.length;cc++){
+                      //         renderData.list[cc].date = dateUtil_temp.getdate(renderData.list[cc].date.replace(/\-/g, '/'),'MM-DD');
+                      //     }
+                      // }
+                       // console.log('renderData:'+JSON.stringify(renderData));
+                      renderData._shopInfo = data; 
+                      var detailContainer = that.$el.find(that._data_box_container[box]);
+                      detailContainer.html(RC.template.get_node('if','box', renderData, that._data_template_all, 0));
+                      
+                       var chartInfo = [{name: '推广量', item: 'amount'}, {name: '支付佣金', item: 'price'}];
+                      chartInfo.width='940';
+                      that._fn_dom_update_tbk_line_chart('detail', 'data_shop_tbk_chart_list', hashs, refresh, null, chartInfo);
+                      if (detailContainer.find('.J_Pages_Container').length === 0) {
+                          return;
+                      }
+                      //以下渲染分页
+                      if (!that._data_page_controls[box]) {
+                          that._data_page_controls[box] = RC.controls.get('controls.shop.pagination');
+                      }
+                      that._fn_dom_update_pagination(
+                          that._data_page_controls[box],
+                          detailContainer.find('.J_Pages_Container'), {
+                              tp: box,
+                              href: null /* $.proxy(that._fn_act_cal_detail_pag_href, that) */, 
+                              maxNo: res.total,
+                              pageNo: decodeHash.pageNo,
+                              pageSize: decodeHash.pageSize,
+                              hasTotal: res.__hasTotal,
+                              isEnd: res.__isEnd
+                      });
+                  });
+              });
+          },
+          _fn_dom_update_tbk_line_chart:function(box, api, hashs, refresh, params, chartInfo) {
+              var that = this,
+                  decodeHash = this._fn_data_unparams(decodeURIComponent(hashs[box] || ''));
+              var $container = that.$el.find('.J_tbk_detail');
+              //if (!this._fn_is_box_need_reload(box, hashs, refresh)) {
+              //    return;
+             // }
+              $container.find('.chart').html('<div class="ft-center" style="line-height:300px;">loading...</div>');
+  
+              Shop.getModel(hashs.id).getData(function(data) {
+                  params = that._fn_set_api_params(hashs.id, data, decodeHash, params);
+                  Shop.getModel(hashs.id)[api](params, function(res) {
+                      var list,
+                          renderData = $.extend({
+                              box: box,
+                              select: decodeHash.select ? decodeHash.select : 'all',
+                              nodata: false,
+                              status: res.__status,
+                              status_html:res.__status_html,
+                              level: res.__level
+                          }, decodeHash);
+  
+                      // if (decodeHash.startDate && decodeHash.endDate) {
+                      //     decodeHash.dateRange = renderData.dateRange = decodeHash.startDate.replace(/-/g, '/') + ' - ' + decodeHash.endDate.replace(/-/g, '/');
+                      // }
+                      if ((list = res.list) !== undefined) {
+                          if (list.length === 0) {
+                              renderData.nodata = true;
+                          }
+                      }
+                      renderData.id = hashs.id;
+                      
+                      // $container.html(RC.template.get_node('if', 'box', renderData, that._data_template_all, 0));
+                      // console.log("list:"+JSON.stringify(list));
+                      // console.log("list:"+JSON.stringify(list));
+                      //list=[{"date":1433692800000,"amount":10709956,"price":504421},{"date":1433779200000,"amount":10858785,"price":150474},{"date":1433865600000,"amount":10956253,"price":191423},{"date":1433952000000,"amount":10690318,"price":124515},{"date":1434038400000,"amount":12196496,"price":136734},{"date":1434124800000,"amount":12111255,"price":158238},{"date":1434211200000,"amount":11980553,"price":160152},{"date":1434297600000,"amount":10589565,"price":138092},{"date":1434384000000,"amount":10355996,"price":145364},{"date":1434470400000,"amount":11272582,"price":141888},{"date":1434556800000,"amount":6631297,"price":102901},{"date":1434643200000,"amount":7633891,"price":89257},{"date":1434729600000,"amount":5839786,"price":114404},{"date":1434816000000,"amount":4899962,"price":142140},{"date":1434902400000,"amount":4745083,"price":180306},{"date":1434988800000,"amount":5136799,"price":321929},{"date":1435075200000,"amount":5830704,"price":864972},{"date":1435161600000,"amount":6260880,"price":1358408},{"date":1435248000000,"amount":3923634,"price":251509},{"date":1435334400000,"amount":5107417,"price":321557},{"date":1435420800000,"amount":5155550,"price":407242},{"date":1435507200000,"amount":5444063,"price":267509},{"date":1435593600000,"amount":6239959,"price":156612},{"date":1435680000000,"amount":6778498,"price":139108},{"date":1435766400000,"amount":6048452,"price":122131},{"date":1435852800000,"amount":6342397,"price":128613},{"date":1435939200000,"amount":5705442,"price":100725},{"date":1436025600000,"amount":4722595,"price":109106},{"date":1436112000000,"amount":5092261,"price":104885},{"date":1436198400000,"amount":6044409,"price":110134}];
+                      if (list && list.length) {
+                          list.sort(function(a,b){
+                              return a.date-b.date;
+                          });
+                          var dateUtil = RC.util.date;
+                          var startD = dateUtil.getdate(list[0].date, 'YY-MM-DD');
+                          var endD = dateUtil.getdate(list[list.length-1].date, 'YY-MM-DD');
+                          // for(var cc = 0;cc<list.length;cc++){
+                          //     list[cc].date = dateUtil.getdate(list[cc].date.replace(/\-/g, '/'),'MM-DD');
+                          // }
+                          that._fn_act_draw_chart_tbk(list, chartInfo, $container, {startDate:startD , endDate:endD });
+                      }else{
+                           $container.find('.chart').html('<div class="ft-center" style="line-height:300px;">暂无数据</div>');
+                      }
+                  });
+              });
+  
+          },
+          _fn_dom_update_two_line_chart: function(box, api, hashs, refresh, params, chartInfo) {
+              var that = this,
+                  decodeHash = this._fn_data_unparams(decodeURIComponent(hashs[box] || ''));
+              var $container = that.$el.find(that._data_box_container[box]);
+  
+              if (!this._fn_is_box_need_reload(box, hashs, refresh)) {
+                  return;
+              }
+              $container.find('.chart').html('<div class="ft-center" style="line-height:300px;">loading...</div>');
+              Shop.getModel(hashs.id).getData(function(data) {
+                  params = that._fn_set_api_params(hashs.id, data, decodeHash, params);
+                  Shop.getModel(hashs.id)[api](params, function(res) {
+                      var list,
+                          renderData = $.extend({
+                              box: box,
+                              select: decodeHash.select ? decodeHash.select : 'all',
+                              nodata: false,
+                              status: res.__status,
+                              status_html:res.__status_html,
+                              level: res.__level
+                          }, decodeHash);
+                      if (decodeHash.endDate) {
+                          decodeHash.searchDate = renderData.searchDate = decodeHash.endDate.replace(/-/g, '/');
+                      }
+                      if (decodeHash.startDate && decodeHash.endDate) {
+                          decodeHash.dateRange = renderData.dateRange = decodeHash.startDate.replace(/-/g, '/') + ' - ' + decodeHash.endDate.replace(/-/g, '/');
+                      }
+                      if ((list = res.list) !== undefined) {
+                          if (list.length === 0) {
+                              renderData.nodata = true;
+                          }
+                      }
+                      renderData.id = hashs.id;
+                      $container.html(RC.template.get_node('if', 'box', renderData, that._data_template_all, 0));
+                      if (list && list.length) {
+                          that._fn_act_draw_chart(list, chartInfo, $container, {startDate: decodeHash.startDate, endDate: decodeHash.endDate});
+                      }
+                  });
+              });
+  
+          },
+          _fn_act_draw_chart_tbk: function(list, chartInfo, $container, dateRange) {
+              var chartColor = RC.controls.get('control.config').chartColor;
+              var dateObj = RC.util.date;
+                  
+              list.sort(function(a, b) {
+                  return a.date - b.date;
+              });
+              
+              dateRange.startDate = dateObj.tojsdate(dateRange.startDate).getTime();
+              dateRange.endDate = dateObj.tojsdate(dateRange.endDate).getTime();
+              dateRange.startDate = (list[0] && list[0].date < dateRange.startDate ? list[0].date:dateRange.startDate);
+              var data = this._fn_process_data_for_chart_tbk(list, chartInfo, dateRange);
+  
+              //10天一个单位
+              var step = Math.ceil((dateRange.endDate - dateRange.startDate)/(10 * 24 * 60 * 60 * 1000));
+              var opt = {
+                  chart: {
+                      width: chartInfo.width || 1042,
+                      height: 400,
+                      type: 'area'
+                  },
+                  exporting: {
+                      enabled: false
+                  },
+                  credits: {
+                      enabled: false
+                  },
+                  title: {
+                      text: ' '
+                  },
+                  rangeSelector: {
+                       enabled: false
+                   },
+                  legend: {
+                      align: 'center',      //水平居中
+                      verticalAlign: 'top', //在顶部
+                      margin: 35, 
+                      enabled: true,
+                      symbolWidth: 20,
+                      symbolHeight: 8
+                      // useHTML: true,
+                      // labelFormatter: function() {
+                      //     var color = [shopColor, ztcColor];
+                      //     return html = '<span style="color:' + color[this.index] + '"><span style="display:inline-block;width:20px;height:2px;margin-right:5px;vertical-align: 3px;background:' + color[this.index] + '"></span>' + this.name + '</span>';
+                      // }
+                   },
+                   plotOptions: {
+                      area: {
+                          fillOpacity: 0.05,
+                          lineWidth: 1
+                      }
+                   },
+                  xAxis: {
+                      type: 'datetime',
+                      title: {text: null},
+                      labels: {
+                          formatter: function () {
+                              return dateObj.getdate(this.value,'MM-DD').replace(/-/g, '\/');
+                          },
+                          staggerLines: 1,  //水平轴label不会换行
+                          step: step,          //3天显示一次
+                      },
+                      gridLineWidth: 1,  //网格线
+                      tickLength: 0,     //伸出水平轴的长度
+                      lineWidth: 2,       //x轴的宽度
+                      tickInterval: 24 * 60 * 60 * 1000,
+                      startOnTick: true,
+                      endOnTick: true
+                  },
+                  
+                  tooltip: {
+                      shared: true,
+                      xDateFormat: '%Y-%m-%d'
+                  },
+                  yAxis: [{
+                       // min: 0,
+                       labels: {
+                           // y: 3,
+                           // x: -25,
+                           style: {
+                               color: chartColor[0]
+                           },
+                           opposite: false
+                       },
+                       // showLastLabel: true,
+                       title: {
+                          text: null
+                       },
+                       lineWidth: 2,
+                       opposite: false
+  
+                   }, {
+                      // min: 0,
+                      linkedTo: 0,
+                      labels: {
+                          // y: 3,
+                          // x: 20,
+                          opposite: true,
+                          style: {
+                              color: chartColor[1]
+                          }
+                      },
+                      opposite: true,
+                      // showLastLabel: true,
+                      title: {
+                         text: null
+                      },
+                      lineWidth: 2
+  
+                   }],
+                  series: [{
+                      name: chartInfo[0].name,
+                      data: data[0],
+                      color: chartColor[0]
+                  }, {
+                      name: chartInfo[1].name,
+                      data: data[1],
+                      color: chartColor[1]
+                  }]
+              };
+              $container.find('.chart').highcharts(opt);
+          },
+          _fn_act_draw_chart: function(list, chartInfo, $container, dateRange) {
+              var chartColor = RC.controls.get('control.config').chartColor;
+              var dateObj = RC.util.date;
+                  
+              list.sort(function(a, b) {
+                  return a.date - b.date;
+              });
+              
+              dateRange.startDate = dateObj.tojsdate(dateRange.startDate).getTime();
+              dateRange.endDate = dateObj.tojsdate(dateRange.endDate).getTime();
+              dateRange.startDate = (list[0] && list[0].date < dateRange.startDate ? list[0].date:dateRange.startDate);
+              var data = this._fn_process_data_for_chart(list, chartInfo, dateRange);
+  
+              //10天一个单位
+              var step = Math.ceil((dateRange.endDate - dateRange.startDate)/(10 * 24 * 60 * 60 * 1000));
+              var opt = {
+                  chart: {
+                      width: chartInfo.width || 1042,
+                      height: 400,
+                      type: 'area'
+                  },
+                  exporting: {
+                      enabled: false
+                  },
+                  credits: {
+                      enabled: false
+                  },
+                  title: {
+                      text: ' '
+                  },
+                  rangeSelector: {
+                       enabled: false
+                   },
+                  legend: {
+                      align: 'center',      //水平居中
+                      verticalAlign: 'top', //在顶部
+                      margin: 35, 
+                      enabled: true,
+                      symbolWidth: 20,
+                      symbolHeight: 8
+                      // useHTML: true,
+                      // labelFormatter: function() {
+                      //     var color = [shopColor, ztcColor];
+                      //     return html = '<span style="color:' + color[this.index] + '"><span style="display:inline-block;width:20px;height:2px;margin-right:5px;vertical-align: 3px;background:' + color[this.index] + '"></span>' + this.name + '</span>';
+                      // }
+                   },
+                   plotOptions: {
+                      area: {
+                          fillOpacity: 0.05,
+                          lineWidth: 1
+                      }
+                   },
+                  xAxis: {
+                      type: 'datetime',
+                      title: {text: null},
+                      labels: {
+                          formatter: function () {
+                              return dateObj.getdate(this.value,'YY-MM-DD').replace(/-/g, '\/');
+                          },
+                          staggerLines: 1,  //水平轴label不会换行
+                          step: step,          //3天显示一次
+                      },
+                      gridLineWidth: 1,  //网格线
+                      tickLength: 0,     //伸出水平轴的长度
+                      lineWidth: 2,       //x轴的宽度
+                      tickInterval: 24 * 60 * 60 * 1000,
+                      startOnTick: true,
+                      endOnTick: true
+                  },
+                  
+                  tooltip: {
+                      shared: true,
+                      xDateFormat: '%Y-%m-%d'
+                  },
+                  yAxis: [{
+                       // min: 0,
+                       labels: {
+                           // y: 3,
+                           // x: -25,
+                           style: {
+                               color: chartColor[0]
+                           },
+                           opposite: false
+                       },
+                       // showLastLabel: true,
+                       title: {
+                          text: null
+                       },
+                       lineWidth: 2,
+                       opposite: false
+  
+                   }, {
+                      // min: 0,
+                      linkedTo: 0,
+                      labels: {
+                          // y: 3,
+                          // x: 20,
+                          opposite: true,
+                          style: {
+                              color: chartColor[1]
+                          }
+                      },
+                      opposite: true,
+                      // showLastLabel: true,
+                      title: {
+                         text: null
+                      },
+                      lineWidth: 2
+  
+                   }],
+                  series: [{
+                      name: chartInfo[0].name,
+                      data: data[0],
+                      color: chartColor[0]
+                  }, {
+                      name: chartInfo[1].name,
+                      data: data[1],
+                      color: chartColor[1]
+                  }]
+              };
+              $container.find('.chart').highcharts(opt);
+          },
+          _fn_process_data_for_chart_tbk: function(list, chartInfo, dateRange) {
+              var dateObj = RC.util.date;
+              var s = dateRange.startDate, 
+                  e = dateRange.endDate,
+                  t = s;
+              var i = 0, temp, l = list.length;
+              var data0 = [], data1 = [];
+              var item0 = chartInfo[0].item, item1 = chartInfo[1].item;
+  
+              temp = list[i];
+              temp.date = dateObj.tojsdate(dateObj.getdate(temp.date, 'YY-MM-DD')).getTime();
+              while(t <= e) {
+                  if (t == temp.date) {
+                      data0.push([t, temp[item0] === undefined ? null: temp[item0]]);
+                      data1.push([t, temp[item1] === undefined ? null: temp[item1]]);
+                      if (i < l - 1) {
+                          temp = list[++i];
+                          //去掉小时、分、秒
+                          temp.date = dateObj.tojsdate(dateObj.getdate(temp.date, 'YY-MM-DD')).getTime();
+                      }
+                  } else {
+                      data0.push([t, null]);
+                      data1.push([t, null]);
+                  }
+                  t = dateObj.tojsdate(dateObj.getdiffdate(t, '1d')).getTime();
+              }
+              return [data0, data1];
+          },
+          //时间段为用户选择的时间段，非api返回的时间段，没有数据则用null断裂
+          _fn_process_data_for_chart: function(list, chartInfo, dateRange) {
+              var dateObj = RC.util.date;
+              var s = dateRange.startDate, 
+                  e = dateRange.endDate,
+                  t = s;
+              var i = 0, temp, l = list.length;
+              var data0 = [], data1 = [];
+              var item0 = chartInfo[0].item, item1 = chartInfo[1].item;
+  
+              temp = list[i];
+              temp.date = dateObj.tojsdate(dateObj.getdate(temp.date, 'YY-MM-DD')).getTime();
+              while(t <= e) {
+                  if (t == temp.date) {
+                      data0.push([t, temp[item0] === undefined ? null: temp[item0]]);
+                      data1.push([t, temp[item1] === undefined ? null: temp[item1]]);
+                      if (i < l - 1) {
+                          temp = list[++i];
+                          //去掉小时、分、秒
+                          temp.date = dateObj.tojsdate(dateObj.getdate(temp.date, 'YY-MM-DD')).getTime();
+                      }
+                  } else {
+                      data0.push([t, null]);
+                      data1.push([t, null]);
+                  }
+                  t = dateObj.tojsdate(dateObj.getdiffdate(t, '1d')).getTime();
+              }
+              return [data0, data1];
+          },
+          _fn_data_unparams: function(string){
+              string = string.replace(/.*(\?.*)$/,'$1').replace(/^\?/,'');
+              var o = {},
+                  r = string.split('&');
+              $.each(r,function(idx, item){
+                  var rr = item.split('='); 
+                  if(rr[0]){
+                      o[rr[0]] = rr[1] || '';
+                  }
+              });  
+              return o;
+          },
+          //hashs对象转为了url string
+          _fn_act_unformat_hashs: function(hashs) {
+              var s = [];
+              for(var p in hashs){
+                  if(typeof hashs[p] === 'object'){
+                      s.push(p + '=' + encodeURIComponent($.param(hashs[p])));
+                  } else {
+                      s.push(p + '=' + hashs[p]);
+                  }
+              }
+              return s.join('&');
+          },
+          _fn_act_modify_hash: function(key, value) {
+              var hash = {};
+              hash[key] = value;
+              RC.pages.modifyCurHash(hash);
+          },
+          _fn_get_url_from_hashs: function(hashs) {
+              return location.href.replace(/\?.*$/, '') + '?' + this._fn_act_unformat_hashs(hashs);
+          },
+          _fn_dom_update_pagination: function(pagControl, $container, opt) {
+              this._data_deep_copy_hashs = $.extend(true, {}, this._data_lastest_hash);
+              $container.empty().append(pagControl.getHtml(opt));
+          },
+          /**
+           * 翻页验证
+           */
+          _fn_act_page_verify: function(decodeHash) {
+              //页码
+              if(!(+decodeHash.pageNo >= 1)){
+                  decodeHash.pageNo = '1';
+              }
+              if(!decodeHash.pageSize || $.inArray(decodeHash.pageSize, ['10','20','30']) === -1) {
+                  decodeHash.pageSize = '10';
+              }
+          },
+          /**
+           * 排序验证
+           */
+          _fn_act_order_verify: function(level, decodeHash) {
+              if (!decodeHash.orderField || level !== 'senior') {
+                  decodeHash.orderField = 'date';
+                  decodeHash.orderType = 'desc';
+              }
+          },
+          /**
+           * 权限检查和hashs值校验
+           * @param  {Array} decodeHashs 每个box的已编码的hash的数组
+           */
+          _fn_act_hashs_verify: function(data, decodeHash) {
+              
+              this._fn_act_page_verify(decodeHash);
+              this._fn_act_order_verify(data.__level, decodeHash); 
+              this._fn_act_format_date(decodeHash, data.__level, data.__updateTime);
+          },
+          _fn_act_format_date: function(hashs, viplevel, updateTime) {
+              /*
+              1. 默认查询30天数据
+              2. 未购买用户, 查看最近30天数据
+              3. 标准版用户, 查看最近半年数据
+              4. 高级版用户, 不做限制
+              */
+              var dateUtil = RC.util.date,
+                  startDate,
+                  endDate,
+                  minDate,
+                  maxDate,
+                  difDay,
+                  maxDays;
+  
+              startDate = hashs.startDate || '';
+              endDate = hashs.endDate || '';
+              maxDate = dateUtil.getdate(updateTime, 'YY-MM-DD');
+              
+              if (viplevel == 'normal' || viplevel == '') {  // 未购买 或者未登录的示范店铺
+                  difDay = '-30d';
+                  maxDays = 31;
+              } else if (viplevel == 'primary') {  // 标准版
+                  difDay = '-182d';
+                  maxDays = 183;
+              }
+  
+              if (difDay) {
+                  minDate = dateUtil.getdiffdate(maxDate, difDay, 'YY-MM-DD');
+              }
+  
+              //格式化开始时间、结束时间
+              if (!endDate 
+                  || !dateUtil.is_date(endDate)
+                  || dateUtil.is_date(endDate) && dateUtil.tojsdate(endDate) >= dateUtil.tojsdate(maxDate)) {
+                  endDate = maxDate;
+              }
+  
+              if (!startDate
+                  || !dateUtil.is_date(startDate)) {
+                  startDate = dateUtil.getdiffdate(endDate, '-29d', 'YY-MM-DD');
+              } else if (minDate && dateUtil.tojsdate(startDate) < dateUtil.tojsdate(minDate)) {
+                  startDate = dateUtil.getdiffdate(minDate, '0d', 'YY-MM-DD');
+              }
+  
+              if (dateUtil.tojsdate(startDate) > dateUtil.tojsdate(endDate)) {
+                  startDate = dateUtil.getdiffdate(endDate,'-29d','YY-MM-DD');
+              }
+  
+              hashs.startDate = startDate;
+              hashs.endDate = endDate;
+              hashs.minDate = (minDate || '2000/01/01');
+              hashs.maxDate = maxDate;
+              hashs.maxDays = maxDays || 60;
+          }
+      };
+  
+      RC.controls.define(ctrls.name, ctrls);
+  
+  })(jQuery, RayCloud);
+  
+
+});

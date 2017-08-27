@@ -1,0 +1,65 @@
+define('modules/demo/bbjk/module', function(require, exports, module) {
+
+  ;(function($,RC){
+  	var mdul = {
+  		name: 'demo.bbjk',
+  		depend: 'demo',
+  		_is_first_update: true,
+  		_dom_root: '#container',
+  		_template_name: 'demo.bbjk.index',
+  
+          init: function(){}
+  
+          , render: function () {
+  			if(this.$el){
+  				return;
+  			}
+  			this.$el = $(RC.template.get(this._template_name)).appendTo(this._dom_root);
+          }
+  
+          , getContainer: function(){
+  			return this.$el;
+  		}
+  
+          , update: function(hashs, afterload, is_refresh){
+              var _this = this;
+  			
+  			_this.render();
+  			this.switchTab(hashs);
+              afterload && afterload();
+  			
+  			// 更新头部搜索框对应类型
+  			$('#header .search-nav .J_Tab').removeClass('current')
+  				.filter('[data-value="hotkeys"]')
+  				.trigger('click');
+          }
+  		, switchTab: function(hashs){
+  			var r = (hashs.tab||'').split("-");
+  			var root = r[0];var app = r[1] || ""; 
+  			if($.inArray(root, ["index","item_analysis","marketing","traffic_analysis"]) === -1){
+  				root = "index";app = "";
+  			}
+  			$("#J_item_pin_bar .anchor").filter(".current").removeClass("current");
+  			$("#J_item_pin_bar .anchor").filter("."+root).addClass("current");
+  			$("#module-shop-item .module").filter(".current").removeClass("current");
+  			$("#J_"+root).addClass("current");
+  			if(app){
+  				$("#J_"+root).find(".mar-tab").filter(".current").removeClass("current");
+  				$("#J_"+root).find(".mar-tab").filter(".J_tab_"+app).addClass("current");
+  				$("#J_"+root).find(".sub-module").filter(".current").removeClass("current");
+  				$("#J_"+app).addClass("current");
+  			}
+  			
+  		}
+  		, destroy: function(){
+  			if(this.$el){
+  				this.$el.empty().remove();
+  				this.$el = null;
+  			}
+          }
+  	};
+  
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery, window.RayCloud);
+
+});

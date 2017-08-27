@@ -1,0 +1,585 @@
+define('modules/shop/detail/total/module.shop.detail.total', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var Shop        = RC.controls.get('control.shop.model'),
+  		querystring = RC.controls.get('control.querystring');
+  
+  	var mdul = {
+  		name: 'shop.detail.total',
+  		depend: 'shop',
+  		_elem_root: '#main',
+  		_elem_template_name: 'template.shop.detail.total',
+  		_fn_dom_render: function(data){
+  			if(this.$el){
+  				return;
+  			}
+  			this.$el = $(RC.template.get(this._elem_template_name, data)).appendTo(this._elem_root);
+  			this._fn_event_bind();
+  		},
+  		_fn_event_bind: function(){
+  			this._fn_event_unbind();
+  			this.$el.on("click",".next-7-day",this._fn_event_date_next_7_proxy = $.proxy(this._fn_event_date_next_7, this));
+  			this.$el.on("click",".pre-7-day",this._fn_event_date_pre_7_proxy = $.proxy(this._fn_event_date_pre_7, this));
+  			this.$el.on('change', '.datePicker', this._fn_event_date_change_proxy = $.proxy(this._fn_event_date_change, this));
+  			this._fn_event_unbind_scrollFixed();
+  			this._fn_event_bind_scrollFixed();
+  		},
+  		_fn_event_bind_scrollFixed: function(){
+  			var _this = this;
+  			if(this._status_event_scrollFixed === true){
+  				return;
+  			}
+  			$('.J_date_cell').scrollToFixed({zIndex:100,marginTop:47});
+  			this._status_event_scrollFixed = true;
+  		},
+  		_status_event_scrollFixed:false,
+  		_fn_event_unbind_scrollFixed: function(){
+  			if(this._status_event_scrollFixed === false){
+  				return;
+  			}
+  			$('.J_date_cell').trigger('detach.ScrollToFixed');
+  			this._status_event_scrollFixed = false;
+  		},
+  		_fn_event_date_next_7:function(e){
+  			var $target = $(e.target)
+  			if($target.hasClass("disabled")){
+  				return;
+  			}
+  			var dateUtil = RC.util.date;
+  			var hashs = this._fn_get_cur_hashs(),
+              date = this.$el.find(".datePicker").val();
+              decodeHash = {},
+              endDate = date;
+              endDate = dateUtil.getdiffdate(endDate, '-7d', 'YY-MM-DD').replace(/-/g, '/');
+              startDate = dateUtil.getdiffdate(endDate, '-6d', 'YY-MM-DD').replace(/-/g, '/');
+              var hash = {};
+            	startDate = new Date(startDate).getTime();
+              // startDate = dateUtil.getdiffdate(startDate, '-7d', 'YY-MM-DD').replace(/-/g, '/');
+              if(new Date(startDate).getTime()<=new Date(this._minDate).getTime()){
+              	startDate = this._minDate;
+              }
+              hash['startDate'] = new Date(startDate).getTime();
+              hash['endDate'] = new Date(endDate).getTime();
+              RC.pages.modifyCurHash(hash);
+  		},
+  		_fn_event_date_pre_7:function(e){
+  			var $target = $(e.target)
+  			if($target.hasClass("disabled")){
+  				return;
+  			}
+  			var dateUtil = RC.util.date;
+  			var hashs = this._fn_get_cur_hashs(),
+              date = this.$el.find(".datePicker").val();
+              decodeHash = {},
+              endDate = date;
+              var hash = {};
+             	endDate = new Date(endDate).getTime();
+  
+              endDate = dateUtil.getdiffdate(endDate, '7d', 'YY-MM-DD').replace(/-/g, '/');
+              if(new Date(endDate).getTime()>=new Date(this._maxDate).getTime()){
+              	endDate = this._maxDate;
+              }
+             	startDate = dateUtil.getdiffdate(endDate, '-6d', 'YY-MM-DD').replace(/-/g, '/');
+              hash['startDate'] = new Date(startDate).getTime();
+              hash['endDate'] = new Date(endDate).getTime();
+              RC.pages.modifyCurHash(hash);
+  		},
+  		_fn_event_unbind: function(){
+  			this.$el.off('change', '.datePicker', this._fn_event_date_change_proxy);
+  			this.$el.off("click",".next-7-day",this._fn_event_date_next_7_proxy);
+  			this.$el.off("click",".pre-7-day",this._fn_event_date_pre_7_proxy);
+  		},
+  		_fn_event_handler_shopModelPermissionChange: function(e){
+  			if(e.id != this._status_hashs.id){
+  				return;
+  			}
+  			this._status_shop_stauts_changed = true;
+  			if(this._status_module_active === true){
+  				this.update(this._status_hashs, null, true);
+  			}
+  		},
+  		init: function(){},
+  		getContainer: function(){
+  			return this.$el;
+  		},
+  		_maxDate :undefined,
+  		_minDate:undefined,
+  		disabled: function(){
+  			this._status_module_active = false;
+  		},
+  		_fn_event_date_change: function(e) {
+  			var dateUtil = RC.util.date;
+              var hashs = this._fn_get_cur_hashs(),
+                  $target = $(e.target),
+                  // decodeHash = this._fn_util_unparam(decodeURIComponent(hashs[box])),
+                  decodeHash = {},
+                  date = $target.val();
+              endDate = date;
+             	startDate = dateUtil.getdiffdate(endDate, '-6d', 'YY-MM-DD').replace(/-/g, '/');
+              var hash = {};
+              if(new Date(startDate).getTime()<=new Date(this._minDate).getTime()){
+              	startDate = this._minDate;
+              }
+              hash['startDate'] = new Date(startDate).getTime();
+              hash['endDate'] = new Date(endDate).getTime();
+  
+              RC.pages.modifyCurHash(hash);
+              // this._fn_act_modify_hash(box, encodeURIComponent($.param(decodeHash)));
+          },
+          _fn_get_cur_hashs: function() {
+              var url = location.href,
+                  index, o = {}, l, t, hashs, i;
+              index = url.indexOf('#');
+              if (index !== -1) {
+                  hashs =  url.slice(index + 1);
+                  if (hashs.indexOf('?') !== -1) {
+                      hashs = hashs.slice(hashs.indexOf('?') + 1);
+                      hashs = hashs.split('&');
+                      for (i = 0, l = hashs.length; i < l; i++) {
+                          t = hashs[i].split('=');
+                          if (t[0]) {
+                              o[t[0]] = t[1];
+                          }
+                      }
+                  }
+              }
+              return o;
+          },
+  		_fn_dom_update_list:function(hashs,shopInfo){
+  			// console.log('shopInfo:'+JSON.stringify(shopInfo));
+  			var dateUtil = RC.util.date,offerHashs=hashs;
+  			var maxDate   = dateUtil.getdate(shopInfo.__updateTime, 'YY-MM-DD'),
+  				endDate   = offerHashs.endDate,
+  				minDate,
+  				// 要做本地排序， 长度限制一下 365*2
+  				_maxDays  = 730;
+  			// 用户查询权询，一个月以31天计算，保证足够.
+  
+  			switch(shopInfo.__level){
+  				case 'senior':
+  					minDate = '2000-01-01';
+  					break;
+  				case 'primary':
+  					minDate = dateUtil.getdiffdate(maxDate, '-182d', 'YY-MM-DD');
+  					break;
+  				default:
+  					minDate = dateUtil.getdiffdate(maxDate, '-30d', 'YY-MM-DD');
+  			}
+  			if(!endDate){
+  				endDate = endDate||maxDate;
+  
+  			}else{
+  				endDate = RC.util.date.getdate(new Date(parseInt(endDate)), 'YY-MM-DD');
+  			}
+  			startDate = dateUtil.getdiffdate(endDate, '-6d', 'YY-MM-DD');
+  			this._maxDate = maxDate;
+  			this._minDate = minDate;
+  
+  			var disabledendDate = false;
+  			var disabledstartDate = false;
+  			if(endDate==maxDate){
+  				//禁用上七天
+  				var disabledendDate = true;
+  			}
+  			if(startDate==minDate){
+  				//禁用下七天
+  				disabledstartDate = true;
+  			}
+  			startDate = startDate.replace(/-/g, '/');
+  			endDate = endDate.replace(/-/g, '/');
+  			var _this = this;
+  			Shop.getModel(shopInfo.id).data_shop_detail_total(
+  				{startDate:new Date(startDate).getTime(),
+  					endDate:new Date(endDate).getTime(),
+  					shopId:shopInfo.id},
+  				function(data){
+  					var renderData = {};
+  					renderData.minDate = minDate;
+  					renderData.maxDate = maxDate;
+  					renderData.status = data.__status;
+  					renderData.status_html = data.__status_html;
+  					if(data.__status==3){
+  						offerHashs.dateRange = renderData.dateRange = dateUtil.getdate(new Date(endDate), 'YY-MM-DD').replace(/-/g, '/');
+  						if(!data.data.list || data.data.list.length==0){
+  							renderData.nodata=true;
+  						}else{
+  							renderData.nodata=false;
+  							renderData.list = _this._fn_deal_data(startDate,endDate,data,shopInfo);
+  						}
+  					}
+  					var inner_c = "天猫预售";
+  					if(shopInfo.type=="C"){
+  						inner_c = "天天特价";
+  					}
+  					renderData.inner_c=inner_c;
+  					renderData.shopType=shopInfo.type;
+  					renderData.shopId = shopInfo.id;
+  					// console.log('renderData:'+JSON.stringify(renderData));
+  					renderData.box="show";
+  					_this.$el.find(".J_detail_total").html(RC.template.get_node('if','box', renderData,RC.template.get(_this._elem_template_name), 0));
+  					if(disabledendDate){
+  						$(".J_detail_total .pre-7-day").addClass("disabled");
+  					}
+  					if(disabledstartDate){
+  						$(".J_detail_total .next-7-day").addClass("disabled");
+  					}
+  					_this._fn_event_bind();
+  				},
+  				function(data){
+  
+  				}
+  			);
+  		},
+  		_fn_deal_data:function(startDate,endDate,data,shopInfo){
+  			data.data.list.sort(function(a,b){
+  				return -a.date+b.date;
+  			});
+  			var id = shopInfo.id;
+  
+  			var data_min_date = data.data.list[data.data.list.length-1].date;
+  			var days = Math.floor((new Date(endDate).getTime()-new Date(startDate).getTime())/1000/3600/24)+1;
+  		var attrs = [{name:'taoke_itemcnt', a:"/index.html#/shop/detail/marketing/?type=tbk&id="+id},
+  {name:'zuan_itemcnt', a:"/index.html#/shop/detail/marketing/?type=zszw&id="+id},
+  {name:'mp4p_itemcnt', a:""},
+  {name:'mp4p_keycnt', a:""},
+  {name:'p4p_itemcnt', a:""},
+  {name:'p4p_keycnt', a:""},
+  {name:'itemCount', a:"/index.html#/shop/detail/item_analysis/?ranking=pageNo%3D1%26days%3D30&type=hot&id="+id},
+  {name:'yushou', a:"/index.html#/shop/detail/marketing/?detail={{date_str}}%26position%3Dyushou%26pageNo%3D1&type=innersite&id="+id},
+  {name:'tejia', a:"/index.html#/shop/detail/marketing/?detail={{date_str}}%26position%3Dtejia%26pageNo%3D1&type=innersite&id="+id},
+  {name:'qingcang', a:"/index.html#/shop/detail/marketing/?detail={{date_str}}%26position%3Dqingcang%26pageNo%3D1&type=innersite&id="+id},
+  {name:'qiang', a:"/index.html#/shop/detail/marketing/?detail={{date_str}}%26position%3Dqiang%26pageNo%3D1&type=innersite&id="+id},
+  {name:'tjb', a:"/index.html#/shop/detail/marketing/?detail={{date_str}}%26position%3Dtjb%26pageNo%3D1&type=innersite&id="+id+""},
+  {name:'freetry', a:"/index.html#/shop/detail/marketing/?detail={{date_str}}%26position%3Dfreetry%26pageNo%3D1&type=innersite&id="+id+""},
+  {name:'mizhe', a:"/index.html#/shop/detail/marketing/?detail={{date_str}}%26position%3Dmizhe%26pageNo%3D1&type=outersite&id="+id+""},
+  {name:'fanli', a:"/index.html#/shop/detail/marketing/?detail={{date_str}}%26position%3Dfanli%26pageNo%3D1&type=outersite&id="+id+""},
+  {name:'meidebi', a:"/index.html#/shop/detail/marketing/?detail={{date_str}}%26position%3Dmeidebi%26pageNo%3D1&type=outersite&id="+id+""},
+  {name:'zhe800', a:"/index.html#/shop/detail/marketing/?detail={{date_str}}%26position%3Dzhe800%26pageNo%3D1&type=outersite&id="+id+""},
+  {name:'juanpi', a:"/index.html#/shop/detail/marketing/?detail={{date_str}}%26position%3Djuanpi%26pageNo%3D1&type=outersite&id="+id+""},
+  {name:'taofen8', a:"/index.html#/shop/detail/marketing/?detail={{date_str}}%26position%3Dtaofen8%26pageNo%3D1&type=outersite&id="+id},
+  {name:'zhonghuasuan', a:"/index.html#/shop/detail/marketing/?detail={{date_str}}%26position%3Dzhonghuasuan%26pageNo%3D1&type=outersite&id="+id+""},
+  {name:'youhuishe', a:"/index.html#/shop/detail/marketing/?detail={{date_str}}%26position%3Dyouhuishe%26pageNo%3D1&type=outersite&id="+id+""},
+  // {name:'search_itemcnt', a:""},
+  // {name:'search_keycnt', a:""},
+  // {name:'spsearch_itemcnt', a:""},
+  // {name:'spsearch_keycnt'},
+  // {name:'msearch_itemcnt'},
+  // {name:'msearch_keycnt'},
+  // {name:'spmsearch_itemcnt'},
+  // {name:'spmsearch_keycnt'}];
+  {name:'search_itemcnt', a:""},
+  {name:'search_keycnt', a:""},
+  {name:'spsearch_itemcnt', a:""},
+  {name:'spsearch_keycnt', a:""},
+  {name:'msearch_itemcnt', a:""},
+  {name:'msearch_keycnt', a:""},
+  {name:'spmsearch_itemcnt', a:""},
+  {name:'spmsearch_keycnt', a:""}];
+  		var attrs_other = ['ratio','hotItemCount','price','amount'];
+  				// dateUtil.getdate(new Date(startDate), 'YY').replace(/-/g, '/')
+  			var returnList = [];
+  var dateUtil = RC.util.date;
+  var arrow_html='';
+  // <a href="/index.html#/shop/detail/index/?id={{shopId}}">
+  			for(var i=0,length=data.data.list.length;i<7;i++){
+  				//和上一天比,下降还是上升
+  				if(!data.data.list[i]||!data.data.list[i].date){
+  					break;
+  				}
+  				var month = new Date(data.data.list[i].date).getMonth()+1+"";
+  				var day = new Date(data.data.list[i].date).getDate()+"";
+  				if(month.length<2){
+  					month="0"+month;
+  				}
+  				if(day.length<2){
+  					day="0"+day;
+  				}
+  				var __minDay = new Date("2015/11/07");
+              	var minDate = new Date(dateUtil.getdiffdate(shopInfo.updateTime, '-62d', 'YY-MM-DD').replace(/-/g, '/'));
+              	var day_offset = (new Date(shopInfo.updateTime).getTime()-__minDay.getTime())/3600/24/1000+1;
+  	            if(day_offset<62){
+  	               minDate = __minDay;
+  	            }
+  				data.data.list[i].date_m = data.data.list[i].date;
+  				if(data.data.list[i].date_m<minDate.getTime()){
+  					data.data.list[i].outoffdate = 1;
+  				}
+  				data.data.list[i].date = month+"月"+day+"日";
+  				for(var j=0;j<attrs.length;j++){
+  						var date_str = 'startDate%3D'+dateUtil.getdate(data.data.list[i].date_m, 'YY-MM-DD')+'%26endDate%3D'+dateUtil.getdate(data.data.list[i].date_m, 'YY-MM-DD');
+  					if(!data.data.list[i][attrs[j].name]){
+  						data.data.list[i][attrs[j].name]='-';
+  						data.data.list[i][attrs[j].name+"_check"] = 1;
+  					}else{
+  						//
+  						//
+  						if(data.data.list[i+1]&&data.data.list[i+1][attrs[j].name]){
+  							if(data.data.list[i][attrs[j].name]>data.data.list[i+1][attrs[j].name]){
+  								arrow_html = '<b class="price-up"></b>';
+  							}else if(data.data.list[i][attrs[j].name]<data.data.list[i+1][attrs[j].name]){
+  								arrow_html = '<b class="price-down"></b>';
+  							}else{
+  								arrow_html = '<b class="price-normal"></b>';
+  							}
+  						}else{
+  							arrow_html = '<b class="price-up"></b>';
+  						}
+  						if(attrs[j].a){
+  							data.data.list[i][attrs[j].name]=arrow_html+'<a href="'+attrs[j].a.replace(/\{\{date_str\}\}/, date_str)+'">'+data.data.list[i][attrs[j].name]+" 个</a>";
+  						}else{
+  							data.data.list[i][attrs[j].name]=arrow_html+data.data.list[i][attrs[j].name]+" 个";
+  						}
+  					}
+  				}
+  				if(data.data.list[i].amount){
+  					 arrow_html='';
+  						if(data.data.list[i+1]&&data.data.list[i+1].amount){
+  							if(data.data.list[i].amount>data.data.list[i+1].amount){
+  								arrow_html = '<b class="price-up"></b>';
+  							}else if(data.data.list[i].amount<data.data.list[i+1].amount){
+  								arrow_html = '<b class="price-down"></b>';
+  							}else{
+  								arrow_html = '<b class="price-normal"></b>';
+  							}
+  						}else{
+  							arrow_html = '<b class="price-up"></b>';
+  						}
+  						// offer=2015-12-192015-12-19%26
+  						data.data.list[i].amount=arrow_html+'<a href="/index.html#/shop/detail/sale_detail/?date='+data.data.list[i].date_m+'&id='+id+'">'+data.data.list[i].amount+" 件</a>";
+  				}else{
+  					data.data.list[i].amount="-";
+  				}
+  
+  				if(data.data.list[i].price){
+  					var arrow_html='';
+  						if(data.data.list[i+1]&&data.data.list[i+1].price){
+  							if(data.data.list[i].price>data.data.list[i+1].price){
+  								arrow_html = '<b class="price-up"></b>';
+  							}else if(data.data.list[i].price<data.data.list[i+1].price){
+  								arrow_html = '<b class="price-down"></b>';
+  							}else{
+  								arrow_html = '<b class="price-normal"></b>';
+  							}
+  						}else{
+  							arrow_html = '<b class="price-up"></b>';
+  						}
+  						data.data.list[i].price = arrow_html+'<a href="/index.html#/shop/detail/sale_detail/?date='+data.data.list[i].date_m+'&id='+id+'">'+(data.data.list[i].price/10000).toFixed(2)+" 万元</a>";
+  				}else{
+  					data.data.list[i].price="-";
+  				}
+  
+  				// {name:'ju_itemcnt', a:"/index.html#/shop/detail/marketing/?type=jhs&id="+id},
+  				if(data.data.list[i].ju_itemcnt){
+  					 arrow_html='';
+  						if(data.data.list[i+1]&&data.data.list[i+1].ju_itemcnt){
+  							if(data.data.list[i].ju_itemcnt>data.data.list[i+1].ju_itemcnt){
+  								arrow_html = '<b class="price-up"></b>';
+  							}else if(data.data.list[i].ju_itemcnt<data.data.list[i+1].ju_itemcnt){
+  								arrow_html = '<b class="price-down"></b>';
+  							}else{
+  								arrow_html = '<b class="price-normal"></b>';
+  							}
+  						}else{
+  							arrow_html = '<b class="price-up"></b>';
+  						}
+  						// offer=2015-12-192015-12-19%26
+  						data.data.list[i].ju_itemcnt=arrow_html+'<a href="/index.html#/shop/detail/marketing/?type=jhs&detail='+date_str+'&id='+id+'">'+data.data.list[i].ju_itemcnt+" 个</a>";
+  				}else{
+  					data.data.list[i].ju_itemcnt="-";
+  				}
+  
+  				if(data.data.list[i].newItemCount){
+  					 arrow_html='';
+  						if(data.data.list[i+1]&&data.data.list[i+1].newItemCount){
+  							if(data.data.list[i].newItemCount>data.data.list[i+1].newItemCount){
+  								arrow_html = '<b class="price-up"></b>';
+  							}else if(data.data.list[i].newItemCount<data.data.list[i+1].newItemCount){
+  								arrow_html = '<b class="price-down"></b>';
+  							}else{
+  								arrow_html = '<b class="price-normal"></b>';
+  							}
+  						}else{
+  							arrow_html = '<b class="price-up"></b>';
+  						}
+  						// offer=2015-12-192015-12-19%26
+  						data.data.list[i].newItemCount=arrow_html+'<a href="/index.html#/shop/detail/item_analysis/?type=onnew&item='+date_str+'&id='+id+'">'+data.data.list[i].newItemCount+" 个</a>";
+  				}else{
+  					data.data.list[i].newItemCount="-";
+  				}
+  				if(data.data.list[i].titleChange){
+  					 arrow_html='';
+  						if(data.data.list[i+1]&&data.data.list[i+1].titleChange){
+  							if(data.data.list[i].titleChange>data.data.list[i+1].titleChange){
+  								arrow_html = '<b class="price-up"></b>';
+  							}else if(data.data.list[i].titleChange<data.data.list[i+1].titleChange){
+  								arrow_html = '<b class="price-down"></b>';
+  							}else{
+  								arrow_html = '<b class="price-normal"></b>';
+  							}
+  						}else{
+  							arrow_html = '<b class="price-up"></b>';
+  						}
+  						// offer=2015-12-192015-12-19%26
+  						data.data.list[i].titleChange=arrow_html+'<a href="/index.html#/shop/detail/item_analysis/?type=onname&item='+date_str+'&id='+id+'">'+data.data.list[i].titleChange+" 个</a>";
+  				}else{
+  					data.data.list[i].titleChange="-";
+  				}
+  
+  				if(data.data.list[i].priceChange){
+  					 arrow_html='';
+  						if(data.data.list[i+1]&&data.data.list[i+1].priceChange){
+  							if(data.data.list[i].priceChange>data.data.list[i+1].priceChange){
+  								arrow_html = '<b class="price-up"></b>';
+  							}else if(data.data.list[i].priceChange<data.data.list[i+1].priceChange){
+  								arrow_html = '<b class="price-down"></b>';
+  							}else{
+  								arrow_html = '<b class="price-normal"></b>';
+  							}
+  						}else{
+  							arrow_html = '<b class="price-up"></b>';
+  						}
+  						// offer=2015-12-192015-12-19%26
+  						data.data.list[i].priceChange=arrow_html+'<a href="/index.html#/shop/detail/item_analysis/?type=onprice&item='+date_str+'&id='+id+'">'+data.data.list[i].priceChange+" 个</a>";
+  				}else{
+  					data.data.list[i].priceChange="-";
+  				}
+  				if(data.data.list[i].updateChange){
+  					 arrow_html='';
+  						if(data.data.list[i+1]&&data.data.list[i+1].updateChange){
+  							if(data.data.list[i].updateChange>data.data.list[i+1].updateChange){
+  								arrow_html = '<b class="price-up"></b>';
+  							}else if(data.data.list[i].updateChange<data.data.list[i+1].updateChange){
+  								arrow_html = '<b class="price-down"></b>';
+  							}else{
+  								arrow_html = '<b class="price-normal"></b>';
+  							}
+  						}else{
+  							arrow_html = '<b class="price-up"></b>';
+  						}
+  						// offer=2015-12-192015-12-19%26
+  						data.data.list[i].updateChange=arrow_html+'<a href="/index.html#/shop/detail/item_analysis/?type=onsale&item='+date_str+'&id='+id+'">'+data.data.list[i].updateChange+" 个</a>";
+  				}else{
+  					data.data.list[i].updateChange="-";
+  				}
+  				if(data.data.list[i].hotItemCount){
+  					var arrow_html='';
+  						if(data.data.list[i+1]&&data.data.list[i+1].hotItemCount){
+  							if(data.data.list[i].hotItemCount>data.data.list[i+1].hotItemCount){
+  								arrow_html = '<b class="price-up"></b>';
+  							}else if(data.data.list[i].hotItemCount<data.data.list[i+1].hotItemCount){
+  								arrow_html = '<b class="price-down"></b>';
+  							}else{
+  								arrow_html = '<b class="price-normal"></b>';
+  							}
+  						}else{
+  							arrow_html = '<b class="price-up"></b>';
+  						}
+  
+  						data.data.list[i].hotItemCount=arrow_html+'<a href="/index.html#/shop/detail/sale_detail/?id='+id+'&date='+data.data.list[i].date_m+'">'+data.data.list[i].hotItemCount+" 种</a>";
+  				}else{
+  					data.data.list[i].hotItemCount="-";
+  				}
+  
+  				if(data.data.list[i].ratio){
+  					 arrow_html='';
+  						if(data.data.list[i+1]&&data.data.list[i+1].ratio){
+  							if(data.data.list[i].ratio>data.data.list[i+1].ratio){
+  								arrow_html = '<b class="price-up"></b>';
+  							}else if(data.data.list[i].ratio<data.data.list[i+1].ratio){
+  								arrow_html = '<b class="price-down"></b>';
+  							}else{
+  								arrow_html = '<b class="price-normal"></b>';
+  							}
+  						}else{
+  							arrow_html = '<b class="price-up"></b>';
+  						}
+  					data.data.list[i].ratio = arrow_html+data.data.list[i].ratio+"%";
+  				}else{
+  					data.data.list[i].ratio="-";
+  				}
+  				returnList.push(data.data.list[i]);
+  			}
+  
+  			if(data.data.list.length<7){
+  				for(var i=0;i<7-data.data.list.length;i++){
+  					var obj = {};
+  					for(var j=0;j<attrs.length;j++){
+  						obj[attrs[j].name]="-"
+  					}
+  					obj.price="-";
+  					obj.ratio="-";
+  					obj.amount="-";
+  					obj.hotItemCount="-";
+  					// obj.date="-";
+  					obj.outoffdate = 1;
+  					returnList.push(obj);
+  				}
+  			}
+  
+  			if(returnList.length<7){
+  				for(var i=0;i<7-data.data.list.length;i++){
+  					var date = dateUtil.getdiffdate(data_min_date, '-'+(i+1)+'d', 'YY-MM-DD').replace(/-/g, '/');;
+  					var month = new Date(date).getMonth()+1+"";
+  					var day = new Date(date).getDate()+"";
+  					if(month.length<2){
+  						month="0"+month;
+  					}
+  					if(day.length<2){
+  						day="0"+day;
+  					}
+  					var obj = {};
+  					obj.date = month+"月"+day+"日";
+  
+  					for(var j=0;j<attrs.length;j++){
+  						obj[attrs[j].name]="-"
+  					}
+  					obj.price="-";
+  					obj.ratio="-";
+  					obj.amount="-";
+  					obj.hotItemCount="-";
+  					obj.outoffdate = 1;
+  					// obj.date="-";
+  					returnList.push(obj);
+  				}
+  			}
+  
+  			return returnList;
+  		},
+  		update: function(hashs, afterload, refresh){
+  			// 实现 module.is_active
+  			this._status_module_active = true;
+  			// 参数是否和原先一致
+  			if(this._status_shop_stauts_changed !== true && refresh != true && querystring.stringify(hashs) ===  querystring.stringify(this._status_hashs)){
+  				afterload && afterload();
+  				return;
+  			}
+  			this._fn_dom_render({box:'loading'});
+  			// 加载店铺基本信息
+  
+  			Shop.getModel(hashs.id).getData(_.bind(function(data){
+  				this._fn_dom_update_list(hashs,data);
+  				afterload && afterload();
+  			},this));
+  		},
+  		destroy: function(){
+  			if(this.$el){
+  				this._status_hashs = {};
+  				this._fn_event_unbind_scrollFixed();
+  				this._status_shop_stauts_changed = false;
+  				this._status_module_active = false;
+  
+  				this._fn_event_unbind();
+  				this.$el.empty().remove();
+  				this.$el = null;
+  			}
+  		}
+  	};
+  
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+  
+
+});

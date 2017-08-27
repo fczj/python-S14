@@ -1,0 +1,52 @@
+define('controls/control.data_time', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function(_, RC){
+  	var DataTime = {
+  		// 数据最新时间
+  		_time: null,
+  		// 上次请求时间
+  		_lastQueryTime: null,
+  		// 数据和当前时间差距天数
+  		_days: 2,
+  		/**
+  		 * 获取数据最新更新时间
+  		 * @method {Function} success  参数为Number型的时间搓
+  		 */
+  		load: function(success, fail){
+  			var now   = RC.util.date.getcurdate().getTime(),
+  				_time = this._time;
+  			// 如果数据存在， 并且时间差是对的。 直接返回
+  			if(_time && (now - _time < this._days * 86400000)){
+  				success(_time);
+  				return;
+  			}
+  			var _lastQueryTime = this._lastQueryTime;
+  			// 30分钟内不更新
+  			if(_time && _lastQueryTime && (now - _lastQueryTime < 1800000)){
+  				success(_time);
+  				return;
+  			}
+  			this._lastQueryTime = now;
+  			API.test_date({}, _.bind(function(json){
+  				var data = json.data || RC.util.date.tojsdate(RC.util.date.getdiffdate(now, '-'+this._days+'d', 'YY-MM-DD')).getTime();
+  				this._time = data;
+  				success(this._time);
+  			},this), fail);
+  		},
+  		destroy: function(){
+  		
+  		}
+  	};
+  	
+  	RC.controls.define('control.data_time', {
+  		init: function(){
+  			return DataTime;
+  		}
+  	});
+  
+  })(_, RayCloud);
+
+});

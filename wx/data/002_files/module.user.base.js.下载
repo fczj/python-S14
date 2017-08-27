@@ -1,0 +1,64 @@
+define('modules/user/module.user.base', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var mdul = {
+  		name: 'user.base',
+  		depend: 'user',
+  		_elm_dom_root: '#container',
+  		_elm_template_name: 'template.user.base',
+  		_template_header:[
+  		'    <div class="header_person" style=\'margin: 0 auto;font-family: "Microsoft YaHei", arial;\'>',
+  '		</div>'
+  		],
+  		init: function(){ 
+  			if(this._elm_dom_container){
+  				return;
+  			}
+  		this._elm_dom_container = $(RC.template.get(this._elm_template_name,{})).appendTo(this._elm_dom_root);
+  		//隐藏搜索框,显示专有header
+  			$('.header-outer .header-inner').hide();
+  			
+  			var container = $(this._template_header.join(''));
+  			container.appendTo($('.header-outer'));
+  			require('components/maijia-usercenter-header/src/person-header').renderTo(container);
+  		},
+  		// util
+  		_fn_data_format: function(data){
+  			data.nick = data.nick || data.mobile || '-';
+  			data.mobile = data.mobile || '-';
+  			data.email = data.email || '-';
+  			// cut email ...
+  			//$.each(data.account || {},function(key,value){
+  			//	data['account_'+key] = value;
+  			//});
+  			//data.account_balance = data.account_balance || 0;
+  			data.qq = data.qq||'未绑定';
+  			data.account = data.account || {};
+  			if(data.account.balance){
+  				data.account.balance = (data.account.balance/100).toFixed(2);
+  			}
+  			data.account_balance = data.account && data.account.balance || 0;
+  			return data;
+  		},
+  		getContainer: function(){
+  			return this._elm_dom_container;
+  		},
+  		update: function(){
+  		},
+  		destroy: function(){
+  			if(this._elm_dom_container){
+  
+  				this._elm_dom_container.empty().remove();
+  				this._elm_dom_container = null;
+  			}
+  				$('.header-outer .header-inner').show();
+  				$('.header-outer').find('.header_person').remove();
+  		}
+  	};
+  	RC.modules.define(mdul.name,mdul);
+  })(jQuery, RayCloud);
+
+});

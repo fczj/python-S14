@@ -1,0 +1,1214 @@
+define('modules/shop/detail/item_analysis/module.shop.detail.item_analysis', function(require, exports, module) {
+
+  /**
+      @author chenjiangming
+  */
+  ;(function($,RC){
+      var Shop = RC.controls.get('control.shop.model'),
+  
+          panels = {};
+      var hashsId={};
+  	var _ = window._;
+  	var deepClone = function(data){
+  		if(!_.isArray(data) && !_.isObject(data)){
+  			return data;
+  		}
+  		var o = _.isArray(data) ? [] : {};
+  		_.each(data, function(value, key){
+  			if(_.isArray(value) || _.isObject(value)){
+  				o[key] = deepClone(value);
+  			}else{
+  				o[key] = value;
+  			}
+  		});
+  		return o;
+  	};
+  
+  
+  	// 缓存类
+  	function Cache(id){
+  		/**
+  		 * @property id
+  		 * @private
+  		 * @todo: manager cache
+  		 */
+  		this.id = id;
+  		/**
+  		 * @property data
+  		 * @private
+  		 */
+  		this.data = {};
+  	}
+  
+  	Cache.prototype = {
+  		/**
+  		 * @method remove
+  		 * @param {String} key
+  		 */
+  		remove: function(key){
+  			if(!this.data.hasOwnProperty(key)){
+  				return;
+  			}
+  			delete this.data[id][key];
+  		},
+  		/**
+  		 * @method add
+  		 * @param {String} key
+  		 * @param {Any} data
+  		 */
+  		add: function(key, data){
+  			this.data[key] = deepClone(data);
+  		},
+  		/**
+  		 * @method get
+  		 * @param {String} key
+  		 */
+  		get: function(key){
+  			if(!this.data.hasOwnProperty(key)){
+  				return null;
+  			}
+  			return  deepClone(this.data[key]);
+  		},
+  		/**
+  		 * clear all of this cache
+  		 * @method clear
+  		 */
+  		clear: function(){
+  			this.data = {};
+  		},
+  		/**
+  		 * Least Recently Used算法
+  		 * @method lru
+  		 * @private
+  		 * @param {String} key
+  		 * @param {String<'get','add','remove','clear'>} method
+  		 */
+  		lru: function(key, method){
+  			// todo: LRU 链表实现
+  			// todo: 内存控制. chrome新版支持used memory/total memory. (http content-length/sizeof javascript/local storage)
+  		}
+  	};
+  
+      var newPanel = function(root, containers, templateName) {
+          return RC.controls.get('controls.shop.panel',
+                  {root: root, containers: containers, templateName: templateName});
+      };
+  
+      panels.hot = newPanel('.J_panel_hot', {ranking: '.J_hot_ranking'}, 'template.shop.detail.item_analysis.hot');
+      $.extend(panels.hot, {
+          _fn_dom_update: function(hashs, refresh) {
+          	this._fn_dom_update_list('ranking', 'data_shop_item_hotlist', hashs, refresh);
+          },
+          _fn_event_bind: function() {
+  
+          },
+          _fn_event_unbind: function() {
+          },
+          _fn_render_data_process: {
+          	ranking: function(list,hashs) {
+          		if (!list || !list.length) {
+          			return;
+          		}
+  
+          		var opt = {
+  					"name"   : "",
+  					"favor"  : "-",
+  					//"dsr"    : "-",
+  					"rate"   : "-",
+  					"price"  : "-",
+  					"oriPrice": "-"
+  					//"promotinonRatio": "-",
+  					//"chainGrowth": "-"
+  				};
+          		$.each(list, function(idx, item){
+          			item.viewId = (hashs.pageNo-1)*hashs.pageSize+idx+1+"";
+  					if(item.chainGrowth !== undefined){
+  						if(item.chainGrowthTrend>0){
+  							item.chainGrowth = '<span class="fc-red ">{{chainGrowth}}% <i class="icon icon-sign-up"></i></span>'.replace('{{chainGrowth}}',(item.chainGrowth*100).toFixed(2));
+  						}else if(item.chainGrowthTrend<0){
+  							item.chainGrowth = '<span class="fc-green">{{chainGrowth}}% <i class="icon icon-sign-down"></i></span>'.replace('{{chainGrowth}}',(Math.abs(item.chainGrowth)*100).toFixed(2));
+  						}else{
+  							item.chainGrowth = '<span class="fc-blue">0.00% <i class="icon icon-sign-eq"></i></span>'
+  						}
+  					}else{
+  						item.chainGrowth = '-';
+  					}
+  					if(item.promotionRatio){
+  						item.promotionRatio = Math.round(item.promotionRatio*100) + '%';
+  					}else{
+  						item.promotionRatio = '-';
+  					}
+  					// 特殊
+  					item.brand = item.brand || '-';
+  					list[idx] = $.extend({}, opt, item);
+  				});
+          	}
+          },
+          _fn_act_cal_detail_pag_href: function(pageNo) {
+              this._data_deep_copy_hashs.detail.pageNo = pageNo;
+              return this._fn_get_url_from_hashs(this._data_deep_copy_hashs);
+          }
+      });
+  
+      panels.onsale = newPanel('.J_panel_onsale', {item: '.J_onsale_item', chart: '.J_onsale_chart'}, 'template.shop.detail.item_analysis.onsale');
+      $.extend(panels.onsale, {
+          _status_is_chart_drawed: false,
+          _fn_dom_update: function(hashs, refresh) {
+          	this._fn_dom_update_list('item', 'data_shop_item_onsale_list', hashs, refresh);
+              this._fn_dom_update_chart(hashs, refresh);
+          },
+          _fn_event_bind: function() {
+  			this.$el.parent().on('change', '.J_Day', $.proxy(function(e){
+  				var shopData = Shop.getModel(this._data_lastest_hash.id).toJSON();
+  
+  				if(shopData.__level !== 'senior'){
+  					RC.pub('module.shop.detail.no_permisson_select');
+  					$(e.currentTarget).val($(e.currentTarget).attr('data-default'));
+  					return;
+  				}
+  				RC.pages.modifyCurHash({day: $(e.currentTarget).val()});
+  			},this));
+        this.$el.on('click', '.dateRangePicker', $.proxy(function(e){
+          var shopData = Shop.getModel(this._data_lastest_hash.id).toJSON();
+          if(shopData.__level=='normal'){
+            $('.dateRangePicker').removeClass('J_level')
+          }else{
+            $('.dateRangePicker').addClass('J_level')
+          }
+        },this));
+          },
+          _fn_event_unbind: function() {
+  			this.$el.parent().off('change', '.J_Day');
+          },
+          _fn_render_data_process: {
+          	item: function(list) {
+          		if (!list || !list.length) {
+          			return;
+          		}
+          		$(list).each(function(i, o) {
+  	                if(o.changeDate){
+  						o.date = RC.util.date.getdate(o.changeDate, 'YY-MM-DD HH:MM:SS');
+  						o.date_1 = o.date.split(" ")[0];
+  						o.date_2 = o.date.split(" ")[1];
+  					}else{
+  						o.date = '-';
+  					}
+  					list[i] = $.extend({title: '-', price: '-'}, o);
+  	            });
+          	}
+          },
+  		_update_map: {
+  
+  			'week': function(data){
+  				data._view_init_week = 1;
+  				this.$el.parent().find('.J_Week').html(RC.template.get_node('if','_view_init_week', data, RC.template.get('template.shop.detail.item_analysis.onsale'),0));
+  				//this.update('week_charts', data.list);
+  				this._update_map['week_charts'].call(this, data.list);
+  			},
+  			'week_charts': function(list){
+  				if(!list){
+  					return;
+  				}
+  				var $node = this.$el.parent().find('.J_Week_Charts');
+  				if($node.length === 0 || !$node.highcharts){
+  					return;
+  				}
+  				var categories = [], endCount = [], names= ['周日', '周一','周二','周三','周四','周五','周六'];
+  				$.each(list, function(idx, value){
+  					categories.push(names[idx]);
+  					endCount.push(value);
+  				});
+  				$node.highcharts({
+  					chart: {
+  						type: 'column'
+  					},
+  					title: {
+  						text: ' '
+  					},
+  					xAxis: {
+  						categories: categories
+  					},
+  					yAxis: {
+  						min: 0,
+  						title: {
+  							text: ' '
+  						}
+  					},
+  					plotOptions: {
+  						column: {
+  							pointPadding: 0.2,
+  							borderWidth: 0
+  						}
+  					},
+  					series: [{
+  						name: '宝贝数',
+  						data: endCount
+  
+  					}]
+  				});
+  			},
+  			'hour': function(data){
+  				data._view_init_hour = 1;
+  				this.$el.parent().find('.J_Hour').html(RC.template.get_node('if','_view_init_hour', data, RC.template.get('template.shop.detail.item_analysis.onsale'),0));
+  				this._update_map['hour_charts'].call(this, data.list);
+  			},
+  			'hour_charts': function(list){
+  				if(!list){
+  					return;
+  				}
+  				var $node = this.$el.parent().find('.J_Hour_Charts');
+  				if($node.length === 0 || !$node.highcharts){
+  					return;
+  				}
+  				var categories = [], endCount = [];
+  				$.each(list, function(idx, value){
+  					categories.push(idx+'时');
+  					endCount.push(value);
+  				});
+  				$node.highcharts({
+  					chart: {
+  						type: 'column'
+  					},
+  					title: {
+  						text: ' '
+  					},
+  					xAxis: {
+  						categories: categories,
+  						labels: {
+  							style: { writingMode: 'tb-rl'}
+  						}
+  
+  					},
+  					yAxis: {
+  						min: 0,
+  						title: {
+  							text: ' '
+  						}
+  					},
+  					plotOptions: {
+  						column: {
+  							pointPadding: 0.2,
+  							borderWidth: 0
+  						}
+  					},
+  
+  					series: [{
+  						name: '宝贝数',
+  						data: endCount
+  
+  					}]
+  				});
+  			},
+  			'day': function(data, hashs){
+  				data._view_init_weekday = 1;
+  				data.hashs = hashs;
+  				$.each(data.list, function(idx, item){
+  					item.hour = item.hour + '时--'+ (item.hour+1) + '时';
+  				});
+  				this.$el.parent().find('.J_Weekday').html(RC.template.get_node('if','_view_init_weekday', data, RC.template.get('template.shop.detail.item_analysis.onsale'),0));
+  				            //dateRangePicker dom
+  
+  			}
+  		},
+  		_status_hashs: {},
+  		_fn_ctrl_update_shelve: function(hashs, refresh){
+  			if(this._status_hashs.id != hashs.id){
+  				this.cache && this.cache.clear();
+  			}
+  			if(!this.cache){
+  				this.cache = new Cache('module-shop-detail-item_analysis-shelve');
+  			}
+  			hashs.day = hashs.day || ((new Date()).getDay() - 1 +7)%7;
+  			this._status_hashs = _.clone(hashs);
+  
+  			var cache = this.cache.get('data');
+  			if(cache){
+  				var data = cache;
+  				//day
+  				if(data.list.length){
+  					var day = hashs.day;
+  					var list = [];
+  					for(var i=0; i<24; i++){
+  						list[i] = {
+  							hour: i,
+  							endCount: 0,
+  							minutes0: 0,
+  							minutes1: 0,
+  							minutes2: 0,
+  							minutes3: 0
+  						};
+  					}
+  					for(var i=0; i<data.list.length; i++){
+  						var item = data.list[i];
+  						if(item.week == day){
+  							var w = item.hour;
+  							list[w].endCount +=  item.endCount;
+  							if(item.minutes == 0){
+  								list[w].minutes0 = item.endCount;
+  							}else if(item.minutes == 1){
+  								list[w].minutes1 = item.endCount;
+  							}else if(item.minutes == 2){
+  								list[w].minutes2 = item.endCount;
+  							}else if(item.minutes == 3){
+  								list[w].minutes3 = item.endCount;
+  							}
+  						}
+  
+  					};
+  
+  					this.$el && this._update_map['day'].call(this,  {list: list, $level: data.$level, $status: data.$status,$status_html:data.$status_html, $message: data.$message}, hashs);
+  					//console.log(data.$level)
+  				}else{
+  					this.$el && this._update_map['day'].call(this,  {list: [], $level: data.$level, $status: data.$status,$status_html:data.$status_html, $message: data.$message}, hashs);
+  				}
+  			}else{
+  				Shop.getModel(hashs.id).data_shop_item_unshelve_list({
+  					  shopId: hashs.id
+  				}, _.bind(function(data){
+  
+  					data.$level = data.__level;
+  					data.$status = data.__status;
+  					data.$status_html = data.__status_html;
+  					data.$message = data.__message || '';
+  					data.list = data.list || [];
+  
+  					this.cache.add('data', data);
+  
+  					//week
+  					if(data.list.length){
+  						var week = [0,0,0,0,0,0,0];
+  						for(var i=0; i<data.list.length; i++){
+  							var item = data.list[i];
+  							var w = item.week;
+  							week[w] += item.endCount;
+  						};
+  						this.$el && this._update_map['week'].call(this, {list: week, $level: data.$level, $status: data.$status,$status_html:data.$status_html, $message: data.$message});
+  					}else{
+  						this.$el && this._update_map['week'].call(this, {list: [], $level: data.$level, $status: data.$status,$status_html:data.$status_html, $message: data.$message});
+  					}
+  
+  
+  					//hour
+  					if(data.list.length){
+  						var hours = [];
+  						for(var i=0; i<24; i++){
+  							hours[i] = 0;
+  						}
+  						for(var i=0; i<data.list.length; i++){
+  							var item = data.list[i];
+  							var w = item.hour;
+  							hours[w] += item.endCount;
+  						};
+  						this.$el && this._update_map['hour'].call(this,  {list: hours, $level: data.$level, $status: data.$status,$status_html:data.$status_html, $message: data.$message});
+  					}else{
+  						this.$el && this._update_map['hour'].call(this, {list: [], $level: data.$level, $status: data.$status,$status_html:data.$status_html, $message: data.$message});
+  					}
+  
+  					//day
+  					if(data.list.length){
+  						var day = hashs.day;
+  						var list = [];
+  						for(var i=0; i<24; i++){
+  							list[i] = {
+  								hour: i,
+  								endCount: 0,
+  								minutes0: 0,
+  								minutes1: 0,
+  								minutes2: 0,
+  								minutes3: 0
+  							};
+  						}
+  						for(var i=0; i<data.list.length; i++){
+  							var item = data.list[i];
+  							if(item.week == day){
+  								var w = item.hour;
+  								list[w].endCount +=  item.endCount;
+  								if(item.minutes == 0){
+  									list[w].minutes0 = item.endCount;
+  								}else if(item.minutes == 1){
+  									list[w].minutes1 = item.endCount;
+  								}else if(item.minutes == 2){
+  									list[w].minutes2 = item.endCount;
+  								}else if(item.minutes == 3){
+  									list[w].minutes3 = item.endCount;
+  								}
+  							}
+  
+  						};
+  
+  						this.$el && this._update_map['day'].call(this, {list: list, $level: data.$level, $status: data.$status,$status_html:data.$status_html, $message: data.$message}, hashs);
+  					}else{
+  						this.$el && this._update_map['day'].call(this, {list: [], $level: data.$level, $status: data.$status,$status_html:data.$status_html, $message: data.$message}, hashs);
+  					}
+  
+  				},this));
+  
+  			}
+  		},
+  		_fn_dom_update_chart: function(hashs, refresh) {
+          	var that = this;
+  
+              Shop.getModel(hashs.id).getData(function(data) {
+  				that._fn_ctrl_update_shelve(hashs, refresh);
+  
+              });
+          },
+          _fn_dom_update_chart_0: function(hashs, refresh) {
+          	var that = this,
+          		decodeHash = this._fn_data_unparams(decodeURIComponent(hashs.chart || ''));
+  
+              if (!refresh && this._status_is_chart_drawed) {
+                  return;
+              }
+  
+              Shop.getModel(hashs.id).getData(function(data) {
+                  Shop.getModel(hashs.id).data_shop_item_unshelve_list({
+                      shopId: hashs.id,
+                  }, function(res) {
+                      var list,
+                          renderData = $.extend({
+                              box: 'chart',
+                              nodata: false,
+                              status: res.__status,
+                              status_html:res.__status_html,
+                              level: res.__level
+                          }, decodeHash);
+  
+                      if ((list = res.list) !== undefined) {
+                          if (list.length === 0) {
+                              renderData.nodata = true;
+                          }
+                      }
+                      renderData.id = hashs.id;
+                      var detailContainer = that.$el.find(that._data_box_container.chart);
+                      detailContainer.html(RC.template.get_node('if', 'box', renderData, that._data_template_all, 0));
+                      if (list && !renderData.nodata) {
+                          that._fn_act_draw_chart(list);
+                          that._status_is_chart_drawed = true;
+                      }
+                  });
+              });
+          },
+          _fn_act_draw_chart: function(list) {
+              var i, l, t, data = [];
+              var week = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  
+              for (i = 0, l = list.length; i < l; i++) {
+                  t = list[i];
+                  data.push([t.hour, t.week, t.endCount]);
+              }
+  
+          	var opt = {
+                  chart: {
+                      type: 'bubble',
+                      zoomType: 'xy'
+                  },
+                  xAxis: {
+                      categories: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,16,17,18,19,20,21,22,23,24],
+                      labels: {
+                          formatter: function() {
+                              var v = this.value;
+                              return v < 9 ? '0' + v + ':00' : v + ':00';
+                          }
+                      }
+                  },
+                  yAxis: {
+                      categories: [0,1,2,3,4,5,6],
+                      labels: {
+                          formatter: function() {
+                              return  week[this.value];
+                          }
+                      },
+                      title: {
+                          text: null
+                      }
+                  },
+                  legend: {
+                      borderRadius: 4,
+                      borderWidth: 1,
+                      labelFormat: '{name}（圆圈大小表示同一时间下架的宝贝数量，圆圈越大就是越多）'
+                  },
+                  tooltip: {
+                      useHTML: true,
+                      formatter: function() {
+                          return week[this.y] + ' ' + (this.x < 9 ? '0' + this.x + ':00' : this.x + ':00') + '<br>' + '下架数: ' + this.point.z;
+                      }
+                  },
+                  title: {
+                      text: null
+                  },
+  
+                  series: [{
+                      data: data,
+                      name: '商品数'
+                  }]
+              };
+  			this.$el.find('.J_onsale_chart .chart').highcharts(opt);
+          },
+          destroy: function() {
+              this.constructor.prototype.destroy.call(this);
+              this._status_is_chart_drawed = false;
+  			this._status_hashs = {};
+          }
+      });
+  
+      panels.onname = newPanel('.J_panel_onname', {item: '.J_onname_item'}, 'template.shop.detail.item_analysis.onname');
+      $.extend(panels.onname, {
+          _fn_dom_update: function(hashs, refresh) {
+          	this._fn_dom_update_list('item', 'data_shop_item_onname_list', hashs, refresh);
+          },
+          _fn_event_bind: function() {
+            this.$el.on('click', '.dateRangePicker', $.proxy(function(e){
+              var shopData = Shop.getModel(this._data_lastest_hash.id).toJSON();
+              if(shopData.__level=='normal'){
+                $('.dateRangePicker').removeClass('J_level')
+              }else{
+                $('.dateRangePicker').addClass('J_level')
+              }
+            },this));
+          },
+          _fn_event_unbind: function() {
+          },
+          _fn_render_data_process: {
+          	item: function(list) {
+          		if (!list || !list.length) {
+          			return;
+          		}
+          		var compare = $.proxy(this._fn_data_compare_name, this);
+                  $(list).each(function(i, o) {
+                      if(o.changeDate){
+  						o.date = RC.util.date.getdate(o.changeDate, 'YY-MM-DD');
+  					}else{
+  						o.date = '-';
+  					}
+  					if(o.oldTitle && o.newTitle){
+  						var r = compare(o.oldTitle, o.newTitle);
+  						o.oldTitle = r[0];
+  						o.newTitle = r[1];
+  					}
+  					list[i] = $.extend({oldTitle: '-', newTitle: '-', price: '-'}, o);
+                  });
+          	}
+          },
+          _fn_data_compare_name: function(str1, str2,p){
+  			var i, j,
+  				len1 = str1.length,
+  				len2 = str2.length,
+  				r = [];
+  
+  			for (i = 0; i < len1+1; i++) {
+  				r.push(new Array(len2));
+  				r[i][0] = i;
+  			}
+  			for (j = 0; j < len2+1; j++) {
+  				r[0][j] = j;
+  			}
+  
+  
+  			for (i = 1; i < len1+1; i++) {
+  				for (j = 1; j < len2+1; j++) {
+  					if (str1.charAt(i-1) === str2.charAt(j-1)) {
+  						r[i][j] = r[i - 1][j - 1];
+  					} else {
+  						r[i][j] = Math.min(r[i - 1][j - 1], r[i - 1][j], r[i][j - 1]) + 1;
+  					}
+  				}
+  			}
+  
+  
+  			for (i = 0; i < r.length; i++) {
+  				//console.log(r[i]);
+  			}
+  
+  
+  			i = len1;
+  			j = len2;
+  			var A = [], B = [], ii,jj,w,
+  				charA, charB;
+  			//0 左上角 ,1上方,-1左边
+  			function way(i_t, j_t, i, j){
+  			  if (i-i_t==1&&j-j_t==1) {
+  				return 0;
+  			  }
+  			  if (i-i_t==1&&j-j_t==0) {
+  				return 1;
+  			  }
+  			  if (i-i_t==0&&j-j_t==1) {
+  				return -1;
+  			  }
+  			}
+  
+  			while (i > 0 && j > 0) {
+  				charA = str1.charAt(i-1);
+  				charB = str2.charAt(j-1);
+  				//console.log(i, j, charA, charB)
+  				if (charA === charB) {
+  					A.push(charA);
+  					B.push(charB);
+  					i--;
+  					j--;
+  				} else {
+  					if(r[i][j-1] >= r[i-1][j]){
+  						ii = i-1;
+  						jj = j;
+  					}else{
+  						ii = i;
+  						jj = j-1;
+  					}
+  
+  					if(r[ii][jj] >= r[i-1][j-1]){
+  						ii = i-1;
+  						jj = j-1;
+  					}
+  
+  					w = way(ii, jj, i, j);
+  					if(w == 0){
+  						A.push(charA);
+  						B.push(charB);
+  					}else if(w == -1){
+  						A.push('');
+  						B.push(charB);
+  					}else{
+  						A.push(charA);
+  						B.push('');
+  					}
+  					i = ii;
+  					j = jj;
+  				}
+  			}
+  			//console.log('i,j:',i,j);
+  			if(i == 0){
+  			while(j>0){
+  			  A.push('');
+  			  B.push(str2.charAt(j-1));
+  			  j--;
+  			}
+  			}else{
+  				while(i>0){
+  			  A.push(str1.charAt(i-1));
+  			  B.push('');
+  			  i--;
+  			}
+  			}
+  
+  
+  			A.reverse();
+  			B.reverse();
+  			//console.log(A);
+  			//console.log(B);
+  
+  
+  			if (A.join('') !== str1 || B.join('') !== str2) {
+  				if(p === true){
+  					//return [str1, str2];
+  				}
+  
+  				//return this._fn_data_compare_name(str2, str1, true).reverse();
+  				//console.log(A);
+  			   //console.log(B);
+  				//console.log('!!!!!!');
+  				//console.log(A.join(''));
+  				//console.log(str1);
+  				//console.log(B.join(''));
+  				//console.log(str2);
+  				return [str1, str2];
+  			}
+  
+  			for (i = 0; i < A.length; i++) {
+  				if (A[i] !== B[i]) {
+  					A[i] = '<span style="color:#3bac8a;">' + A[i] + '</span>';
+  					B[i] = '<span style="color:#e6283e;">' + B[i] + '</span>';
+  				}
+  			}
+  
+  			A = A.join('').replace(new RegExp('</span><span style="color:#3bac8a;">', 'g'), '').replace(new RegExp('<span style="color:#3bac8a;"></span>', 'g'), '');
+  			B = B.join('').replace(new RegExp('</span><span style="color:#e6283e;">', 'g'), '').replace(new RegExp('<span style="color:#e6283e;""></span>', 'g'), '');
+  
+  			//console.log(A);
+  			//console.log(B);
+  
+  			return [A,B];
+  		}
+      });
+  
+      panels.onprice = newPanel('.J_panel_onprice', {item: '.J_onprice_item'}, 'template.shop.detail.item_analysis.onprice');
+      $.extend(panels.onprice, {
+          _fn_dom_update: function(hashs, refresh) {
+          	this._fn_dom_update_list('item', 'data_shop_item_onprice_list', hashs, refresh);
+          },
+          _fn_event_bind: function() {
+            this.$el.on('click', '.dateRangePicker', $.proxy(function(e){
+              var shopData = Shop.getModel(this._data_lastest_hash.id).toJSON();
+              if(shopData.__level=='normal'){
+                $('.dateRangePicker').removeClass('J_level')
+              }else{
+                $('.dateRangePicker').addClass('J_level')
+              }
+            },this));
+          },
+          _fn_event_unbind: function() {
+          },
+          _fn_render_data_process: {
+          	item: function(list) {
+          		if (!list || !list.length) {
+          			return;
+          		}
+          		$(list).each(function(i, o) {
+          			//原标价
+          			//实售价 oldPrice newPrice
+          			//手机价 oldMPrice mPrice
+       //    			o.oldOriPrice = parseFloat(o.oldOriPrice.toFixed(2));
+       //    			o.oriPrice = parseFloat(o.oriPrice.toFixed(2));
+  					// o.oldPrice = parseFloat(o.oldPrice.toFixed(2));
+  					// o.newPrice = parseFloat(o.newPrice.toFixed(2));
+  					// o.oldMPrice = parseFloat(o.oldMPrice.toFixed(2));
+  					// o.mPrice = parseFloat(o.mPrice.toFixed(2));
+  					// console.log(o.oldPrice+":"+o.newPrice);
+  					// console.log(o.oldPrice>o.newPrice);
+          			if(o.oriPrice>o.oldOriPrice){
+          				o.oriPrice_m = '<span style="color:#e6283e;"><b class="price-up"></b><b class="fm-arial ft-normal">&#165;</b>'+(o.oriPrice-o.oldOriPrice).toFixed(2)+'</span>';
+          			}else if(o.oriPrice<o.oldOriPrice){
+          				o.oriPrice_m = '<span style="color:#3bac8a;"><b class="price-down"></b><b class="fm-arial ft-normal">&#165;</b>'+(o.oldOriPrice-o.oriPrice).toFixed(2)+'</span>';
+          			}else{
+  						o.oriPrice_m = '<span style="color:#999;"><b class="price-normal"></b><b class="fm-arial ft-normal">&#165;</b>0.00</span>';
+          			}
+  
+          			if(o.newPrice>o.oldPrice){
+          				o.newPrice_m = '<span style="color:#e6283e;"><b class="price-up"></b><b class="fm-arial ft-normal">&#165;</b>'+(o.newPrice-o.oldPrice).toFixed(2)+'</span>';
+          			}else if(o.newPrice<o.oldPrice){
+          				o.newPrice_m = '<span style="color:#3bac8a;"><b class="price-down"></b><b class="fm-arial ft-normal">&#165;</b>'+(o.oldPrice-o.newPrice).toFixed(2)+'</span>';
+          			}else{
+          				o.newPrice_m = '<span style="color:#999;"><b class="price-normal"></b><b class="fm-arial ft-normal">&#165;</b>0.00</span>';
+          			}
+  
+          			if(o.mPrice>o.oldMPrice){
+          				o.mPrice_m = '<span style="color:#e6283e;"><b class="price-up"></b><b class="fm-arial ft-normal">&#165;</b>'+(o.mPrice-o.oldMPrice).toFixed(2)+'</b>';
+          			}else if(o.mPrice<o.oldMPrice){
+          				o.mPrice_m = '<span style="color:#3bac8a;"><b class="price-down"></b><b class="fm-arial ft-normal">&#165;</b>'+(o.oldMPrice-o.mPrice).toFixed(2)+'</b>';
+          			}else{
+          				o.mPrice_m = '<span style="color:#999;"><b class="price-normal"></b><b class="fm-arial ft-normal">&#165;</b>0.00</span>';
+          			}
+  
+          			o.oldOriPrice =o.oldOriPrice?o.oldOriPrice.toFixed(2):'-';
+          			o.oriPrice = o.oriPrice?o.oriPrice.toFixed(2):'-';
+  					o.oldPrice = o.oldPrice?o.oldPrice.toFixed(2):'-';
+  					o.newPrice = o.newPrice?o.newPrice.toFixed(2):'-';
+  					o.oldMPrice = o.oldMPrice?o.oldMPrice.toFixed(2):'-';
+  					o.mPrice = o.mPrice?o.mPrice.toFixed(2):'-';
+          			//<b class="price-up"><b>
+          			//<b class="price-down"><b>
+                      if(o.changeDate){
+  						o.date = RC.util.date.getdate(o.changeDate, 'YY-MM-DD');
+  					}else{
+  						o.date = '-';
+  					}
+  					list[i] = $.extend({oldPrice: '-', newPrice: '-', title: '-', oriPrice: '-'}, o);
+                  });
+          	}
+          }
+      });
+  
+  panels.onnew = newPanel('.J_panel_onnew', {item: '.J_onnew_item'}, 'template.shop.detail.item_analysis.onnew');
+  	//console.log(hashsId)
+      $.extend(panels.onnew, {
+          _fn_dom_update: function(hashs, refresh) {
+          	this._fn_dom_update_list('item', 'data_shop_item_onnew_list', hashs, refresh);
+          },
+          _fn_event_bind: function() {
+            this.$el.on('click', '.dateRangePicker', $.proxy(function(e){
+      				var shopData = Shop.getModel(this._data_lastest_hash.id).toJSON();
+              if(shopData.__level=='normal'){
+                $('.dateRangePicker').removeClass('J_level')
+              }else{
+                $('.dateRangePicker').addClass('J_level')
+              }
+      			},this));//时间控件修改
+          },
+          _fn_event_unbind: function() {
+          },
+          _fn_render_data_process: {
+          	item: function(list) {
+          		if (!list || !list.length) {
+          			return;
+          		}
+          		$(list).each(function(i, o) {
+          			var createDate = new Date(o.createDate);
+          			var today = new Date();
+          			// console.log(RC.util.date.getdate(createDate, 'YY-MM-DD'));
+          			// console.log(RC.util.date.getdate(today, 'YY-MM-DD'));
+          			var days = ((today.getTime()-createDate.getTime())/1000/24/3600).toFixed(0);
+          			o.daysago = days;
+          			// console.log(days);
+                      if(o.date){
+                      // 	var ddd = new Date(o.date).getDay();
+                      // 	switch(ddd){
+                      // 		case 1:o.weekday = "星期一";break;
+                      // 		case 2:o.weekday = "星期二";break;
+                      // 		case 3:o.weekday = "星期三";break;
+                      // 		case 4:o.weekday = "星期四";break;
+                      // 		case 5:o.weekday = "星期五";break;
+                      // 		case 6:o.weekday = "星期六";break;
+                      // 		case 0:o.weekday = "星期日";break;
+                      // 	}
+                     		o.weekday = RC.util.date.getdate(o.date, 'YY-MM-DD');
+  						o.timedate = RC.util.date.getdate(o.date, 'HH:MM:SS');
+  					}else{
+  						o.weekday = '-';
+  						o.timedate = '';
+  					}
+  					list[i] = $.extend({oldPrice: '-', newPrice: '-', title: '-', oriPrice: '-'}, o);
+                  });
+          	}
+          }
+      });
+  
+      panels.traded = newPanel('.J_panel_traded', {detail: '.J_traded_detail'}, 'template.shop.detail.item_analysis.traded');
+      $.extend(panels.traded, {
+          _fn_dom_update: function(hashs, refresh) {
+              this._fn_dom_update_list('detail', 'data_shop_item_ontxn_list', hashs, refresh);
+          },
+          _fn_event_bind: function() {
+  
+          },
+          _fn_event_unbind: function() {
+  
+          },
+          _fn_render_data_process: {
+          	detail: function(list) {
+          		if (!list || !list.length) {
+          			return;
+          		}
+          		$(list).each(function(i, o) {
+                      if(o.chargeDate){
+  						o.date = RC.util.date.getdate(o.chargeDate, 'YY-MM-DD');
+  					}else{
+  						o.date = '-';
+  					}
+  					list[i] = $.extend({title: '-', price: '-', buyerNick: '-', amount: '-'}, o);
+                  });
+          	}
+          }
+      });
+  
+      var mdul = {
+          name: 'shop.detail.item_analysis',
+          depend: 'shop',
+          _elem_root: '#main',
+          _elem_template_name: 'template.shop.detail.item_analysis',
+          _status_permission_change: {} /* 记录权限是否变化 */,
+          _status_module_active: false,
+          _data_lastest_hash: null,
+          _fn_dom_render: function(data){
+              if(this.$el){
+                  return;
+              }
+              this.$el = $(RC.template.get(this._elem_template_name, data)).appendTo(this._elem_root);
+              this._fn_event_bind();
+          },
+          _fn_dom_update: function(hashs, refresh) {
+              this._fn_update_tab_url(hashs.type);
+              this._fn_dom_update_tab_panel(hashs.type);
+          },
+          _fn_dom_update_panel: function(hashs, refresh) {
+              var type = hashs.type;
+  
+              if (this._status_permission_change[type]) {
+                  refresh = true;
+                  this._status_permission_change[type] = false;
+              }
+              panels[type].update(hashs, refresh);
+          },
+          _fn_event_bind: function(){
+              this.$el.on('click', '.mar-tab', this._fn_event_click_tab_proxy = $.proxy(this._fn_event_click_tab, this));
+  
+              this.$el.on('click', '.order-click', this._fn_event_order_proxy = $.proxy(this._fn_event_order, this));
+              this.$el.on('click', '.J_page_jump', this._fn_event_page_jump_proxy = $.proxy(this._fn_event_page_jump, this));
+              this.$el.on('change', '.dateRangePicker', this._fn_event_date_change_proxy = $.proxy(this._fn_event_date_change, this));
+                this.$el.on('change', '.datePicker', this._fn_event_date_change_sigle_proxy = $.proxy(this._fn_event_date_change_sigle, this));
+              this.$el.on('change', '.pageSize', this._fn_J_page_sevent_page_size_change_proxy = $.proxy(this._fn_event_page_size_change, this));
+              RC.sub('control.shop.model.permission_change', this._fn_event_status_change_proxy = $.proxy(this._fn_event_status_change, this));
+  
+  			this.$el.on('change', '.J_Select_hot_days', $.proxy(function(e){
+  				var shopData = Shop.getModel(this._data_lastest_hash.id).toJSON();
+  
+  				if(shopData.__level !== 'senior'){
+  					RC.pub('module.shop.detail.no_permisson_select');
+  					$(e.currentTarget).val($(e.currentTarget).attr('data-default'));
+  					return;
+  				}
+  				var hashs = this._fn_get_cur_hashs(),
+  					box = 'ranking',
+                  decodeHash = this._fn_util_unparam(decodeURIComponent(hashs[box]));
+  				decodeHash.pageNo = 1;
+  				decodeHash.days = $(e.currentTarget).val();
+  				this._fn_act_modify_hash(box, encodeURIComponent($.param(decodeHash)));
+  			},this));
+  		},
+          _fn_event_unbind: function(){
+          	this.$el.off('click', '.order-click', this._fn_event_order_proxy);
+          	this.$el.off('click', '.J_page_jump', this._fn_event_page_jump_proxy);
+              this.$el.off('click', '.mar-tab', this._fn_event_click_tab_proxy);
+              this.$el.off('change', '.dateRangePicker', this._fn_event_date_change_proxy);
+               this.$el.off('change', '.datePicker', this._fn_event_date_change_sigle_proxy);
+  
+              this.$el.off('change', '.pageSize', this._fn_event_page_size_change_proxy);
+              RC.removeSub('control.shop.model.permission_change', this._fn_event_status_change_proxy);
+  
+  			this.$el.off('change', '.J_Select_hot_days');
+          },
+  		_status_event_scrollFixed: false,
+  		_fn_event_bind_scrollFixed: function(){
+  			if(!this.$el || this._status_event_scrollFixed === true){
+  				return;
+  			}
+  			this.$el.find('.mar-tabs').scrollToFixed({marginTop: 44});
+  			this._status_event_scrollFixed = true;
+  		},
+  		_fn_event_unbind_scrollFixed: function(){
+  			if(!this.$el || this._status_event_scrollFixed === false){
+  				return;
+  			}
+  			this.$el.find('.mar-tabs').trigger('detach.ScrollToFixed');
+  			this._status_event_scrollFixed = false;
+  		},
+          _fn_event_click_tab: function(e) {
+              if ($(e.currentTarget).hasClass("current")) {
+                  e.preventDefault();
+              }
+          },
+          _fn_event_order: function(e) {
+              var shopData = Shop.getModel(this._data_lastest_hash.id).toJSON();
+              if (!RC.user.get('_login_status')) {
+                  RC.pub('global.login.pop');
+                  return;
+              }
+  
+              if(shopData.__level !== 'senior'){
+                  RC.pub('module.shop.detail.no_permisson_sort');
+                  return;
+              }
+  
+              var hashs = this._fn_get_cur_hashs(),
+                  $i = $(e.currentTarget).find('.order'),
+                  box = $i.data('box'),
+                  decodeHash = this._fn_util_unparam(decodeURIComponent(hashs[box]));
+  
+                  decodeHash.orderField = $i.data('th');
+                  if ($i.hasClass('desc')) {
+                      decodeHash.orderType = 'asc';
+                  } else {
+                      decodeHash.orderType = 'desc';
+                  }
+                  decodeHash.pageNo && delete decodeHash.pageNo;
+                  this._fn_act_modify_hash(box, encodeURIComponent($.param(decodeHash)));
+          },
+          _fn_event_date_change_sigle:function(e){
+          	var hashs = this._fn_get_cur_hashs(),
+                  $target = $(e.target),
+                  box = $target.data('box'),
+                  // decodeHash = this._fn_util_unparam(decodeURIComponent(hashs[box])),
+                  decodeHash = {},
+                  date = $target.val();
+  
+              decodeHash.endDate = $.trim(date.replace(/\//g, '-'));
+              this._fn_act_modify_hash(box, encodeURIComponent($.param(decodeHash)));
+          },
+          _fn_event_date_change: function(e) {
+              var hashs = this._fn_get_cur_hashs(),
+                  $target = $(e.target),
+                  box = $target.data('box'),
+                  // decodeHash = this._fn_util_unparam(decodeURIComponent(hashs[box])),
+                  decodeHash = {},
+                  date = $target.val().split('-');
+  
+              decodeHash.startDate = $.trim(date[0].replace(/\//g, '-'));
+              decodeHash.endDate = $.trim(date[1].replace(/\//g, '-'));
+              this._fn_act_modify_hash(box, encodeURIComponent($.param(decodeHash)));
+          },
+          _fn_event_page_jump: function(e) {
+              var hashs = this._fn_get_cur_hashs(),
+                  $target = $(e.target),
+                  box = $target.data('tp'),
+                  decodeHash = this._fn_util_unparam(decodeURIComponent(hashs[box])),
+                  pageNo;
+              if ($target.hasClass('page_sure')) {
+                  pageNo = $target.siblings('input').val();
+                  if (!$.isNumeric(pageNo) || +pageNo <= 0 || +pageNo > $target.data('maxPage')) {
+                      RC.showWarn('请输入正确的页码');
+                      e.preventDefault();
+                      return;
+                  }
+                  $target.data('key', pageNo);
+              }
+              if ($target.hasClass('page-cur')) {
+                  return;
+              }
+              decodeHash.pageNo = $target.data('key');
+              this._fn_act_modify_hash(box, encodeURIComponent($.param(decodeHash)));
+              e.preventDefault();
+          },
+          _fn_event_page_size_change: function(e) {
+              var hashs = this._fn_get_cur_hashs(),
+                  $target = $(e.target),
+                  box = $target.data('box'),
+                  decodeHash = this._fn_util_unparam(decodeURIComponent(hashs[box]));
+  
+              decodeHash.pageSize = $target.val();
+              decodeHash.pageNo = 1;
+              this._fn_act_modify_hash(box, encodeURIComponent($.param(decodeHash)));
+          },
+          _fn_dom_update_tab_panel: function(type) {
+              this.$el.find('.mar-tab').removeClass("current").filter('.J_tab_' + type).addClass("current");
+              this.$el.find('.mar-panel').hide().filter('.J_panel_' + type).show();
+          },
+          _fn_update_tab_url: function(type) {
+              this.$el.find('.J_tab_' + type + ' a').attr('href', location.href);
+          },
+          _fn_event_status_change: function(data) {
+              if (data.id != this._data_lastest_hash.id) {
+                  return;
+              }
+              this._status_permission_change.hot = true;
+              this._status_permission_change.onprice = true;
+              this._status_permission_change.onnew = true;
+              this._status_permission_change.onname = true;
+              this._status_permission_change.onsale = true;
+              this._status_permission_change.traded = true;
+  
+              if(this._status_module_active === true){
+  				this.update(this._data_lastest_hash, null, true);
+  			}
+          },
+          _fn_init_tab_url: function(tabs) {
+          	var that = this;
+  
+          	$.each(tabs, function(i, tab) {
+          		that.$el.find('.J_tab_' + tab.type + ' a').attr('href', tab.hash);
+          	});
+          },
+          _fn_util_unparam: function(str) {
+              if (!str || typeof str != 'string') {
+                  return {};
+              }
+              var obj = {},
+                  reg = /(\w+)=([^&]+)/g,
+                  result;
+  
+              while (result = reg.exec(str)) {
+                  obj[result[1]] = decodeURIComponent(result[2]);
+              }
+  
+              return obj;
+          },
+          /**
+           * 返回hash的对象形式，没传参数返回当前url的hash对象
+           * @return {[type]} [description]
+           */
+          _fn_get_cur_hashs: function() {
+              var url = location.href,
+                  index, o = {}, l, t, hashs, i;
+  
+              index = url.indexOf('#');
+              if (index !== -1) {
+                  hashs =  url.slice(index + 1);
+                  if (hashs.indexOf('?') !== -1) {
+                      hashs = hashs.slice(hashs.indexOf('?') + 1);
+                      hashs = hashs.split('&');
+                      for (i = 0, l = hashs.length; i < l; i++) {
+                          t = hashs[i].split('=');
+                          if (t[0]) {
+                              o[t[0]] = t[1];
+                          }
+                      }
+                  }
+              }
+              return o;
+          },
+          _fn_act_modify_hash: function(key, value) {
+              var hash = {};
+              hash[key] = value;
+              RC.pages.modifyCurHash(hash);
+          },
+          _fn_destroy_panels: function() {
+              for (var panel in panels) {
+                  if (panels.hasOwnProperty(panel)) {
+                      if (typeof panels[panel].destroy === 'function') {
+                          panels[panel].destroy();
+                      }
+                  }
+              }
+          },
+          init: function(){},
+          getContainer: function(){
+              return this.$el;
+          },
+          update: function(hashs, afterload, refresh){
+              var type = hashs.type,
+                  id = hashs.id,
+                  tabs = [{
+                      name: '热销宝贝排行',
+                      type: 'hot',
+                      hash: '#/shop/detail/item_analysis/?type=hot&id=' + id
+                  }, {
+                      name: '宝贝上下架跟踪',
+                      type: 'onsale',
+                      hash: '#/shop/detail/item_analysis/?type=onsale&id=' + id
+                  }, {
+                      name: '宝贝改名跟踪',
+                      type: 'onname',
+                      hash: '#/shop/detail/item_analysis/?type=onname&id=' + id
+                  }, {
+                      name: '宝贝调价跟踪',
+                      type: 'onprice',
+                      hash: '#/shop/detail/item_analysis/?type=onprice&id=' + id
+                  },{
+                      name: '宝贝上新跟踪',
+                      type: 'onnew',
+                      hash: '#/shop/detail/item_analysis/?type=onnew&id=' + id
+                  }/*, {
+                      name: '宝贝成交跟踪',
+                      type: 'traded',
+                      hash: '#/shop/detail/item_analysis/?type=traded&id=' + id
+                  }*/],
+                  tab;
+  
+              if (!id) {
+                  return;
+              }
+              hashs.type = type ? type : 'hot';
+              if (this._data_lastest_hash && this._data_lastest_hash.id !== hashs.id) {
+                  this._fn_init_tab_url(tabs);
+                  refresh = true;
+              }
+              this._status_module_active = true;
+              this._data_lastest_hash = hashs;
+              this._fn_dom_render({tabs: tabs});
+              this._fn_dom_update(hashs);
+              this._fn_dom_update_panel(hashs, refresh);
+  			// 每次update的时候，绑定滚动固定顶部. 如果已绑定方法不处理.  disabled解绑
+  			this._fn_event_bind_scrollFixed();
+              afterload && afterload();
+          },
+          disabled: function(){
+  			this._status_module_active = false;
+  			this._fn_event_unbind_scrollFixed();
+  		},
+          destroy: function(){
+              if(this.$el){
+  				this._fn_event_unbind_scrollFixed();
+  
+                  this._fn_destroy_panels();
+                  this._status_module_active = false;
+                  this._fn_event_unbind();
+                  this._data_lastest_hash = null;
+                  this.$el.empty().remove();
+                  this.$el = null;
+              }
+          }
+      };
+  
+      RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+  
+
+});

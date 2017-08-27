@@ -1,0 +1,52 @@
+define('controls/control.querystring', function(require, exports, module) {
+
+  /**
+    * @author xukang
+    * @control querystring
+   
+    * @todo: 参数, 空格, 编码规则，array, object, 空字符，非法格式等处理
+    * @todo: 同步nodejs, express等框架
+    * @see: 
+  		http://www.w3.org/TR/html401/appendix/notes.html#ampersands-in-uris
+  		http://nodejs.org/api/querystring.html#querystring_query_string
+  */
+  ;(function(_, RC){
+  	var querystring = {
+  		parse: function(qs, sep, eq){
+  			if(!qs){
+  				return {};
+  			}
+  			// 不处理，空格处理成'+'的情况， 不限制大小
+  			// todo: 支持数组 a=b&a=c -> a: ['b','c']
+  			sep = sep || "&";
+  			eq = eq || "=";
+  			for (var obj = {},i = 0,pieces = qs.split(sep),l = pieces.length,tuple;i < l;i ++){
+  				tuple = pieces[i].split(eq);
+  				if (tuple.length > 0 && tuple[0]) {
+  					obj[decodeURIComponent(tuple.shift())] = decodeURIComponent(tuple.join(eq));
+  				}
+  			}
+  			return obj;
+  		},
+  		stringify: function(obj){
+  			// 不处理数组， 只对对象URL编码
+  			var r = [];
+  			for(var key in obj){
+  				if(_.isObject(obj[key])){
+  					r.push([key,encodeURIComponent(querystring.stringify(obj[key]))].join('='));
+  				}else{
+  					//这里不编码， 为了和框架统一
+  					r.push([key,obj[key]].join('='));
+  				}
+  			}
+  			return r.join('&');
+  		}
+  	};
+  	RC.controls.define('control.querystring', {
+  		init: function(){
+  			return querystring;
+  		}
+  	});
+  })(_, RayCloud);
+
+});

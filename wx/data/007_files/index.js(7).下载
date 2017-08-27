@@ -1,0 +1,30 @@
+define('modules/shop/detail/title/optimize/tab/index', function(require, exports, module) {
+
+  var $ = require('components/jquery/jquery'),
+      $el = $("<div class=\"tab\">\r\n    <div class=\"tabitem mw J_tab current \" data-type=\"6\">类目热销宝贝标题</div>\r\n    <div class=\"tabitem J_tab\" data-type=\"2\">精准流量词</div>\r\n    <div class=\"tabitem mw J_tab\" data-type=\"1\">宝贝属性关联词</div>\r\n    <div class=\"tabitem J_tab\" data-type=\"3\">长尾热搜词</div>\r\n    <div class=\"tabitem J_tab\" data-type=\"4\">营销词</div>\r\n    <div class=\"tabitem J_tab last\" data-type=\"5\">关键词查询</div>\r\n</div>\r\n<!-- @require 'modules/shop/detail/title/optimize/tab/index.less' -->"),
+      $tabs = $el.find('.J_tab'),
+      $container = null;
+  
+  module.exports = {
+      mount:function(container){
+          if(!$container){
+              $(container).html($el);
+              $container = container;
+          }
+      },
+      dismount:function(){
+          $el.remove();
+      },
+      onClick:function(fn){
+          $tabs.off('click');
+          $tabs.on('click',function(e){
+              var dom = $(e.target);
+              if(dom.hasClass('current')){return;}
+              $tabs.removeClass('current');
+              dom.addClass('current');
+              fn(dom.attr('data-type'));
+          });
+      }
+  }
+
+});

@@ -1,0 +1,31 @@
+.modules-shop-title-optimize .tab {
+  height: 50px;
+  background: #f9f9f9;
+}
+.modules-shop-title-optimize .tab:after {
+  display: table;
+  clear: both;
+  content: "";
+}
+.modules-shop-title-optimize .tab .tabitem {
+  float: left;
+  cursor: pointer;
+  width: 148px;
+  border-right: 1px solid #eee;
+  text-align: center;
+  line-height: 48px;
+  background: #f9f9f9;
+  font-size: 16px;
+  color: #666;
+}
+.modules-shop-title-optimize .tab .tabitem.mw {
+  width: 180px;
+}
+.modules-shop-title-optimize .tab .tabitem.current {
+  color: #FE6900;
+  background: #fff;
+  border-bottom: none;
+}
+.modules-shop-title-optimize .tab .tabitem.last {
+  border-right: none;
+}

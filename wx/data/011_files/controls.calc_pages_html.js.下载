@@ -1,0 +1,124 @@
+define('controls/controls.calc_pages_html', function(require, exports, module) {
+
+  /**
+   * @author Administrator
+   */
+  (function($, RC) {
+  	var ctrls = {
+  		name: 'controls.calc_pages_html',
+  		/**
+  		 * tp  -- 表示我们要选择的类别， 可不写
+  		 * lk  -- 表示我们的url, 可传入参数（经过处理的url），function， 或者不传（不穿默认就为javascript:void(0);)
+  		 * page_total -- 总页数
+  		 * page_no -- 当前页
+  		 */
+  		get_html: function(tp, lk, page_total, page_no) {
+  			var _url = (!lk || lk === '' || /^javascript/.test(lk)) ? 'javascript:void(0);' : /\?|\&/.test(lk) ? lk + '&' : lk + '?',
+  				href = (!lk || lk === '' || /^javascript/.test(lk)) ? function() {
+  						return _url;
+  					} : typeof lk === 'function' ? function(page_no) {
+  						return lk(page_no);
+  					} : function(page_no) {
+  						return _url + 'page_num=' + page_no;
+  					};
+  			if (!tp) {
+  				tp = '';
+  			}
+  			return this._get_pages(tp, href, this._calc_array(page_total, page_no), page_total, page_no);
+  		},
+  		_get_pages: function(tp, href, list, page_total, page_no) {
+  			var html = ['<span class="page-prev">'];
+  			page_total = ~~page_total || 1;
+  			page_no = ~~page_no || 1;
+  			
+  			if (page_no == 1) {
+  				html.push('<a class="disable" >上一页<b></b></a>');
+  			} else {
+  				html.push('<a class="page-no" href="' + href(page_no - 1) + '" data-act="page_jump" data-tp="' + tp + '" data-key="' + (page_no - 1) + '">上一页<b></b></a></span>');
+  			}
+  			html.push('</span>');
+  			
+  			var i = 0, ni = list.length;
+  			for (; i < ni; i++) {
+  				if (list[i] == '...') {
+  					html.push('<span class="page-split">...</span>');
+  					continue;
+  				}
+  				
+  				var cls = list[i] == page_no ? 'page-no page-cur' : 'page-no';
+  				html.push('<a class="' + cls + '" href="' + href(list[i]) + '" data-tp="' + tp + '" data-act="page_jump" data-key="' + (list[i]) + '">' + list[i] + '</a>');
+  				
+  				/*
+  				if (list[i] == page_no) {
+  					html.push('<a class="page-no page-cur" href="' + href(page_no - 1) + '" data-tp="' + tp + '" data-act="page_jump" data-key="' + (list[i]) + '">' + page_no + '</a>');
+  					continue;
+  				}
+  				html.push('<a class="page-no" href="' + href(list[i]) + '" data-tp="' + tp + '" data-act="page_jump" data-key="' + (list[i]) + '">' + list[i] + '</a>');
+  				*/
+  			}
+  
+  			html.push('<span class="page-next">');
+  			if (page_no == page_total) {
+  				html.push('<a class="disable" >下一页<b></b></a>');
+  			} else {
+  				html.push('<a class="page-no" href="' + href(page_no + 1) + '" data-act="page_jump" data-tp="' + tp + '" data-key="' + (page_no + 1) + '">下一页<b></b></a>');
+  			}
+  			html.push('</span>');
+  			return html.join('');
+  		},
+  		_calc_array: function(page_total, page_no) {
+  			var pages = [], index = 0;
+  			page_total = +page_total;
+  			page_no = +page_no;
+  			/**
+  			 * 来自 @ 刘明剑 
+  			 * 
+  			 * 计算页数的展现形式，算法如下：
+  			 * <pre>
+  			 * 如果页数小于等于3，那么页码全部显示；
+  			 * 如果页数大于3并且小于等于10，那么前三页码显示，然后再显示第10页；
+  			 * 如果页数大于10，那么算法是保留前3页，和最后两页，中间显示一页
+  			 * </pre>
+  			 */
+  			if (page_total <= 5) {
+  				for (var i = 1; i <= page_total; i++) {
+  					pages[index++] = i;
+  				}
+  				return pages;
+  			}
+  			if (page_no <= 3) {
+  				for (var i = 1; i <= page_no + 1; i++) {
+  					pages[index++] = i;
+  				}
+  				pages[index++] = '...';
+  			} else if (page_no > 3 && page_no < (page_total - 2)) {
+  				pages[index++] = 1;
+  				pages[index++] = '...';
+  				pages[index++] = page_no - 1;
+  				pages[index++] = page_no;
+  				pages[index++] = page_no + 1;
+  				pages[index++] = '...';
+  			} else {
+  				pages[index++] = 1;
+  				pages[index++] = '...';
+  				if (page_no == page_total - 2) {
+  					for (var i = page_no - 1; i <= page_total - 1; i++) {
+  						pages[index++] = i;
+  					}
+  				} else if (page_no == page_total - 1) {
+  					for (var i = page_total - 2; i <= page_total - 1; i++) {
+  						pages[index++] = i;
+  					}
+  				} else {
+  					pages[index++] = page_total - 1;
+  				}
+  			}
+  			pages[index++] = page_total;
+  			return pages;
+  		}
+  	};
+  	RC.controls.define(ctrls.name, ctrls);
+  })(jQuery, RayCloud);
+  
+
+});

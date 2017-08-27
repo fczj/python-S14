@@ -1,0 +1,240 @@
+define('framework/js/mock', function(require, exports, module) {
+
+  (function() {
+  	//所有的与服务端连接的地址, 都保存在此.
+  	var SERVER_Path = {
+  		'get_user_email_identifycode': '/user/identifycode/email', // 邮箱获取验证码
+  		"api_turntable_mychance":"/turntable/mychance",
+  		'user_monitor_industry_add':'/user/monitor/industry/add',
+  		'post_user_register'   : '/user/register',
+  		'get_user_validatecode': '/user/validatecode',
+  		'post_user_login'      : '/user/login',
+  		'industry_monitor_delete':'/user/monitor/industry/cancel',
+  		'user_find_passord_by_mobile': '/user/password/1',
+  		'user_find_passord_by_email': '/user/password/2',
+  		'user_monitor_industry_list':'/user/monitor/industry/list',
+  		
+  		'post_user_logout'     : '/user/logout',
+  		'user_edit_passord'    : '/user/edit/password',
+  		'user_edit_email'      : '/user/edit/email',
+  		'user_edit_info'       : '/user/edit',
+  		'user_get_recharge_list': '/tx/recharge/list',
+  		'user_get_change_list': '/tx/change/list',
+  		//'user_recharge_open'    : '/tx/recharge/open',
+  		'user_recharge_pay'    : '/tx/alipay_api',
+  		'user_get_changerule_message': '/tx/changerule/type/1',
+  		'user_get_changerule_email': '/tx/changerule/type/2',
+  		'user_change_pay'      : 	'/tx/change/pay',
+  
+  		'user_get_warnconfig_info': '/user/warnconfig/info',
+  		'user_warnconfig_edit':	'/user/warnconfig/edit',
+  		'user_get_warnconfig_remind_list': '/user/warnconfig/remind/list',
+  		'user_add_warnconfig_remind':  '/user/warnconfig/remind/add',
+  		'user_edit_warnconfig_remind': '/user/warnconfig/remind/edit',
+  		'user_delete_warnconfig_remind': '/user/warnconfig/remind/delete',
+  
+  		'user_monitor_shop_list': 	'/user/monitor/shop/list',
+  
+  		'get_hotshopes'   : '/index/hotshopes',
+  		'get_hotkeys'    : '/index/hotkeys',
+  		'get_user_info'   : '/user/info',
+  		'get_user_levelinfo'   : '/user/level/info',
+  
+  
+  
+  		'get_shop_list': '/data/shop/list',
+  		'user_shop_add': '/user/shop/add',
+  		'shop_monitor_add': '/user/monitor/shop/add',
+  		'shop_monitor_delete':	'/user/monitor/shop/delete',
+  		'shop_get_info': '/data/shop/info',
+  		'shop_get_offer_list': '/data/shop/offer/list',
+  		'shop_get_hotcat_list': '/data/shop/hotcat/list',
+  		'data_shop_catratio_list': '/data/shop/catratio/list',
+  		'shop_get_brandratio_list':	'/data/shop/brandratio/list',
+  		'shop_get_rankhotratio_list':	'/data/shop/rankhotratio/list',
+  		'shop_get_rank30amount_list':	'/data/shop/rank30amount/list',
+  		'shop_get_item_list':  '/data/shop/item/list',
+  		'shop_get_item_ontxn_list': '/data/shop/item/ontxn/list',
+  		'shop_get_item_onsale_list': '/data/shop/item/onsale/list',
+  		'shop_get_item_onname_list': '/data/shop/item/onname/list',
+  		'shop_get_item_onprice_list': '/data/shop/item/onprice/list',
+  		'shop_get_item_anatxn_list': '/data/shop/item/anatxn/list',
+  		'shop_get_item_anatxncat_list':	'/data/shop/item/anatxncat/list',
+  		'shop_get_item_anatxnbrand_list':'/data/shop/item/anatxnbrand/list',
+  		'shop_item_anatxncat_chart_list':'/data/shop/item/anatxncat/chart/list',
+  		'shop_item_anatxnbrand_chart_list':	'/data/shop/item/anatxnbrand/chart/list',
+  		'shop_get_market_p4p_list': '/data/shop/market/p4p',
+  		'shop_get_market_juhuasuan_list': '/data/shop/market/jhs',
+  		'shop_get_market_zuanzhan_list': '/data/shop/market/zz',
+  		'shop_get_market_sales_list': '/data/shop/market/sales',
+  		'data_shop_market_innersite': '/data/shop/market/innersite',
+  		'data_shop_market_outersite': '/data/shop/market/outersite',
+  		'shop_item_get_market_p4p_list': '/data/item/market/p4p',
+  		'shop_item_get_market_juhuasuan_list': '/data/item/market/jhs',
+  		'shop_item_get_market_zuanzhan_list': '/data/item/market/zz',
+  		'shop_item_get_market_sales_list': '/data/item/market/sales',
+  		'shop_compare': '/user/monitor/shop/compare',
+  		'get_item_info': 	'/data/item/info',
+  
+  
+  
+  		'item_get_list': '/data/item/list',
+  		
+  		// 2014-06-07 13:04
+  		// add by zilong start
+  		
+  		// 添加监控组
+  		'add_mointor_group': '/user/item/group/add',
+  		'edit_mointor_group': '/user/item/group/edit',
+  		
+  		// 获取联系人列表
+  		'get_remind_list': '/user/warnconfig/remind/list',
+  		
+  		// 添加宝贝价格监控
+  		'add_mointor_item': '/user/item/add',
+  		
+  		// 修改宝贝价格监控
+  		'edit_mointor_item': '/user/item/edit',
+  		
+  		// 取消监控
+  		'del_mointor_item': '/user/item/delete',
+  		
+  		// add by zilong end
+  
+  		'user_item_group_info': '/user/item/group/info',
+  		'user_item_all_list':	'/user/item/all/list',
+  		'user_item_warning_list':'/user/item/warning/list',
+  		'user_item_warnlog_list': '/user/item/warnlog/list',
+  
+  		'user_monitor_item_group_list':	'/user/monitor/item/group/list',
+  
+  		
+  		/*************行情分析开始*************/
+  		// 2014-07-29 09:08 add by zilong
+  		
+  		// 系统推荐热搜词
+  		'optimize_market_sys_reco_keyword': '/data/canmou/systemkw/list',
+  		
+  		// 我关注的热搜词
+  		'optimize_market_my_fav_hot_keyword': '/data/canmou/userkw/list',
+  		
+  		// 管理/修改我的热搜词
+  		'optimize_market_modify_my_fav_hot_keyword': '/data/canmou/userkw/update',
+  		
+  		// 热搜词关联宝贝排名
+  		'optimize_market_keyword_rela_item_rank': '/data/canmou/search/list',
+  		
+  		// 获取商品搜索类目
+  		'optimize_market_item_category': '/data/canmou/itemcat/search/list',
+  		
+  		// 搜索关键词
+  		'optimize_market_search_keyword': '/data/canmou/search/list',
+  		
+  		// 关键词关注/收藏
+  		'optimize_market_add_fav_keyword': '/data/canmou/keyword/favor',
+  		
+  		// 取消关键词关注/收藏
+  		'optimize_market_del_fav_keyword': '/data/canmou/keyword/cancelfavor',
+  		
+  		// 我关注的关键词
+  		'optimize_market_my_fav_keyword': '/data/canmou/mykw/search/list',
+  		
+  		// 关键词PK
+  		'optimize_market_keyword_pk': '/data/canmou/keywordCompare/list',
+  		
+  		// 关键词趋势
+  		'optimize_market_keyword_trend': '/data/canmou/keywordTrend/info',
+  		//标题诊断
+  		'optimize_market_title_search_for_data':'/data/canmou/title/diagnosis',
+  		'optimize_market_canmou_search_keyword_list':'/data/canmou/keyword/search/list',
+  		/*************行情分析结束*************/
+  		
+  		
+  		// 推荐用户关注的类目
+  		'get_sys_reco_category': '/user/category/listall',
+  		
+  		// 更新用户关注的类目
+  		'update_user_fav_category': '/user/category/update',
+  		
+  		// 获取用户关注的类目
+  		'get_user_fav_category': '/user/category/listmine',
+  		
+  		// 第三方帐号信息
+  		'get_sns_account': '/user/thirdpart/account',
+  		
+  		// 解绑第三方帐号
+  		'unbind_sns_account': '/user/thirdpart/unbound',
+  		
+  
+  
+  		/// 新增
+  		'data_shop_item_ontxn_time_list': '/data/shop/item/ontxn/time/list',
+  		'data_shop_search_trend_list': '/data/shop/search/trend/list',
+  		'data_shop_item_search_list': '/data/shop/item/search/list',
+  		'data_shop_p4p_chart_list': '/data/shop/p4p/chart/list',
+  		'data_shop_tbk_chart_list': '/data/shop/tbk/chart/list',
+  		'data_shop_item_p4p_list': '/data/shop/item/p4p/list',
+  		'data_shop_item_zz_list': '/data/shop/item/zz/list',
+  		'data_shop_item_unshelve_list': '/data/shop/item/unshelve/list',
+  		'data_shop_buyer_level_list': '/data/shop/buyer/level/list',
+  		'data_shop_buyer_expense_list': '/data/shop/buyer/expense/list',
+  		'data_shop_buyer_area_list': '/data/shop/buyer/area/list',
+  		'data_shop_buyer_buytime_list': '/data/shop/buyer/buytime/list',
+  		'data_shop_market_tbk': '/data/shop/market/tbk',
+  		'test_date': '/test/date',
+  
+  		//宝贝详情
+  		'data_item_p4p_chart_list': '/data/item/p4p/chart/list',
+  		'data_item_market_p4p': '/data/item/market/p4p',
+  		'data_item_market_tbk': '/data/item/market/tbk',
+  		'data_item_market_innersite': '/data/item/market/innersite',
+  		'data_item_market_outersite': '/data/item/market/outersite',
+  		'data_item_market_jhs': '/data/item/market/jhs',
+  		'data_item_search_kw_list': '/data/item/search/kw/list',
+  		'data_item_p4p_kw_chart_list': '/data/item/p4p/kw/chart/list',
+  		'data_item_market_sales': '/data/item/market/sales',
+  
+  		//广告、链接后台请求
+  		'get_cooper_list': '/index/cooper/list',
+  		'get_index_ad_list': '/index/ad/list',
+  		'get_index_weekshop_list': '/index/weekshop/list',
+  		'get_index_news_rssinfo': '/index/news/rssinfo',
+  		'get_index_kw_list': '/index/kw/list',
+  		'oauth_friendship_create': '/oauth/friendship/create',
+  
+  
+  		//message
+  		'message_preview_count': '/message/preview/count',
+  		'hongbao_user_today': '/hongbao/user/today',
+  		"mission_new_status":"/user/fresh/task",
+  		"mission_get_red_pkg":"/user/fresh/hongbao",
+  		"mission_get_my_red_pkgs_list":"/user/fresh/myhongbao",
+  		"data_canmou_keyword_recent_list":"/data/canmou/keyword/recent/list",
+  		"user_monitor_shop_clist":"/user/monitor/shop/clist",
+  		"data_shop_similar":"/data/shop/similar",
+  		"shop_get_item_new_list":"/data/shop/item/new/list",
+  		"data_shop_detail_total":"/data/shop/detail",
+  		"data_shop_flow_list":"/data/shop/item/flow/list",
+  		"data_shop_flow_detail":"/data/shop/item/flow/detail",
+  		"data_shop_item_flow_rank":"/data/shop/item/flow/rank",
+  		"data_shop_item_unsale_list":"/data/shop/item/unsale/list",
+  		"data_shop_item_np4p_list":"/data/shop/item/np4p/list",
+  		"data_shop_item_np4p_detail":"/data/shop/item/np4p/detail",
+  		"data_shop_item_np4p_rank":"/data/shop/item/np4p/rank",
+  		"data_item_np4p_list":"/data/item/np4p/list",
+  		"data_shop_pricerange_list":"data/shop/pricerange/list",
+  		"data_shop_item_hotlist":"/data/shop/item/hotlist",
+  		'data_shop_item_exist':'/data/shop/exist',
+  		"user_monitor_industry_clist":'/user/monitor/industry/clist',
+  		'tx_change_info':'/tx/change/info',
+  		'tx_change_info_fenxiao':'/user/tx/prom/trial/change/info',
+  		"xxxx":""
+  	};
+  	window.SERVER_Path = SERVER_Path;
+  
+  	
+  })();
+  
+  
+
+});

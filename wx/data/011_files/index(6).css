@@ -1,0 +1,90 @@
+.modules-shop-title-optimize .result {
+  border: 1px solid #eee;
+  min-height: 100px;
+}
+.modules-shop-title-optimize .result .loading {
+  height: 100px;
+  background: url(//cdn.taosj.com/data-www-shop/modules/shop/detail/title/optimize/result/img/loading.gif) no-repeat 50px center;
+}
+.modules-shop-title-optimize .result:after {
+  clear: both;
+  display: table;
+  content: "";
+}
+.modules-shop-title-optimize .result .main {
+  padding: 20px 0 25px 0;
+  width: 100px;
+  float: left;
+  height: 55px;
+  background: #fff4da;
+}
+.modules-shop-title-optimize .result .main h2 {
+  margin: 0;
+  height: 0;
+  display: block;
+  line-height: 1em;
+  height: 16px;
+  color: #333;
+  text-align: center;
+  font-size: 16px;
+}
+.modules-shop-title-optimize .result .main h1 {
+  margin: 0;
+  padding-top: 20px;
+  text-align: center;
+  display: block;
+  line-height: 1em;
+  height: 0;
+  font-size: 24px;
+}
+.modules-shop-title-optimize .result .main h1.low {
+  color: #e8364b;
+}
+.modules-shop-title-optimize .result .main h1.middle {
+  color: #ff9248;
+}
+.modules-shop-title-optimize .result .main h1.high {
+  color: #36c77b;
+}
+.modules-shop-title-optimize .result .detail {
+  float: left;
+  width: 850px;
+}
+.modules-shop-title-optimize .result .detail ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  margin-bottom: 12px;
+}
+.modules-shop-title-optimize .result .detail ul li {
+  padding-top: 11px;
+  margin: 0;
+  float: left;
+  width: 422px;
+}
+.modules-shop-title-optimize .result .detail ul li div {
+  float: left;
+}
+.modules-shop-title-optimize .result .detail ul li .title {
+  width: 80px;
+  text-align: right;
+}
+.modules-shop-title-optimize .result .detail ul li .icon {
+  width: 22px;
+  height: 16px;
+  background: url(//cdn.taosj.com/data-www-shop/modules/shop/detail/title/optimize/result/img/normal.png) no-repeat;
+}
+.modules-shop-title-optimize .result .detail ul li .icon.warn {
+  background: url(//cdn.taosj.com/data-www-shop/modules/shop/detail/title/optimize/result/img/warn.png) no-repeat;
+}
+.modules-shop-title-optimize .result .detail ul li .context {
+  width: 315px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.modules-shop-title-optimize .result .detail ul:after {
+  clear: both;
+  display: table;
+  content: "";
+}

@@ -1,0 +1,88 @@
+define('modules/demo/bbjk/template', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var page_template = [
+  		'<div id="module-shop-item" class="module-shop-item-detail clearfix">',
+  		'<div><div class="shop-item-pin-bar J_Item_Detail_Global" id="J_item_pin_bar" style="z-index: auto; position: static; top: auto;"><div><div class="item-name ft_14"><span style="max-width: 450px;vertical-align:middle;" class="ellipsis inline-block">宝贝名称：预售韩都衣舍韩版2015春装新款女装宽松小脚背带牛仔裤CQ4030莀</span><a class="J_Add_Monitor btn item-btn" href="javascript:;">添加价格监控</a><a class="return-shop f-rt" href="/index.html#/shop/detail/?id=71644724"><i class="icon-return-shop"></i>返回宝贝所在店铺</a></div><div class="bar-bd"><a href="#/demo/bbjk/?tab=index" class="anchor index current">宝贝基础状况<b></b></a><a href="#/demo/bbjk/?tab=item_analysis-onsale" class="anchor item_analysis">宝贝上下架调价明细<b></b></a><a href="#/demo/bbjk/?tab=marketing-ztc" class="anchor marketing">宝贝营销推广<b></b></a><a href="#/demo/bbjk/?tab=traffic_analysis" class="anchor traffic_analysis">宝贝流量分析<b></b></a></div></div></div><div style="display: none; width: 1200px; height: 74px; float: none;"></div></div>',
+  		'<style>.module,.sub-module{display:none;}.module{margin-top: 10px;}.module.current,.sub-module.current{display:block;}</style>',
+  		'<div id="">',
+  			'<div id="J_index" class="module">',
+  				'<img src="http://cdn.maijia.com/www/www-old/SEO/images/item/2.jpg">',
+  				'<img src="http://cdn.maijia.com/www/www-old/SEO/images/item/3.jpg" class="mt_10">',
+  				'<img src="http://cdn.maijia.com/www/www-old/SEO/images/item/4.jpg" class="mt_10">',
+  				'<img src="http://cdn.maijia.com/www/www-old/SEO/images/item/5.jpg" class="mt_10">',
+  				'<img src="http://cdn.maijia.com/www/www-old/SEO/images/item/6.jpg" class="mt_10">',
+  			'</div>',
+  			'<div id="J_item_analysis" class="module">',
+  				'<ul class="mar-tabs marketing-tab"  unselectable="on" onselectstart="return false;">',
+  					'<li class="mar-tab J_tab_onsale">',
+  						'<a href="#/demo/bbjk/?tab=item_analysis-onsale"><span>宝贝上下架跟踪</span><b class="arrow"><b></b></b></a>',
+  					'</li>',
+  					'<li class="mar-tab J_tab_onname">',
+  						'<a href="#/demo/bbjk/?tab=item_analysis-onname"><span>宝贝改名跟踪</span><b class="arrow"><b></b></b></a>',
+  					'</li>',
+  					'<li class="mar-tab J_tab_onprice">',
+  						'<a href="#/demo/bbjk/?tab=item_analysis-onprice"><span>宝贝调价跟踪</span><b class="arrow"><b></b></b></a>',
+  					'</li>',
+  				'</ul>',
+  				'<div class="mar-panels">',
+  					'<div id="J_onsale" class="sub-module">',
+  						'<img src="http://cdn.maijia.com/www/www-old/SEO/images/item/7.jpg">',
+  					'</div>',
+  					'<div id="J_onname" class="sub-module">',
+  						'<img src="http://cdn.maijia.com/www/www-old/SEO/images/item/8.jpg">',
+  					'</div>',
+  					'<div id="J_onprice" class="sub-module">',
+  						'<img src="http://cdn.maijia.com/www/www-old/SEO/images/item/9.jpg">',
+  					'</div>',
+  				'</div>',
+  			'</div>',
+  			'<div id="J_marketing" class="module">',
+  				'<ul class="mar-tabs marketing-tab"  unselectable="on" onselectstart="return false;">',
+  					'<li class="mar-tab J_tab_ztc">',
+  						'<a href="#/demo/bbjk/?tab=marketing-ztc"><span>直通车</span><b class="arrow"><b></b></b></a>',
+  					'</li>',
+  					'<li class="mar-tab J_tab_jhs">',
+  						'<a href="#/demo/bbjk/?tab=marketing-jhs"><span>聚划算</span><b class="arrow"><b></b></b></a>',
+  					'</li>',
+  					'<li class="mar-tab J_tab_spcx">',
+  						'<a href="#/demo/bbjk/?tab=marketing-spcx"><span>商品促销</span><b class="arrow"><b></b></b></a>',
+  					'</li>',
+  				'</ul>',
+  				'<div class="mar-panels">',
+  					'<div id="J_ztc" class="sub-module">',
+  						'<img src="http://cdn.maijia.com/www/www-old/SEO/images/item/10.jpg">',
+  						'<img src="http://cdn.maijia.com/www/www-old/SEO/images/item/11.jpg" class="mt_10">',
+  						'<img src="http://cdn.maijia.com/www/www-old/SEO/images/item/12.jpg" class="">',
+  						'<img src="http://cdn.maijia.com/www/www-old/SEO/images/item/13.jpg" class="mt_10">',
+  					'</div>',
+  					'<div id="J_jhs" class="sub-module">',
+  						'<img src="http://cdn.maijia.com/www/www-old/SEO/images/item/14.jpg">',
+  					'</div>',
+  					'<div id="J_spcx" class="sub-module">',
+  						'<img src="http://cdn.maijia.com/www/www-old/SEO/images/item/15.jpg">',
+  					'</div>',
+  				'</div>',
+  			'</div>',
+  			'<div id="J_traffic_analysis" class="module">',
+  				'<img src="http://cdn.maijia.com/www/www-old/SEO/images/item/16.jpg">',
+  				'<img src="http://cdn.maijia.com/www/www-old/SEO/images/item/17.jpg" class="mt_10">',
+  				'<img src="http://cdn.maijia.com/www/www-old/SEO/images/item/18.jpg" class="mt_10">',
+  			'</div>',
+  		'</div>',
+  		'<div id="module-shop-detail">',
+  			'<div class="shop-detail-banner-bottom">您正在浏览淘数据数据演示版（此版本只展示产品功能，数据不具有效性）<a href="#/login/login/" class="btn shop-detail-banner-bottom-login ml_20">登录淘数据</a><div class="shop-detail-banner-bottom-cover"></div></div>',
+  		'</div>',
+  	'</div>'
+  	
+  	];
+  	
+  	
+  	RC.template.addTemp('demo.bbjk.index', page_template);
+  	
+  })(jQuery,RayCloud);
+
+});

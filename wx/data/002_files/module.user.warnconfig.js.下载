@@ -1,0 +1,765 @@
+define('modules/user/warnconfig/module.user.warnconfig', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var control = RC.controls.get('controls.add_receiver_pop');
+  
+  	//tab切换
+  var subModule_changePop = {
+  		name: 'user.recharge.change_pop',
+  		_elm_dom_root: '#J_Module_User_Recharge_changePop_Container',
+  		_elm_template_name: 'template.user.recharge.change_pop',
+  		
+  		_fn_dom_render: function(){ 
+  			if(this._elm_dom_container){
+  				return;
+  			}
+  			var $el = this._elm_dom_container = $(RC.template.get(this._elm_template_name)).appendTo(this._elm_dom_root);
+  			this._elm_dom_navs = $el.find('.J_sms-email-meals .trigger');
+  			this._elm_dom_panels = $el.find('.J_sms-email-meals .sms-email-meal-panel');
+  			
+  			this._fn_event_bind();
+  		},
+  		_fn_ctrl_sms_email_num: function () {
+  			var that = subModule_changePop
+  				, account = RC.user.get('account');
+  			
+  			that._elm_dom_container.find('.J_remain-sms').html(account.remainMessage);
+  			that._elm_dom_container.find('.J_remain-email').html(account.remainEmail);
+  		},
+  		_fn_dom_update_tab: function(index){
+  			this._elm_dom_navs.removeClass('current').eq(index).addClass('current');
+  			this._elm_dom_panels.hide().eq(index).show();
+  		},
+  		_fn_dom_update_tab_panel: function(data, index){
+  			data._text = this._status_last_tab_index === '0' ? '条短信': '封邮件';
+  			data._type = this._status_last_tab_index === '0' ? 'sms' : 'email';
+  			
+  			$.each(data.data, function (i, o) {
+  				o.marketPrice = (+o.marketPrice || 0).toFixed(2);
+  				o.payment = (+o.payment || 0).toFixed(2);
+  				o.promotion = (+o.promotion || 0).toFixed(2);
+  			});
+  			
+  			this._elm_dom_panels.eq(index).html(RC.template.get('template.user.recharge.change_pop_list',data));
+  		},
+  		_fn_event_bind: function(){
+  			this._elm_dom_navs.on('mouseover', this._fn_event_handler_click_tab_proxy = $.proxy(this._fn_event_handler_click_tab,this));
+  			this._elm_dom_container.on('click', '.J_ChangeBtn', this._fn_event_handler_click_change_proxy = $.proxy(this._fn_event_handler_click_change,this));
+  			
+  			RC.sub('socket.user.user_info.update', this._fn_ctrl_sms_email_num);
+  		},
+  		_fn_event_unbind: function(){
+  			this._elm_dom_navs.off('mouseover', this._fn_event_handler_click_tab_proxy);
+  			this._elm_dom_container.off('click', '.J_ChangeBtn', this._fn_event_handler_click_change_proxy);
+  			
+  			RC.removeSub('socket.user.user_info.update', this._fn_ctrl_sms_email_num);
+  		},
+  		_fn_event_handler_click_tab: function(e){
+  			var $target = $(e.currentTarget);
+  			if($target.hasClass('current')){
+  				return;
+  			}
+  			var idx = $target.attr('data-index');
+  			this._fn_ctrl_switchTab({type: idx});
+  		},
+  		_fn_event_handler_click_change: function(e){
+  			var _this = this
+  				, $target = $(e.currentTarget)
+  				, type = $target.attr('data-type')
+  				, params = {
+  					id: $target.attr('data-id')
+  					, money: $target.attr('data-money')
+  					, version: $target.attr('data-name')
+  				}
+  			window.location.href="/index.html#/surecharge/?id="+params.id;
+  			// if (!_this._gc_ctrl_payment_pop) {
+  			// 	_this._gc_ctrl_payment_pop = RC.controls.get('controls.payment_pop');
+  			// }
+  			
+  			// RC.user.get('info', function () {
+  			// 	_this._gc_ctrl_payment_pop['buy_' + type](params);
+  			// });
+  			
+  			
+  			
+  			return;
+  			/*
+  			this._fn_ctrl_changePay(id,$.proxy(function(data){
+  				RC.pub('page.sethash.user.recharge.change_pop',null);
+  				RC.pub('socket.user.user_info.update');
+  			},this));
+  			*/
+  		},
+  
+  		_fn_data_format: function(data){
+  			$.each(data, function(idx,item){
+  				item.marketPrice = Math.floor(item.marketPrice/100);
+  				item.payment = Math.floor(item.payment/100);
+  				item.promotion = Math.floor(item.promotion/100);
+  			});
+  			return {"data": data};
+  		},
+  		_fn_ctrl_load: function(type, success, fail){
+  			var apiName = type == '0' ? 'user_get_changerule_message' : 'user_get_changerule_email';
+  			API[apiName]({}, $.proxy(function(json){
+  				var data = this._fn_data_format(json.data);
+  				success(data);
+  			},this), fail, false, false, false);
+  		},
+  		
+  		_status_last_tab_index: null,
+  		_fn_ctrl_switchTab: function(hashs, is_refresh){
+  			var type = hashs.type || '0';
+  			if(-1 === $.inArray(type, ['0', '1'])){
+  				type = '0';
+  			}
+  			
+  			if(this._status_last_tab_index === type){
+  				return;
+  			}
+  			this._status_last_tab_index = type;
+  			this._fn_dom_update_tab(type); 
+  			this._fn_ctrl_load(type, $.proxy(function(data){
+  				this._fn_dom_update_tab_panel(data, this._status_last_tab_index);
+  			},this));
+  		},
+  		_status_userId: null,
+  		_fn_ctrl_load_userId: function(success){
+  			if(this._status_userId){
+  				success && success(this._status_userId);
+  			}else{
+  				API.get_user_info({}, $.proxy(function(json){
+  					this._status_userId = json.data.id;
+  					this._fn_ctrl_sms_email_num();
+  					success && success(json.data.id);
+  				},this));
+  			}
+  		},
+  		_fn_ctrl_changePay: function(id, success, fail){
+  			this._fn_ctrl_load_userId(function(userId){
+  				API.user_change_pay({
+  					userId: userId,
+  					changeRuleId: id
+  				},function(json){
+  					success && success(json.data);
+  				}, fail);
+  			});
+  		},
+  
+  		init: function(){},
+  		getContainer: function(){
+  			return this._elm_dom_container;
+  		},
+  		update: function(hashs, afterload, is_refresh){
+  			this._fn_dom_render();
+  			this._fn_ctrl_switchTab(hashs, is_refresh);
+  			this._fn_ctrl_load_userId();
+  			afterload && afterload();
+  			// if(hashs.url_type=='recharge_sms'){
+  			// 	$('html, body').animate({scrollTop:2100}, 'fast');
+  			// 	$('.personal-center-menu .first dd').removeClass('active').filter(function(idx,item){
+  			// 		var name = $(item).attr('data-appName');
+  			// 		return  name=='recharge_sms';
+  			// 	}).addClass('active');
+  			// }else if(hashs.url_type=='rechange_detail'){
+  			// 	$('html, body').animate({scrollTop:2400}, 'fast');
+  			// }
+  			// else{
+  				// $('.personal-center-menu .first dd').removeClass('active').filter(function(idx,item){
+  				// 	var name = $(item).attr('data-appName');
+  				// 	return  name=='recharge';
+  				// }).addClass('active');
+  			// }
+  		},
+  		disabled: function(){
+  			// this.destroy();
+  		},
+  		destroy: function(){
+  			if(this._elm_dom_container){
+  				this._fn_event_unbind();
+  				this._elm_dom_container.empty();
+  				this._elm_dom_container = null;
+  			}
+  				this._status_last_tab_index = null;
+  				this._status_userId = null;
+  		}
+  		
+  	};
+  	var mdul = {
+  		name: 'user.warnconfig',
+  		depend: 'user',
+  		_elm_dom_root: '#main',
+  		_elm_template_name: 'template.user.warnconfig',
+  		_fn_dom_render: function(){
+  			if(this._elm_dom_container){
+  				return;
+  			}
+  			var $el = this._elm_dom_container = $(RC.template.get(this._elm_template_name)).appendTo(this._elm_dom_root);
+  			var $info_container = this._elm_dom_info_container = $el.find('.J_Warn_Info_Container');
+  			//this._elm_dom_email = $info_container.find('input[name="email"]');
+  			this._elm_dom_email = $info_container.find('.J_User_Email');
+  			this._elm_dom_mobile = $info_container.find('.J_phone_show');
+  			this._elm_dom_remainMessage = $info_container.find('.J_Info_remainMessage');
+  			this._elm_dom_remainEmail = $info_container.find('.J_Info_remainEmail');
+  			this._elm_dom_warnType = $info_container.find('input[name="warnType"]');
+  
+  			this._elm_dom_sendCodeBtn = $info_container.find('.J_SendCode');
+  			
+  			this._elm_dom_addRemind = $el.find('.J_Add_Remind');
+  			this._elm_dom_remindList = $el.find('.J_linkman_container');
+  			this._elm_dom_info_warnRate = $el.find('select[name="warnRate"]');
+  			this._elm_dom_info_edit = $el.find('.J_EditEmail');
+  			this._elm_dom_info_code = $el.find('input[name="code"]');
+  			this._elm_dom_info_code_img = $el.find('input[name="imgcode"]');
+  			this._elm_don_info_code_img_dom = $el.find('.J_img_code_container img');
+  			this._elm_don_info_code_img_dom_div = $el.find('.J_div_imgcode');
+  			//this._elm_dom_remindList_footer = $el.find('.J_Warn_List_Footer');
+  
+  			this._elm_dom_info_container.show();
+  			this._elm_dom_warnType.iCheck();
+  			this._elm_dom_info_warnRate.iSelect();
+  			//this._elm_dom_remindList_footer.find('select').iSelect();
+  
+  			
+  			this._fn_event_bind();
+  		},
+  		////////////////手机验证码
+  		_status_sendCode_timer: null,
+  		_elm_dom_sendCodeBtn: null,
+  		_elm_dom_mobile: null,
+  		_status_identifyCodeId: '',
+  		////////////////
+  		_fn_dom_update_info: function(data){
+  			// API.user_get_warnconfig_info({}, function(json){
+  			// 	success && success(json.data);
+  			// }, fail);
+  			//this._elm_dom_email.val(data.email || '');
+  			//这个接口没有返回剩余短信和邮件的数据
+  			this._elm_dom_mobile.html(data.mobile);
+  			this._elm_dom_email.val(data.email);
+  			this._elm_dom_remainMessage.html(data.account?data.account.remainMessage:'');
+  			this._elm_dom_remainEmail.html(data.account?data.account.remainEmail:'');
+  			this._elm_dom_email.val(data.email || '');
+  			this._elm_dom_info_code.val('');
+  			this._elm_dom_info_code_img.val('');
+  			/*
+  			if(data.email){
+  				this._elm_dom_email.html('<a href="#/user/bind_email/?email='+encodeURIComponent(data.email)+'" class="" style="text-decoration:underline;">'+data.email+'</a>');
+  			}else{
+  				this._elm_dom_email.html('<a href="#/user/bind_email/" class="" style="text-decoration:underline;">绑定邮箱</a>');
+  			}
+  			*/
+  			
+  			
+  			this._elm_dom_warnType.filter(function(idx,radio){return $(radio).val() == data.warnType;}).attr('checked',true);
+  			
+  			this._elm_dom_warnType.iCheck();
+  			this._elm_dom_info_warnRate.val(data.warnRate || '0').iSelect();
+  		},
+  		_fn_dom_update_list: function(data){
+  			if(!data.length){
+  				this._elm_dom_remindList.empty().html('<tr class="empty_list"><td colspan="6"><div class="cell-box"><div class="ft-center pd_30">无报警联系人</div></div></td></tr>');
+  				return;
+  			}
+  			var r = [];
+  			$.each(data, function(idx, item){
+  				item._idx = idx+1;
+  				r.push(RC.template.get('template.user.warnconfig.remind_list',item));
+  			});
+  			this._elm_dom_remindList.empty().html(r.join(''));
+  			this._elm_dom_remindList.find('select').each(function(idx, select){
+  				select = $(select);
+  				select.val(select.attr('data-value')||'0').iSelect();
+  			});
+  		},
+  
+  		_fn_dom_get_formValue: function(form){
+  			var $node = $(form);
+  			var r = {};
+  			r.name = $node.find('input[name="name"]').val();
+  			r.mobile = $node.find('input[name="mobile"]').val();
+  			r.email = $node.find('input[name="email"]').val();
+  			r.role = $node.find('input[name="role"]').val();
+  			r.warnRate = $node.find('select[name="warnRate"]').val();
+  			
+  			var $id = $node.find('input[name="id"]');
+  			if($id && $id.val()){
+  				r.id = $id.val();
+  			}
+  			return r;
+  		},
+  
+  		_fn_event_bind: function(){
+  			this._elm_dom_info_container.find('input[name="warnType"]').on('ifChecked', this._fn_event_hander_change_warnType_proxy = $.proxy(this._fn_event_hander_change_warnType, this));
+  			this._elm_dom_remindList.on('click', '.J_Delete', this._fn_event_handler_click_remove_proxy = $.proxy(this._fn_event_handler_click_remove, this));
+  			this._elm_dom_remindList.on('click', '.J_Edit', this._fn_event_handler_click_edit_proxy = $.proxy(this._fn_event_handler_click_edit, this));
+  			//this._elm_dom_remindList_footer.on('click', '.J_Add', this._fn_event_handler_click_add_proxy = $.proxy(this._fn_event_handler_click_add, this));
+  			this._elm_dom_addRemind.on('click',  this._fn_event_handler_click_add_remind_proxy = $.proxy(this._fn_event_handler_click_add_remind, this));
+  			this._elm_dom_info_edit.on('click', this._fn_event_handler_click_editInfo_proxy = $.proxy(this._fn_event_handler_click_editInfo,this));
+  			
+  			this._elm_don_info_code_img_dom.on('click', this._fn_event_handler_click_img_dom_proxy = $.proxy(this._fn_event_handler_click_img_dom,this));
+  			this._elm_don_info_code_img_dom_div.on('click', this._fn_event_handler_click_img_dom_div_proxy = $.proxy(this._fn_event_handler_click_img_dom,this));
+  
+  
+  			this._elm_dom_info_container.on('click', '.J_EditMobile', this._fn_event_handler_click_editMobile_proxy = $.proxy(this._fn_event_handler_click_editMobile, this));
+  			this._elm_dom_info_container.off('click', '.J_add_new_linkman');
+  			this._elm_dom_info_container.on('click', '.J_add_new_linkman', this._fn_event_handler_click_add_new_linkman_proxy = $.proxy(this._fn_event_handler_click_add_new_linkman, this));
+  			this._elm_dom_info_container.off('click', '.J_linkman_Edit');
+  			this._elm_dom_info_container.on('click', '.J_linkman_Edit', this._fn_event_handler_click_edit_linkman_proxy = $.proxy(this._fn_event_handler_click_edit_linkman, this));
+  			
+  			this._elm_dom_container.on('click', '.tag', this._fn_event_handler_click_tab_proxy = $.proxy(this._fn_event_handler_click_tab,this));
+  
+  			RC.sub('page.click.user.recharge.change_pay', this._fn_event_handler_subModule_changePop_setHash_proxy);
+  			var _this = this;
+  
+  
+  			// $('#J_Warn_Info_Container_tab_ui li').each(function(){
+  			// 	$(this).on("click",function(){
+  			// 		$('#J_Warn_Info_Container_tab_ui li').removeClass("current");
+  			// 		$(this).addClass("current");
+  			// 		if($(this).attr("data-type")=='price'){
+  			// 			_this._elm_dom_container.find('#J_Module_User_Recharge_changePop_Container').show();
+  			// 			_this._elm_dom_container.find(".J_Warn_Info_Container").hide();
+  			// 		}
+  			// 		if($(this).attr("data-type")=='num'){
+  			// 			_this._elm_dom_container.find('#J_Module_User_Recharge_changePop_Container').hide();
+  			// 			_this._elm_dom_container.find(".J_Warn_Info_Container").show();
+  			// 		}
+  			// 	});
+  			// });
+  			// this._elm_dom_container.on('click', 'a.change_sms_email_a', function(){
+  			// 	$('#J_Warn_Info_Container_tab_ui li').removeClass("current");
+  			// 	$('#J_Warn_Info_Container_tab_ui li').eq(0).addClass("current");
+  
+  			// 	_this._elm_dom_container.find('#J_Module_User_Recharge_changePop_Container').show();
+  			// 	_this._elm_dom_container.find(".J_Warn_Info_Container").hide();
+  			// });
+  		},
+  		_fn_event_handler_click_edit_linkman:function(e){
+  			var id = $(e.currentTarget).attr('data-id');
+  			var tds = this._elm_dom_info_container.find('#J_RemindList_'+id).find('td');
+  			tds.eq(1).find('div').html('<input value="'+tds.eq(1).find('div').text()+'" type="text" class="J_add_linkman_name" style="border-radius:0px;width:85px;height:18px;line-height:28px;">');
+  			// tds.eq(2).find('div').text()
+  			tds.eq(2).find('div').html('<input type="text" value="'+tds.eq(2).find('div').text()+'" class="J_add_linkman_phone" style="border-radius:0px;width:105px;height:18px;line-height:28px;">');
+  
+  			tds.eq(3).find('div').html('<input type="text" value="'+tds.eq(3).find('div').text()+'" class="J_add_linkman_email" style="border-radius:0px;width:195px;height:18px;line-height:28px;line-height:28px;">');
+  
+  			tds.eq(4).find('div').html('<input type="text" value="'+tds.eq(4).find('div').text()+'" class="J_add_linkman_remark" style="border-radius:0px;width:195px;height:18px;line-height:28px;">');
+  
+  			tds.eq(5).find('div').html('<span style="width: 40px;box-shadow: #d9d9d9 0px 1px 1px 0px;background-color: #ff8939;border-radius: 1px;height: 30px;line-height: 30px;" class="btn-new btn-primary-new J_save_linkman J_save_linkman_by_edit" data-id="'+id+'">保存</span>');
+  			this._fn_bind_save_linkman();
+  		},
+  		_fn_bind_save_linkman:function(){
+  			this._elm_dom_info_container.off('click', '.J_save_linkman');
+  			this._elm_dom_info_container.on('click', '.J_save_linkman', this._fn_event_handler_click_save_linkman_proxy = $.proxy(this._fn_event_handler_click_save_linkman, this));
+  		},
+  		_fn_event_handler_click_save_linkman:function(e){
+  			var $dom = $(e.currentTarget);
+  			var tr = $dom.parents('tr').eq(0);
+  			var params = {};
+  			params.name = tr.find('.J_add_linkman_name').val();
+  			params.mobile = tr.find('.J_add_linkman_phone').val();
+  			params.email = tr.find('.J_add_linkman_email').val();
+  			params.role = tr.find('.J_add_linkman_remark').val();
+  			if(params.name === ''){
+  				RC.showWarn('请输入姓名！',1);
+  				tr.find('.J_add_linkman_name').focus();
+  				return;
+  			}
+  			if(params.mobile === ''){
+  				RC.showWarn('请输入手机！',1);
+  				tr.find('.J_add_linkman_phone').focus();
+  				return;
+  			}
+  			if(params.email === ''){
+  				RC.showWarn('请输入邮箱！',1);
+  				tr.find('.J_add_linkman_email').focus();
+  				return;
+  			}
+  			if(!params.mobile.match(/^\d{11}$/)){
+  				RC.showWarn('手机号码格式不正确！',1);
+  				tr.find('.J_add_linkman_phone').focus();
+  				return;
+  			}
+  			if(params.email && params.email.indexOf('@') === -1){
+  				RC.showWarn('邮箱格式不正确！',1);
+  				tr.find('.J_add_linkman_email').focus();
+  				return;
+  			}
+  			if($dom.hasClass('J_save_linkman_by_edit')){
+  				params.id = $dom.attr('data-id');
+  				this._fn_ctrl_edit_warnconfig_remind(params,
+  					$.proxy(function(){
+  					RC.showSuccess('修改成功！',1);
+  					var callback = $.proxy(function(){
+  						this._fn_ctrl_get_warnconfig_remind_list($.proxy(this._fn_dom_update_list,this));
+  					},this);
+  					setTimeout(callback, 800);
+  				},this));
+  			}else{
+  				// _fn_ctrl_add_warnconfig_remind
+  				this._fn_event_handler_click_add(params);
+  			}
+  			// _fn_ctrl_delete_warnconfig_remind_check//
+  		},
+  		_fn_event_handler_click_add_new_linkman:function(){
+  			if(this._elm_dom_info_container.find('.add_new_tr').size()>0){
+  				return;
+  			}
+  			var trs = this._elm_dom_info_container.find('.J_linkman_container tr');
+  			var empty = this._elm_dom_info_container.find('.J_linkman_container .empty_list').size()>0;
+  			if(trs.size()>=8){
+  				RC.showWarn('报警接收人最多 8 个！',1);
+  				return;
+  			}
+  			var list = [
+  					'<tr class="add_new_tr" style="border-bottom:1px solid #eee;">',
+  						'<td>',
+  							'<div class="cell-box">',
+  								'<span class="ml_20">'+(empty?1:(trs.size()+1))+'</span>',
+  							'</div>',
+  						'</td>',
+  						'<td>',
+  							'<div class="cell-box">',
+  							'<input type="text" class="J_add_linkman_name" style="border-radius:0px;width:85px;height:18px;line-height:28px;">',
+  							'</div>',
+  						'</td>',
+  						'<td>',
+  							'<div class="cell-box">',
+  							'<input type="text" class="J_add_linkman_phone" style="border-radius:0px;width:105px;height:18px;line-height:28px;">',
+  							'</div>',
+  						'</td>',
+  						'<td>',
+  							'<div class="cell-box">',
+  								'<input type="text" class="J_add_linkman_email" style="border-radius:0px;width:195px;height:18px;line-height:28px;">',
+  							'</div>',
+  						'</td>',
+  						'<td>',
+  							'<div class="cell-box">',
+  								'<input type="text" class="J_add_linkman_remark" style="border-radius:0px;width:195px;height:18px;line-height:28px;">',
+  							'</div>',
+  						'</td>',
+  						'<td>',
+  							'<div class="cell-box">',
+  								'<span style="width: 40px;box-shadow: #d9d9d9 0px 1px 1px 0px;background-color: #ff8939;border-radius: 1px;height: 30px;line-height: 30px;" class="btn-new btn-primary-new J_save_linkman">保存</span>',
+  							'</div>',
+  						'</td>',
+  					'</tr>',
+  			];
+  			if(this._elm_dom_info_container.find('.J_linkman_container .empty_list').size()>0){
+  				this._elm_dom_info_container.find('.J_linkman_container .empty_list').empty();
+  			}
+  			//判断是不是空
+  			this._elm_dom_info_container.find('.J_linkman_container').append(list.join(''));
+  			this._fn_bind_save_linkman();
+  		},
+  		_fn_event_unbind: function(){
+  			this._elm_dom_info_container.off('click', '.J_add_new_linkman', this._fn_event_handler_click_add_new_linkman_proxy );
+  			this._elm_dom_info_container.find('input[name="warnType"]').off('ifChecked', this._fn_event_hander_change_warnType_proxy);
+  			this._elm_dom_remindList.off('click', '.J_Delete', this._fn_event_handler_click_remove_proxy);
+  			this._elm_dom_remindList.off('click', '.J_Edit', this._fn_event_handler_click_edit_proxy);
+  			//this._elm_dom_remindList_footer.off('click', '.J_Add', this._fn_event_handler_click_add_proxy);
+  			this._elm_dom_addRemind.off('click',  this._fn_event_handler_click_add_remind_proxy);
+  			this._elm_dom_sendCodeBtn.off('click',this._fn_event_handler_click_sendCodeBtn_proxy);
+  			this._elm_dom_info_edit.off('click', this._fn_event_handler_click_editInfo_proxy);
+  			this._elm_don_info_code_img_dom.off('click', this._fn_event_handler_click_img_dom_proxy);
+  			this._elm_don_info_code_img_dom_div.off('click', this._fn_event_handler_click_img_dom_div_proxy);
+  			
+  			this._elm_dom_info_container.off('click', '.J_EditMobile', this._fn_event_handler_click_editMobile_proxy);
+  			this._elm_dom_container.off('click', '.tag', this._fn_event_handler_click_tab_proxy);
+  			RC.removeSub('page.click.user.recharge.change_pay', this._fn_event_handler_subModule_changePop_setHash_proxy);
+  		},
+  		_fn_event_handler_click_editMobile: function(e){
+  			this._elm_dom_info_code.val('');
+  			this._elm_dom_info_code_img.val('');
+  			// this._elm_dom_mobile.prop('disabled', false);
+  			this._elm_dom_info_container.find('.J_Code_Container').show();
+  		},
+  		_fn_event_handler_click_tab: function(e){
+  			var $target = $(e.currentTarget);
+  			if($target.hasClass('current')){
+  				return;
+  			}
+  			RC.pages.setCurHash({type: $target.attr('data-type'),tabtype:"num"});
+  		},
+  		_fn_event_hander_change_warnType: function(e){
+  			var value = this._elm_dom_info_container.find('input[name="warnType"]').filter(':checked').val();
+  			API.user_warnconfig_edit({warnType: value}, function(){
+  				$.dialog.alert('修改成功！');
+  			});
+  		},
+  		// _fn_event_handler_click_remove: function(e){
+  		// var id = $(e.target).attr('data-id');
+  		// 	$.dialog.confirm('您确定要删除吗?', $.proxy(function(){
+  		// 		this._fn_ctrl_delete_warnconfig_remind({id: id}, $.proxy(function(){
+  		// 			// $('#J_RemindList_'+id).empty().remove();
+  		// 			// window.location.reload();
+  		// 			this._fn_ctrl_get_warnconfig_remind_list($.proxy(this._fn_dom_update_list,this));
+  		// 		},this));
+  		// 	},this));
+  		// },
+  		_fn_event_handler_click_remove: function(e){
+  			var id = $(e.target).attr('data-id');
+  			// $.dialog.confirm('您确定要删除吗?', $.proxy(function(){
+  				this._fn_ctrl_delete_warnconfig_remind_check(id);
+  				// },this));
+  		},
+  		_fn_ctrl_delete_warnconfig_remind_check: function(id){
+  			var _this = this;
+  			$.wDialog({ title: "报警接收人管理",
+  					content: "<div style=\"display:table;\"><img style=\"margin-top:12px;margin-right:20px;height:50px;width:50px;\" src=\"http://cdn.maijia.com/www/www-old/resources/css/build/images/wDialog-warn.png\"><div style=\"display:table-cell; vertical-align:middle;margin-top:12px;width: 460px;\">确定删除报警接收人?</div></div>",
+  	                width: "",
+  	                height: "",
+  	                okVal: "确定",
+  	                cancelVal: "取消",
+  	                ok:$.proxy(function(){
+  						API.user_delete_warnconfig_remind({id:id}, function(json){RC.clearShow();
+  							_this._fn_ctrl_get_warnconfig_remind_list($.proxy(_this._fn_dom_update_list,_this));
+  						}, function(json){RC.clearShow();if(json.result==2&&json.message=='ERROR:INUSE'){
+  								$.wDialog({
+  									title: "确定删除?",
+  									content: "<div style=\"display:table;\"><img style=\"margin-top:12px;margin-right:20px;height:50px;width:50px;\" src=\"http://cdn.maijia.com/www/www-old/resources/css/build/images/wDialog-warn.png\"><div style=\"display:table-cell; vertical-align:middle;margin-top:12px;width: 460px;\">您监控的宝贝中，该联系人正在参与监控。删除后，宝贝依然存在，对应的联系人中会删除该用户，您确定删除?</div></div>",
+  									width: "",
+  									height: "",
+  									okVal: "确定",
+  									cancelVal: "取消",
+  									ok: $.proxy(function() {
+  										API.user_delete_warnconfig_remind({id:id,confirm:1}, function(json){
+  											_this._fn_ctrl_get_warnconfig_remind_list($.proxy(_this._fn_dom_update_list,_this));
+  										}
+  											);
+  									}, this),
+  									cancel:function(){
+  					                	RC.clearShow();
+  					                }
+  								});
+  						}});
+  					}, this),
+  	                cancel:function(){
+  	                	RC.clearShow();
+  	                }
+  			});
+  			// this._fn_ctrl_delete_warnconfig_remind({id: id}, $.proxy(function(){
+  			// 		this._fn_ctrl_get_warnconfig_remind_list($.proxy(this._fn_dom_update_list,this));
+  			// 	},this));
+  		},
+  		_fn_event_handler_click_edit: function(e){
+  			var id = $(e.target).attr('data-id'),
+  				list = this._status_remind_list,
+  				i, item = null;
+  			for(i=0; i<list.length; i++){
+  				if(list[i].id == id){
+  					item = list[i];
+  					break;
+  				}
+  			}
+  			
+  			if(item !== null){
+  				item.success = $.proxy(function(){
+  					this._elm_dom_container && this._fn_ctrl_get_warnconfig_remind_list($.proxy(this._fn_dom_update_list,this));
+  				},this);
+  
+  				control.modify(item);
+  			}
+  			/*
+  			//control.modify({});
+  			return;
+  			var id = $(e.target).attr('data-id');
+  			var data = this._fn_dom_get_formValue($('#J_RemindList_'+id));
+  			if(data.name === ''){
+  				$.dialog.alert('请输入负责人姓名!', $.proxy(function(){
+  					this._elm_dom_remindList_footer.find('input[name="name"]').focus();
+  				},this));
+  				return;
+  			}
+  			if(data.mobile === ''){
+  				$.dialog.alert('请输入负责人手机!', $.proxy(function(){
+  					this._elm_dom_remindList_footer.find('input[name="mobile"]').focus();
+  				},this));
+  				return;
+  			}
+  			if(data.email === ''){
+  				$.dialog.alert('请输入负责人邮箱!', $.proxy(function(){
+  					this._elm_dom_remindList_footer.find('input[name="email"]').focus();
+  				},this));
+  				return;
+  			}
+  			this._fn_ctrl_edit_warnconfig_remind(data, $.proxy(function(){
+  				$.dialog.alert('修改成功!');
+  			},this));
+  			*/
+  		},
+  		_fn_event_handler_click_add: function(data,tr){
+  			this._fn_ctrl_add_warnconfig_remind(data, $.proxy(function(){
+  				// $.dialog.alert('添加成功！', $.proxy(function(){
+  					// 暂不缓存处理记录， 刷新列表
+  					RC.showSuccess('保存成功！',1);
+  					var callback = $.proxy(function(){
+  						this._fn_ctrl_get_warnconfig_remind_list($.proxy(this._fn_dom_update_list,this));
+  					},this);
+  					setTimeout(callback, 800);
+  					// 清空输入框
+  					// this._elm_dom_remindList_footer.find('input[name="name"]').val('');
+  					// this._elm_dom_remindList_footer.find('input[name="mobile"]').val('');
+  					// this._elm_dom_remindList_footer.find('input[name="email"]').val('');
+  					// this._elm_dom_remindList_footer.find('input[name="role"]').val('');
+  					// this._elm_dom_remindList_footer.find('select[name="warnRate"]').data('iSelect').select('0', false);
+  					
+  				// },this));
+  			},this));
+  		},
+  		_fn_event_handler_click_add_remind: function(){
+  			control.add({
+  				success: $.proxy(function(){
+  					this._elm_dom_container && this._fn_ctrl_get_warnconfig_remind_list($.proxy(this._fn_dom_update_list,this));
+  				},this)
+  			});
+  		},
+  		_fn_event_handler_click_img_dom:function(){
+  			var url = "/user/captcha?random="+Math.random();
+  			this._elm_don_info_code_img_dom.attr("src",url);
+  		},
+  		_fn_event_handler_click_editInfo: function(e){
+  			var value = this._elm_dom_info_container.find('input[name="warnType"]').filter(':checked').val();
+  			var email = this._elm_dom_info_container.find('.J_User_Email').val();
+  			var phone = this._elm_dom_info_container.find('.J_phone_show').text();
+  			if(email === ''){
+  				RC.showWarn('请输入邮箱！',1);
+  				tr.find('.J_User_Email').focus();
+  				return;
+  			}
+  			if(email.indexOf('@') === -1){
+  				RC.showWarn('邮箱格式不正确！',1);
+  				tr.find('.J_User_Email').focus();
+  				return;
+  			}
+  			API.user_warnconfig_edit({
+  				email: email,
+  				mobile:phone
+  			}, $.proxy(function(){
+  				RC.showSuccess('修改成功！',1);
+  			},this));
+  		},
+  		_fn_ctrl_load_linkman_list:function(success, fail){
+  			API.user_get_warnconfig_remind_list({}, function(json){
+  				success && success(json.data);
+  			}, fail);
+  		},
+  		_fn_ctrl_load_info: function(success, fail){
+  			API.user_get_warnconfig_info({}, function(json){
+  				success && success(json.data);
+  			}, fail);
+  		},
+  
+  
+  		_status_remind_list: [],
+  		_fn_ctrl_get_warnconfig_remind_list: function(success, fail){
+  			API.user_get_warnconfig_remind_list({},$.proxy(function(json){
+  				this._status_remind_list = json.data.slice(0);
+  				success(json.data);
+  			},this), fail);
+  		},
+  		_fn_ctrl_add_warnconfig_remind: function(params, success, fail){
+  			API.user_add_warnconfig_remind(params, function(json){
+  				success(json.data);
+  			},fail);
+  		},
+  		_fn_ctrl_edit_warnconfig_remind: function(params,success,fail){
+  			API.user_edit_warnconfig_remind(params, function(json){
+  				success(json.data);
+  			}, fail);
+  		},
+  		_fn_ctrl_delete_warnconfig_remind: function(params,success,fail){
+  			API.user_delete_warnconfig_remind(params, function(json){
+  				success(json.data);
+  			}, fail);
+  		},
+  			
+  		
+  		init: function(){},
+  		update: function(hashs,afterload, is_refresh){
+  			// RC.controls.get('controls.mointor_price_pop').hide();
+  			this._fn_dom_render();
+  			subModule_changePop.update(hashs);
+  			$('.personal-center-menu *').removeClass('active');
+  			$('.personal-center-menu .first dd').removeClass('active').filter(function(idx,item){
+  					var name = $(item).attr('data-appName');
+  					return  name=='recharge_sms';
+  			}).addClass('active');
+  
+  			$('#J_Warn_Info_Container_tab_ui li').removeClass("current");
+  			if(hashs.tabtype=='num'||hashs.type === 'list'){
+  				$('#J_Warn_Info_Container_tab_ui li').eq(1).addClass("current");
+  			}else{
+  				$('#J_Warn_Info_Container_tab_ui li').eq(0).addClass("current");
+  			}
+  
+  			// if(hashs.type === 'list'){
+  			// 	this._elm_dom_info_container.hide();
+  			// 	this._elm_dom_container.find('.J_Warn_List_Container').show();
+  			// 	this._fn_ctrl_get_warnconfig_remind_list($.proxy(this._fn_dom_update_list,this));
+  			// }else{
+  			// 	this._elm_dom_container.find('.J_Warn_List_Container').hide();
+  				
+  			// 	// this._elm_dom_mobile.prop('disabled', true);
+  			// 	this._elm_dom_info_container.find('.J_Code_Container').hide();
+  			// 	this._elm_dom_info_container.show();
+  
+  			// }
+  			if(hashs.tabtype == 'num'){
+  				this._elm_dom_container.find('#J_Module_User_Recharge_changePop_Container').hide();
+  				this._elm_dom_container.find(".J_Warn_Info_Container").show();
+  				this._elm_dom_container.find(".J_Warn_List_Container").hide().hide();
+  				this._fn_ctrl_load_info($.proxy(this._fn_dom_update_info,this));
+  				this._fn_ctrl_load_linkman_list($.proxy(this._fn_dom_update_list,this));
+  			}
+  			else{
+  				this._elm_dom_container.find('#J_Module_User_Recharge_changePop_Container').show();
+  				this._elm_dom_container.find(".J_Warn_Info_Container").hide();
+  				this._elm_dom_container.find(".J_Warn_List_Container").hide();
+  			}
+  			afterload && afterload();
+  		},
+  		disabled: function(){
+  			// info 回复默认值////////////////
+  			control && control.destroy();
+  			this._status_identifyCodeId = '';
+  			this._elm_dom_info_code.val('');
+  			// this._elm_dom_mobile.prop('disabled', true);
+  			this._elm_dom_info_container.find('.J_Code_Container').hide();
+  		},
+  		getContainer: function(){
+  			return this._elm_dom_container;
+  		},
+  		destroy: function(){
+  			if(this._elm_dom_container){
+  				this._fn_event_unbind();
+  				this._status_remind_list = [];
+  				this.disabled();
+  				
+  				
+  				this._elm_dom_info_container = null;
+  				this._elm_dom_email =  null;
+  				this._elm_dom_mobile =  null;
+  				this._elm_dom_remainMessage =  null;
+  				this._elm_dom_remainEmail =  null;
+  				this._elm_dom_warnType =  null;
+  				this._elm_dom_sendCodeBtn = null;
+  				this._elm_dom_remindList = null;
+  				this._elm_dom_info_edit = null;
+  				this._elm_dom_info_code = null;
+  				//this._elm_dom_remindList_footer = null;
+  				this._elm_dom_container.empty().remove();
+  				this._elm_dom_container = null;
+  			}
+  			subModule_changePop.destroy();
+  		}
+  	};
+  
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+
+});

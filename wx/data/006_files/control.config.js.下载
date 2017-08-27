@@ -1,0 +1,18 @@
+define('controls/control.config', function(require, exports, module) {
+
+  /**
+      @author chenjiangming
+  */
+  ;(function(_, RC){
+      var config = {
+          chartColor: ['#48bef4', '#f9cac0', '#cfc0f9', '#4879f4', '#eb6ec6', '#f7a35c', '#8085e9', '#f15c80', '#7cb5ec', '#90ed7d', '#b46dd9', '#75ca4c']
+      };
+      
+      RC.controls.define('control.config', {
+          init: function(){
+              return config;
+          }
+      });
+  })(_, RayCloud);
+
+});

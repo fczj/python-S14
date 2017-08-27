@@ -1,0 +1,63 @@
+define('modules/about/job/template', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var page_template = [
+  		'<div class="site-about-page">',
+  			'<style>.site-about-page{margin:0 auto;padding: 20px 0;font-size:12px;line-height:1.8;font-size:14px;}.site-about-page h2{position:relative;height:54px;margin-bottom:15px;font-size:30px;font-family:microsoft yahei;border-bottom:1px solid #cfcfcf;}.site-about-page h2 span{position:absolute;padding:0 15px 0 5px;border-bottom:1px solid #ff6000;}.site-about-page p{margin:10px 0;}dl{padding:20px;border-bottom:1px solid #eaeaea;}dt{font-weight: 700; font-size: 16px;}</style>',
+  			'<h2><span>诚聘英才</span></h2>',
+  			'<dl>',
+  				'<dt>Java工程师</dt>',
+  				'<dd>职位名称：Java工程师</dd>',
+  				'<dd>招聘人数：5人</dd>',
+  				'<dd>工作地点：杭州市</dd>',
+  				'<dd>月&emsp;&emsp;薪：面议</dd>',
+  				'<dd>学&emsp;&emsp;历：本科以上</dd>',
+  				'<dd>工作年限：一年以上</dd>',
+  				'<dd>职位描述：</dd>',
+  				'<dd>',
+  					'<ol style="margin-left: 24px;">',
+  						'<li>1、JAVA基础扎实，理解io、多线程、集合等基础框架，对JVM原理有一定的了解；</li>','<li>2、2年及以上使用JAVA开发的经验，对于你用过的开源框架，能了解到它的原理和机制；对Spring,ibatis,struts等开源框架熟悉；</li>','<li>3、熟悉分布式系统的设计和应用，熟悉分布式、缓存、消息等机制；能对分布式常用技术进行合理应用，解决问题；</li>',
+  						'<li>4、掌握多线程及高性能的设计与编码及性能调优；有高并发应用开发经验；</li>',
+  						'<li>5、掌握Linux 操作系统和MySQL；对sql优化有一定的经验；</li>',
+  						'<li>6、学习能力强，适应能力好；具备耐心/细心的品质；</li>',
+  						'<li>7、喜欢去看及尝试最新的技术，追求编写优雅的代码，从技术趋势和思路上能影响技术团队；</li>',
+  						'<li>8、了解HTML、CSS、JS优先，但不是必要条件；</li>',
+  					'<ol>',
+  				'</dd>',
+  			'</dl>',
+  			'<dl>',
+  				'<dt>数据工程师</dt>',
+  				'<dd>职位名称：数据工程师</dd>',
+  				'<dd>招聘人数：5人</dd>',
+  				'<dd>工作地点：杭州市</dd>',
+  				'<dd>月&emsp;&emsp;薪：面议</dd>',
+  				'<dd>学&emsp;&emsp;历：本科以上</dd>',
+  				'<dd>工作年限：一年以上</dd>',
+  				'<dd>岗位职责：</dd>',
+  				'<dd>',
+  					'<ol style="margin-left: 24px;">',
+  						'<li>1、负责或参与设计、开发数据的抓取，导入，计算</li>',
+  						'<li>2、大规模数据系统的运维以及工具的开发设计</li>',
+  					'<ol>',
+  				'</dd>',
+  				'<dd>职位描述：</dd>',
+  				'<dd>',
+  					'<ol style="margin-left: 24px;">',
+  						'<li>1、热爱互联网，对大数据处理和数据分析挖掘有浓厚的兴趣；</li>',
+  						'<li>2、精通至少一门编程语言（Java、php、python），对数据结构和算法设计有较为深刻的理解；</li>','<li>3、熟悉数据库、数据仓库，有海量数据处理经验，熟练使用mysql，有MongoDB、HBase、Hadoop使用者优先；</li>','<li>4、良好的逻辑思维能力，能够从海量数据中发现有价值的规律，对数据敏感，能够发现关键数据、发现关键问题；</li>',
+  						'<li>5、强烈的上进心和求知欲，较强的学习能力和沟通能力，具备良好的团队合作精神；</li>',
+  					'<ol>',
+  				'</dd>',
+  			'</dl>',
+  		'</div>'
+  	];
+  
+  	
+  	RC.template.addTemp('about.job.page', page_template);
+  	
+  })(jQuery,RayCloud);
+
+});

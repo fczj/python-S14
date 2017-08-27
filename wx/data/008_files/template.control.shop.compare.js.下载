@@ -1,0 +1,54 @@
+define('controls/template.control.shop.compare', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var temp = [
+  		'<div class="shop-pk-side-bar" style="display:none;">',
+  		    '<div class="hd" style="background-color:#ff8939;">店铺对比<b class="line"></b></div>',
+  		    '<div class="bd" style="z-index:10;">',
+  		        '<div class="shop-pk-list-box">',
+  		            '<ul class="J_shop-pk-list">',
+  		                '<!-- <li act-loop="item in list">',
+  		                    '<span class="opts">',
+  		                        '<input type="checkbox" value="{{item.id}}" name="compare_{{item.id}}" checked>',
+  		                    '</span>',
+  		                    '<span class="num">{{item._idx}}</span>',
+  		                    '<span class="name">{{item.name}}</span>',
+  		                 '</li> -->',
+  		                '<li class="compare-item" act-loop="item in list">',
+  		                   '<span class="J_Remove remove f-l mt_7" data-shop-id={{item.id}}>×</span>',
+  		                   '<span class="shop-name f-l ml_10">{{item.name}}</span>',
+  		                '</li>',
+  		                '<li act-loop="item in empty" class="select">',
+  		                    '<div class="J_Select select-shop">选择已监控的店铺<div class="f-r"><b class="triangle"></b></div></div>',
+  		                '</li>',
+  		            '</ul>',
+  		         '</div>',
+  		        '<div class="compare-bottom mt_15">',
+  		            '<a class="compare-btn ft-center w70 J_Compare f-l" target="_blank" href="#/shop/compare/?shopIds={{shopIds}}">开始对比</a>',
+  		            '<a class="f-c-o f-r J_Clean" href="javascript:;">清空</a>',
+  		        '</div>',
+  		    '</div>',
+  		'</div>',
+  	];
+  
+  	RC.template.addTemp('template.control.shop.compare', temp);
+  
+  	var SELECT_TPL = [
+  		'<div style="max-height:150px;overflow-x:hidden;overflow-y:auto;color:black;border: 1px solid #ff6600;border-top:none;position:absolute;left:4px;top:20px;z-index:20;background:#fff;box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.2);">',
+  			'<style type="text/css">',
+  				'.shop-pk-list-box li.select-item{width:170px;margin:0; padding:0 5px;cursor: pointer;white-space: nowrap;}',
+  				'.shop-pk-list-box .select-item:hover{background:#eeeeee}',
+  			'</style>',
+  			'<ul>',
+  				'<li class="J_SelectClick select-item" act-loop="item in list" data-shop-id="{{item.id}}">{{item.name}}</li>',
+  			'</ul>',
+  		'</div>'
+  	];
+  
+  	RC.template.addTemp('template.control.shop.compare.select', SELECT_TPL);
+  })(jQuery,RayCloud);
+
+});

@@ -1,0 +1,226 @@
+define('modules/shop/detail/title_diagnosis/title_diagnosis', function(require, exports, module) {
+
+  (function ($, RC) {
+      var Shop = RC.controls.get('control.shop.model'),
+          querystring = RC.controls.get('control.querystring');
+      var mdul = {
+          name: 'shop.detail.title_diagnosis',
+          depend: 'shop',
+          _elem_root: '#main',
+          _elem_template_name: 'template.shop.detail.title_diagnosis',
+          _fn_layout_render: function () {
+              if (this.$el) {
+                  return;
+              }
+              this.$el = $('<div></div>').appendTo(this._elem_root);
+          },
+          _fn_dom_render: function (data) {
+              RC.clearShow();
+              var hashs = this.hashs;
+              if (data.status == 3) {
+                  data.hashs_pageSize = hashs.pageSize;
+                  data.have_data = data.list.length ? 1 : 0;
+                  data.showUpdateBtn = this._fn_is_same_day(data.updateTime);
+                  data.updateTime = RC.util.date.getdate(data.updateTime, 'YY-MM-DD');
+                  data.alltotal = +data.Atotal + +data.Btotal + +data.Etotal;
+                  $.each(data.list, function (i, item) {
+                      item.key = (hashs.pageNo - 1) * hashs.pageSize + i + 1;
+                  });
+              }
+              RC.template.addTemp(this._elem_template_name, "<style type=\"text/css\">.title-diagnosis .panel-box {\n  border: 1px solid #eeeeee !important;\n  color: #666666;\n  font-family: \"Microsoft YaHei\", arial;\n  font-size: 14px;\n}\n.title-diagnosis .box-title {\n  background-color: #f5f5f5;\n  font-weight: normal;\n  height: 48px;\n  line-height: 48px;\n  color: #333333;\n  font-size: 14px;\n  border-bottom: 1px solid #eeeeee;\n}\n.title-diagnosis .box-tab {\n  padding: 20px;\n}\n.title-diagnosis .box-tab button {\n  padding-left: 15px;\n  padding-right: 15px;\n  border: none;\n  background-color: #f5f5f5;\n  height: 30px;\n  margin-right: 10px;\n}\n.title-diagnosis .box-tab .current {\n  color: #ffffff;\n  background-color: #ff8939;\n}\n.title-diagnosis .box-tab .current .result-a,\n.title-diagnosis .box-tab .current .result-b,\n.title-diagnosis .box-tab .current .result-c {\n  color: #ffffff;\n}\n.title-diagnosis .box-tab .current .result-total {\n  color: #ffffff;\n}\n.title-diagnosis .item-id,\n.title-diagnosis .item-result {\n  font-size: 16px;\n}\n.title-diagnosis .update {\n  height: 30px;\n  border-radius: 3px;\n  width: 102px;\n  color: #fff;\n  border: none;\n  vertical-align: middle;\n  margin-left: 20px;\n  background-color: #ff8939;\n  line-height: 30px;\n}\n.title-diagnosis .update img {\n  vertical-align: middle;\n  margin-right: 10px;\n}\n.title-diagnosis .box-search {\n  padding: 30px;\n  border-bottom: 1px solid #eeeeee;\n}\n.title-diagnosis .box-search input {\n  box-shadow: none;\n  width: 530px;\n  height: 28px;\n  border: 1px solid #dddddd;\n  border-right: none;\n  border-radius: 0;\n  margin-left: 20px;\n  padding: 5px 6px;\n  line-height: 28px;\n}\n.title-diagnosis .box-search button {\n  width: 40px;\n  height: 40px;\n  border: 1px solid #dddddd;\n  border-left: none;\n  vertical-align: middle;\n  background: #ffffff url('//cdn.taosj.com/data-www-shop/modules/shop/detail/title_diagnosis/imgs/search.png') no-repeat center;\n}\n.title-diagnosis .weight-bold {\n  font-weight: bold;\n}\n.title-diagnosis .result-a {\n  color: #36c77b;\n}\n.title-diagnosis .result-b {\n  color: #ff9248;\n}\n.title-diagnosis .result-c {\n  color: #e8364b;\n}\n.title-diagnosis .result-total {\n  color: #999999;\n}\n.title-diagnosis .diagnosis-time {\n  color: #999999;\n  margin-left: 30px;\n}\n.title-diagnosis .tr-bottom,\n.title-diagnosis .ui-table thead {\n  border-bottom: 1px solid #eeeeee;\n}\n.title-diagnosis .ui-table-striped thead th {\n  color: #666666;\n  font-weight: bold;\n  height: 30px;\n  background-color: #f5f5f5;\n}\n.title-diagnosis .ui-table-striped tr.striped,\n.title-diagnosis .ui-table-striped tbody tr {\n  background-color: #fff;\n}\n.title-diagnosis .ui-table-striped tr.striped,\n.title-diagnosis .ui-table-striped tbody tr {\n  height: 90px;\n}\n.title-diagnosis .ui-table-striped tr.striped,\n.title-diagnosis .ui-table-striped tbody tr:nth-of-type(2n) {\n  background-color: #fbfbfb;\n}\n.title-diagnosis .ui-table-striped tr.striped,\n.title-diagnosis .ui-table-striped tr td {\n  border: 0px;\n}\n.title-diagnosis .ui-table-striped tbody tr:hover {\n  background-color: #fff3da !important;\n}\n.title-diagnosis div.box-footer {\n  background-color: #fff;\n  color: #666;\n  padding-top: 27px;\n  padding-bottom: 27px;\n  border-top: none;\n}\n.title-diagnosis div.box-footer select.pageSize {\n  height: 25px;\n  width: 45px;\n}\n.title-diagnosis .optimize-button {\n  padding: 0px 10px;\n  display: inline-block;\n  min-width: 60px;\n  color: #fff;\n  border-radius: 3px;\n  line-height: 30px;\n  background-color: #3bac8a;\n}\n.title-diagnosis .item-title {\n  font-size: 12px;\n  font-family: '宋体';\n}\n</style>\r\n<div class=\"title-diagnosis mt_10\">\r\n    <div class=\"panel-box\" act-if=\"status == 3\">\r\n        <div class=\"box-title\">\r\n            <span class=\"weight-bold\">全店标题诊断</span><span class=\"diagnosis-time\">诊断时间：{{updateTime}}</span>\r\n            <button class=\"update\" act-if=\"showUpdateBtn == false\"><img src=\"//cdn.taosj.com/data-www-shop/modules/shop/detail/title_diagnosis/imgs/update.png\" width=\"16\" height=\"16\"/><span>更新诊断</span></button>\r\n        </div>\r\n        <div class=\"box-search\"><span class=\"weight-bold\">宝贝查询：</span>\r\n            <input type=\"text\" placeholder=\"输入当前店铺宝贝关键词查询\"/><button></button>\r\n        </div>\r\n        <div class=\"box-tab\">\r\n            <button class=\"current\"><span>全部宝贝</span><span class=\"result-total\">（{{alltotal}}）</span></button>\r\n            <button name=\"E\"><span class=\"result-c\">差</span><span class=\"result-total\">（{{Etotal}}）</span></button>\r\n            <button name=\"B\"><span class=\"result-b\">良</span><span class=\"result-total\">（{{Btotal}}）</span></button>\r\n            <button name=\"A\"><span class=\"result-a\">优</span><span class=\"result-total\">（{{Atotal}}）</span></button>\r\n        </div>\r\n        <div class=\"box-content\">\r\n            <table class=\"ui-table ui-table-striped ui-table-inbox tablefixed\">\r\n                <thead>\r\n                <th width=\"70\">\r\n                    <div class=\"cell-box ft-center\">序号</div>\r\n                </th>\r\n                <th width=\"60\">\r\n                    <div class=\"cell-box\">宝贝名称</div>\r\n                </th>\r\n                <th width=\"340\">\r\n                </th>\r\n                <th width=\"150\">\r\n                    <div class=\"cell-box\">诊断结果</div>\r\n                </th>\r\n                <th width=\"120\">\r\n                    <div class=\"cell-box ft-center\">操作</div>\r\n                </th>\r\n                </thead>\r\n                <tbody>\r\n                <tr act-if=\"have_data == 0\">\r\n                    <td colspan=\"5\">\r\n                        <div class=\"cell-box ft-center\">\r\n                            <div class=\"ft-center\" style=\"line-height:400px;\">暂无数据</div>\r\n                        </div>\r\n                    </td>\r\n                </tr>\r\n                <tr act-if=\"have_data == 1\" act-loop=\"item in list\" class=\"tr-bottom\">\r\n                    <td>\r\n                        <div class=\"cell-box ft-center item-id\">{{item.key}}</div>\r\n                    </td>\r\n                    <td>\r\n                        <div class=\"cell-box\">\r\n                            <a href=\"#/shop/item/?shopId=&itemId={{item.itemId}}\" target=\"_blank\">\r\n                                <img width=\"50\" src=\"{{item.image}}_80x80.jpg\"/>\r\n                            </a>\r\n                        </div>\r\n                    </td>\r\n                    <td>\r\n                        <div class=\"cell-box item-title\" title=\"{{item.title}}\">\r\n                            <a href=\"#/shop/item/?shopId=&itemId={{item.itemId}}\" target=\"_blank\">{{item.title}}</a>\r\n                        </div>\r\n                    </td>\r\n                    <td>\r\n                        <div class=\"cell-box ml_20 item-result result-a\" act-if=\"item.score == A\">\r\n                            优\r\n                        </div>\r\n                        <div class=\"cell-box ml_20 item-result result-b\" act-if=\"item.score == B\">\r\n                            良\r\n                        </div>\r\n                        <div class=\"cell-box ml_20 item-result result-c\" act-if=\"item.score == E\">\r\n                            差\r\n                        </div>\r\n                    </td>\r\n                    <td>\r\n                        <div class=\"cell-box ft-center\">\r\n                            <a href=\"#/shop/detail/title_optimize/?id={{item.shopId}}&itemId={{item.itemId}}\" target=\"_blank\">\r\n                                <span class=\"optimize-button\">立即优化</span></a>\r\n                        </div>\r\n                    </td>\r\n                </tr>\r\n                </tbody>\r\n            </table>\r\n        </div>\r\n        <div class=\"box-footer clearfix\">\r\n            <div act-if=\"have_data == 1\">\r\n                <div class=\"f-lt ml_10\" style=\"line-height:25px;\">\r\n                    每页显示\r\n                    <select name=\"\" class=\"pageSize\" data-box=\"ranking\">\r\n                        <option value=\"10\" act-if=\"hashs_pageSize == 10\" selected>10</option>\r\n                        <option value=\"10\" act-if=\"hashs_pageSize != 10\">10</option>\r\n                        <option value=\"20\" act-if=\"hashs_pageSize == 20\" selected>20</option>\r\n                        <option value=\"20\" act-if=\"hashs_pageSize != 20\">20</option>\r\n                        <option value=\"30\" act-if=\"hashs_pageSize == 30\" selected>30</option>\r\n                        <option value=\"30\" act-if=\"hashs_pageSize != 30\">30</option>\r\n                    </select> 条\r\n                </div>\r\n                <div class=\"pagination J_Pages_Container clearfix\"></div>\r\n            </div>\r\n            <div act-if=\"have_data == 0\">&nbsp;</div>\r\n        </div>\r\n    </div>\r\n    <div class=\"panel-box\" act-if=\"status != 3\">\r\n        <div class=\"box-title\">\r\n            <span class=\"weight-bold\">全店标题诊断</span>\r\n        </div>\r\n        <div class=\"box-content\">\r\n            <div class=\"ft-center\" style=\"line-height:400px;\">{{statusHtml}}</div>\r\n        </div>\r\n    </div>\r\n</div>".replace(/\r|\n/g, ''));
+              this.$el.html($(RC.template.get(this._elem_template_name, data)));
+              if (data.status == 3) {
+                  var $input = this.$el.find('.box-search input');
+                  $input.placeholder();
+                  if (this.hashs.keyWord) {
+                      $input.val(decodeURIComponent(hashs.keyWord));
+                  }
+                  this._fn_page_dom_render(data.total);
+                  this._fn_tab_render();
+                  this._fn_event_bind();
+              }
+          },
+          _fn_tab_render: function () {
+              if (this.hashs.score) {
+                  this.$el.find('.current').removeClass('current');
+                  this.$el.find('[name=' + this.hashs.score + ']').addClass('current');
+              }
+          },
+          _fn_set_hashs: function (key, value) {
+              if (value) {
+                  this.hashs[key] = value;
+              } else {
+                  delete this.hashs[key];
+              }
+          },
+          _fn_is_same_day: function (date) {
+              var today = new Date();
+              date = new Date(date);
+              return (today.getFullYear() == date.getFullYear()
+              && today.getMonth() == date.getMonth()
+              && today.getDate() == date.getDate());
+          },
+          _fn_page_dom_render: function (total) {
+              var hashs = this.hashs;
+              var pages = this.$el.find('.J_Pages_Container');
+              if (pages.length) {
+                  var pagesHtml = RC.controls.get('controls.shop.pagination').getHtml({
+                      lk: function (pageNo) {
+                          hashs.pageNo = pageNo;
+                          return '#/shop/detail/title_diagnosis/?' + querystring.stringify(hashs);
+                      },
+                      pageSize: hashs.pageSize - 0,
+                      pageNo: hashs.pageNo - 0,
+                      maxNo: total,
+                      hasTotal: true,
+                      isEnd: true
+                  });
+                  pages.html(pagesHtml);
+                  pages.find(".page_sure").off("click").on("click", function (e) {
+                      var $target = $(e.target);
+                      var pageNo = $target.siblings('input').val();
+                      if (!$.isNumeric(pageNo) || +pageNo <= 0 || +pageNo > $target.data('maxPage')) {
+                          RC.showWarn('请输入正确的页码');
+                          e.preventDefault();
+                          return;
+                      }
+                      RC.pages.modifyCurHash({pageNo: pageNo, update: ''});
+                  });
+              }
+          },
+          _fn_itemsDgsList: function (update) {
+              var hashs = this.hashs, that = this,
+                  shopModel = Shop.getModel(hashs.id);
+              RC.showLoading('请稍等，正在加载中...');
+              shopModel.getData(_.bind(function () {
+                  var status = shopModel.get_api_status_normal();
+                  if (status < shopModel.API_PERMISSION) {
+                      shopModel.response_send(function (shopInfo) {
+                          that._fn_dom_render({status: status, statusHtml: shopInfo.__status_html});
+                      }, {__status: status});
+                  } else {
+                      if (update) {
+                          that._fn_itemsdgs(status);
+                      } else {
+                          $.ajax({
+                              url: '/data/shop/dgs/itemsDgsList',
+                              dataType: 'json',
+                              data: {
+                                  shopId: hashs.id,
+                                  score: hashs.score,
+                                  keyWord: hashs.keyWord && decodeURIComponent(hashs.keyWord),
+                                  pageNo: hashs.pageNo,
+                                  pageSize: hashs.pageSize
+                              },
+                              success: function (json) {
+                                  if (json.data.judge == 1) {
+                                      var data = json.data;
+                                      data.status = status;
+                                      that._fn_dom_render(data);
+                                  } else {
+                                      that._fn_itemsdgs(status);
+                                  }
+                              },
+                              error: function (e) {
+                                  RC.clearShow();
+                                  console.error(e);
+                              }
+                          });
+                      }
+                  }
+              }, this));
+          },
+          _fn_itemsdgs: function (status) {
+              var that = this;
+              RC.showLoading('正在诊断中，大概需要1-2分钟，请稍后...');
+              $.ajax({
+                  url: '/data/shop/dgs/itemsdgs',
+                  dataType: 'json',
+                  data: {shopId: this.hashs.id},
+                  success: function (json) {
+                      var data = json.data;
+                      data.status = status;
+                      that._fn_dom_render(data);
+                  },
+                  error: function (e) {
+                      RC.clearShow();
+                      console.error(e);
+                  }
+              });
+          },
+          _fn_event_bind: function () {
+              this.$el.on('click', '.box-tab button', $.proxy(function (e) {
+                  var $target = $(e.currentTarget);
+                  if ($target.hasClass('current')) {
+                      return;
+                  }
+                  var name = $target.attr('name');
+                  this._fn_set_hashs('score', name);
+                  RC.pages.modifyCurHash({score: name || '', pageNo: 1, update: ''});
+              }, this));
+              this.$el.on('click', '.box-search button', $.proxy(function () {
+                  var value = encodeURIComponent(this.$el.find('.box-search input').val());
+                  if (value == this.lastKeyword) {
+                      return;
+                  }
+                  this.lastKeyword = value;
+                  this._fn_set_hashs('keyWord', value);
+                  RC.pages.modifyCurHash({keyWord: value || '', pageNo: 1, update: ''});
+              }, this));
+              this.$el.on('keydown', '.box-search input', $.proxy(function (e) {
+                  if (e.keyCode === 13) {
+                      this.$el.find('.box-search button').click();
+                  }
+              }, this));
+              this.$el.on('click', '.update', $.proxy(function () {
+                  RC.pages.modifyCurHash({
+                      id: this.hashs.id,
+                      update: 1
+                  }, true);
+              }, this));
+              this.$el.on('change', '.pageSize', $.proxy(function (e) {
+                  RC.pages.modifyCurHash({pageSize: $(e.currentTarget).val(), pageNo: 1, update: ''});
+              }, this));
+          },
+          _fn_event_unbind: function () {
+              this.$el.off('click', '.box-tab button');
+              this.$el.off('click', '.box-search button');
+              this.$el.off('keydown', '.box-search input');
+              this.$el.off('click', '.update');
+              this.$el.off('change', '.pageSize');
+          },
+          getContainer: function () {
+              return this.$el;
+          },
+          update: function (hashs, afterload, refresh) {
+              if (refresh != true && querystring.stringify(hashs) === querystring.stringify(this.hashs)) {
+                  afterload && afterload();
+                  return;
+              }
+              this._fn_layout_render();
+              afterload && afterload();
+              var obj = {
+                  pageNo: hashs.pageNo || 1,
+                  pageSize: hashs.pageSize || 10,
+                  id: hashs.id
+              };
+              hashs.score && (obj.score = hashs.score);
+              hashs.keyWord && (obj.keyWord = hashs.keyWord);
+              this.hashs = obj;
+              this._fn_itemsDgsList(hashs.update);
+          },
+          destroy: function () {
+              if (this.$el) {
+                  this._fn_event_unbind();
+                  this.$el.empty().remove();
+                  this.$el = null;
+                  this.hashs = null;
+                  this.lastKeyword = null;
+              }
+          }
+      };
+  
+      RC.modules.define(mdul.name, mdul);
+  })(jQuery, RayCloud);
+
+});

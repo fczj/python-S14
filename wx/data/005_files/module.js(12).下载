@@ -1,0 +1,210 @@
+define('modules/shop/detail/sale_analysis/sale_detail/module', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var Shop        = RC.controls.get('control.shop.model'),
+  		querystring = RC.controls.get('control.querystring');
+  
+  	var mdul = {
+  		name: 'shop.detail.sale_detail',
+  		depend: 'shop',
+  		_elem_root: '#main',
+  		_elem_template_name: 'template.shop.detail.sale_analysis',
+  		_elem_template_sale_content: 'template.shop.detail.sale_analysis.content',
+  		_fn_dom_render: function(data){
+  			if(this.$el){
+  				return;
+  			}
+  			this.$el = $(RC.template.get(this._elem_template_name, data)).appendTo(this._elem_root);
+  			this.$el.find(".J_panel_hot").html($(RC.template.get(this._elem_template_sale_content, data)));
+  			this._fn_event_bind();
+  		},
+  		init: function(){},
+  		_fn_event_bind:function(){
+  			this.$el.off('change', '.pageSize');
+  			this.$el.on('change', '.pageSize', $.proxy(function(e){
+  				RC.pages.modifyCurHash({pageSize: $(e.currentTarget).val(),pageNo:1});
+  			}, this));
+  		},
+  		getContainer: function(){
+  			return this.$el;
+  		},
+  		_maxDate :undefined,
+  		_minDate:undefined,
+  		disabled: function(){
+  			this._status_module_active = false;
+  		},
+  		_fn_dom_update_list:function(hashs,data,shopInfo){
+  			var renderData = {};
+  			renderData.loading=2;
+  			renderData.level = data.__level;
+  			renderData.status = data.__status;
+  			renderData.shopId = hashs.id;
+  			renderData.hashs_pageSize = hashs.pageSize;
+  
+  			var dateUtil = RC.util.date,
+                  maxDate = dateUtil.getdate(shopInfo.__updateTime, 'YY-MM-DD'),
+                  minDate;
+              switch(shopInfo.__level){
+                  case 'senior':
+                      minDate = '2000-01-01';
+                      break;
+                  case 'primary':
+                      minDate = dateUtil.getdiffdate(maxDate, '-182d', 'YY-MM-DD');
+                      break;
+                  default:
+                      minDate = dateUtil.getdiffdate(maxDate, '-30d', 'YY-MM-DD');
+              }
+              searchDate = dateUtil.getdate(parseInt(hashs.date), 'YY-MM-DD').replace(/-/g, '/')
+  			renderData.minDate = minDate;
+              renderData.searchDate = searchDate;
+              renderData.maxDate = maxDate;
+              renderData.__date = hashs.date;
+  
+  			renderData.status_html = data.__status_html;
+  			if(!data || !data.list || data.list.length==0){
+  				renderData.have_data=1;
+  			}else{
+  				renderData.have_data=2;
+  				renderData.list = data.list;
+  
+  				var opt = {
+  					"image": "-",
+  		            "title": "-",
+  		            "oriPrice": '-',
+  		            "price": '-',
+  		            "amount": '-',
+  		            "amountGrowth": '-',
+  		            "price1": '-',
+  		            "priceGrowth": '-',
+  		            "favor": '-',
+  		            "brand": "-",
+  		            "catName": "-"
+  				};
+  
+  				$(data.list).each(function(idx,item){
+  					item.viewId = (hashs.pageNo-1)*hashs.pageSize+idx+1+"";
+          			if(item.amountGrowth){
+          				item.amountGrowth = parseFloat(item.amountGrowth);
+  	        			if(item.amountGrowth>0){
+  	        				item.amountGrowth_html = '<span style="color:#e6283e;"><b class="price-up"></b>'+item.amountGrowth.toFixed(2)+'%</span>';
+  	        			}else if(item.amountGrowth<0){
+  	        				item.amountGrowth_html = '<span style="color:#3bac8a;"><b class="price-down"></b>'+Math.abs(item.amountGrowth).toFixed(2)+'%</span>';
+  	        			}else{
+  							item.amountGrowth_html = '<span style="color:#999;"><b class="price-normal"></b>0.00%</span>';
+  	        			}
+          			}else{
+          				item.amountGrowth_html = '<span style="color:#999;"><b class="price-normal"></b> -</span>';
+          			}
+  
+          			if(item.priceGrowth){
+          				item.priceGrowth = parseFloat(item.priceGrowth);
+  	        			if(item.priceGrowth>0){
+  	        				item.priceGrowth_html = '<span style="color:#e6283e;"><b class="price-up"></b>'+item.priceGrowth.toFixed(2)+'%</span>';
+  	        			}else if(item.priceGrowth<0){
+  	        				item.priceGrowth_html = '<span style="color:#3bac8a;"><b class="price-down"></b>'+Math.abs(item.priceGrowth).toFixed(2)+'%</span>';
+  	        			}else{
+  							item.priceGrowth_html = '<span style="color:#999;"><b class="price-normal"></b>0.00%</span>';
+  	        			}
+          			}else{
+          				item.priceGrowth_html = '<span style="color:#999;"><b class="price-normal"></b> -</span>';
+          			}
+  
+          			// item["juhuasuan"]=1;
+  		         //    item["zuanzhan"]=1;
+  		         //    item["p4p"]=1;
+  		         //    item["sales"]=1;
+  		         //    item["taoke"]=1;
+  		         //    item["tbouter"]=1;
+  
+  					item.brand = item.brand || '-';
+  					data.list[idx] = $.extend({}, opt, item);
+  				});
+  			}
+  			this.$el.find(".J_panel_hot").html($(RC.template.get(this._elem_template_sale_content, renderData)));
+  			if(renderData.have_data==2){
+  				this._fn_render_page_dom(hashs,data.total);
+  			}
+  
+  			this._fn_bind_event();
+  		},
+  		_fn_render_page_dom:function(hashs,total){
+              //以下渲染分页
+              var pages = this.$el.find('.J_Pages_Container');
+              if(pages && pages.length){
+                  var pagesHtml = RC.controls.get('controls.shop.pagination').getHtml({
+                      lk: function(pageNo){
+                          hashs.pageNo = pageNo;
+                          return '#/shop/detail/sale_detail/?'+ querystring.stringify(hashs);
+                      },
+                      pageSize: hashs.pageSize -0,
+                      pageNo: hashs.pageNo - 0,
+                      maxNo: total,
+                      hasTotal: true,
+                      isEnd: true
+                      // goPage: true,
+                  });
+                  // console.log('pagesHtml:'+pagesHtml.html());
+                  pages.html(pagesHtml);
+  				pages.find(".page_sure").off("click");
+                  pages.find(".page_sure").on("click",function(e){
+                  	var $target = $(e.target);
+  	                var pageNo = $target.siblings('input').val();
+  	                if (!$.isNumeric(pageNo) || +pageNo <= 0 || +pageNo > $target.data('maxPage')) {
+  	                    RC.showWarn('请输入正确的页码');
+  	                    e.preventDefault();
+  	                    return;
+  	                }
+  	                RC.pages.modifyCurHash({pageNo:pageNo});
+                  });
+              }
+          },
+  		update: function(hashs, afterload, refresh){
+  			// 实现 module.is_active
+  			this._status_module_active = true;
+  			hashs.pageNo = hashs.pageNo||1;
+  			hashs.pageSize = hashs.pageSize||10;
+  			// 参数是否和原先一致
+  			if(this._status_shop_stauts_changed !== true && refresh != true && querystring.stringify(hashs) ===  querystring.stringify(this._status_hashs)){
+  				afterload && afterload();
+  				return;
+  			}
+  			this._fn_dom_render({loading:1});
+  			// 加载店铺基本信息
+  			var _this = this;
+  			afterload && afterload();
+  			Shop.getModel(hashs.id).getData(_.bind(function(shopinfo){
+  				hashs.date = hashs.date||shopinfo.__updateTime;
+  				Shop.getModel(hashs.id).data_shop_item_list({shopId:shopinfo.id,pageNo:hashs.pageNo,pageSize:hashs.pageSize,insertDate:hashs.date},function(data){
+  					_this._fn_dom_update_list(hashs,data,shopinfo);
+  				},function(){
+  
+  				});
+  			},this));
+  		},
+  		_fn_bind_event:function(){
+              this.$el.off('change', '.datePicker', this._fn_event_date_change_proxy);
+              this.$el.on('change', '.datePicker', this._fn_event_date_change_proxy = $.proxy(this._fn_event_date_change, this));
+          },
+          _fn_event_date_change: function(e) {
+              var $target = $(e.target),
+                  date = $target.val(),
+                  hash = {};
+              hash['date'] = new Date(date).getTime();
+              RC.pages.modifyCurHash(hash);
+          },
+  		destroy: function(){
+  			if(this.$el){
+  				this.$el.empty().remove();
+  				this.$el = null;
+  			}
+  		}
+  	};
+  
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+  
+
+});

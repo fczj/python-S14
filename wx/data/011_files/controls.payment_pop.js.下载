@@ -1,0 +1,481 @@
+define('controls/controls.payment_pop', function(require, exports, module) {
+
+  ;(function($, RC) {
+  	
+  	var exports = {
+          name: 'controls.payment_pop'
+  
+          , init: function () {
+              var _this = this;
+  
+              if (_this.initialized) {
+                  return;
+              }
+  			
+  			_this._gc_payment_params = {}; // 购买参数
+  			/*
+  			{
+  				item: '' // 取值 [sms | email | meal]
+  				, changeRuleId: '' // 购买编号
+  				, money: '' // 花费
+  				, version: '' // 时长. 套餐时必需
+  			}
+  			*/
+              _this.initialized = true;
+          }
+  		
+  		, render: function (data) {
+  			if (!RC.user.get('_login_status')) {
+  				location.hash = '#/login/login/';
+  				return;
+  			}
+  		
+  			var _this = this;
+  			_this._elm_container = $(RC.template.get(_this.name, data, true));
+  			_this._elm_container.find('input').iCheck();
+  			_this._elm_container.find('select').iSelect();
+  			
+  			_this._gc_pay_dialog = $.dialog({
+  				title: '付款选择'
+  				, content: _this._elm_container
+  				, width: 600
+  				, padding: 0
+  				, okVal: '去付款'
+  				, ok: function () {
+  					_this.goto_payment_page();
+  					return false;
+  				}
+  			});
+  			
+  			if (data.type == 'sms_email') {
+  				_this._fn_render_payment_type();
+  			}
+  			else {
+  				_this._fn_render_meal_price();
+  			}
+  			
+  			_this.bind();
+  		}
+  		
+  		, bind: function () {
+  			var _this = this;
+  			
+  			if (!_this._elm_container) {
+  				return;
+  			}
+  			
+  			// 改变套餐时长
+  			_this._elm_container.find('[name="order-meal-duration"]')
+  				.on('change', function (e) {
+  					_this._fn_render_meal_price();
+  				});
+  				
+  			// 改变套餐类型
+  			_this._elm_container.find('[name="order-meal-version"]')
+  				.on('change', function (e) {
+  					_this._fn_render_meal_price();
+  				});
+  			
+  		}
+  		
+  		, unbind: function () {}
+  		
+  		, destroy: function () {}
+  		
+  		// 渲染支付类型
+  		, _fn_render_payment_type: function () {
+  			function changeInputType(oldObject, oType) {
+  				  var newObject = document.createElement('input');
+  				  newObject.type = oType;
+  				  if(oldObject.size) newObject.size = oldObject.size;
+  				  if(oldObject.value) newObject.value = oldObject.value;
+  				  if(oldObject.name) newObject.name = oldObject.name;
+  				  if(oldObject.id) newObject.id = oldObject.id;
+  				  if(oldObject.className) newObject.className = oldObject.className;
+  				  oldObject.parentNode.replaceChild(newObject,oldObject);
+  				  return newObject;
+  			}
+  			var _this = this
+  				, balance = (RC.user.get('account').balance / 100) * 1
+  				, payment = _this._elm_container.find('.J_payment').html() * 1;
+  			
+  			// 没有余额
+  			if (!balance || balance == 0) {
+  				_this._elm_container.find('.J_balance-payment')
+  					.addClass('disabled')
+  					.find('[name="payment-type"]')
+  						.prop('checked', false)
+  						.prop('disabled', true)
+  						.iCheck();
+  				
+  				// 支付宝给他选上
+  				_this._elm_container.find('.J_alipay-payment')
+  					.find('[name="payment-type"]')
+  						.prop('checked', true)
+  						.iCheck();
+  			}
+  			// 余额够支付
+  			else if (payment <= balance) {
+  				/*
+  				_this._elm_container.find('.J_balance-payment')
+  					.find('[name="mix-balance"]')
+  						.prop('checked', false)
+  						.attr('type', 'radio')
+  						.attr('name', 'payment-type')
+  						.iCheck();
+  				*/
+  				var oldInput = _this._elm_container.find('.J_balance-payment').find('[name="mix-balance"]')[0];
+  				if(oldInput){
+  					$(oldInput).iCheck('destroy');
+  					var newInput = changeInputType(oldInput, 'radio');
+  					$(newInput).attr('name', 'payment-type').prop('checked', false).iCheck();
+  				}
+  			}
+  			// 余额不够支付
+  			else {
+  				//ie8 doesn't support change input type
+  				//http://www.universalwebservices.net/web-programming-resources/javascript/change-input-element-type-using-javascript
+  				/*
+  				_this._elm_container.find('.J_balance-payment')
+  					.find('[name="payment-type"]')
+  						.attr('type', 'checkbox')
+  						.attr('name', 'mix-balance')
+  						.prop('checked', true)
+  						//.iCheck();
+  				*/
+  				var oldInput = _this._elm_container.find('.J_balance-payment').find('[name="payment-type"]')[0];
+  				if(oldInput){
+  					$(oldInput).iCheck('destroy');
+  					var newInput = changeInputType(oldInput, 'checkbox');
+  					$(newInput).attr('name', 'mix-balance').prop('checked', true).iCheck();
+  				}
+  				
+  				// 支付宝给他选上
+  				_this._elm_container.find('.J_alipay-payment')
+  					.find('[name="payment-type"]')
+  						.prop('checked', true)
+  						.iCheck();
+  			}
+  		}
+  		
+  		// 渲染套餐价格
+  		, _fn_render_meal_price: function () {
+  			var _this = this
+  				, duration = _this._elm_container.find('[name="order-meal-duration"]').val()
+  				, version = _this._elm_container.find('[name="order-meal-version"]').val();
+  			
+  			// 升级
+  			if (RC.user.get('isPrimaryLevel') == '1' && version == 'senior') {
+  				_this._elm_container.find('.meal-infos .J_extra-txt').show();
+  				_this._elm_container.find('.J_payment-type-txt').html('升级');
+  			}
+  			// 定购或续费
+  			else {
+  				_this._elm_container.find('.meal-infos .J_extra-txt').hide();
+  				_this._elm_container.find('.J_payment-type-txt').html('定购');
+  			}
+  			
+  			// 计算套餐开始时间、结束时间、价格
+  			API.user_change_pay({
+  				userId: RC.user.get('id')
+  				, changeRuleId: version == 'primary' ? 10001 : 10002
+  				, month: duration
+  				, isPreview: true
+  			}, function (json) {
+  				// 获取套餐价成功
+  				var money = (json.data.money / 100).toFixed(2);
+  				
+  				_this._elm_container.find('.J_senior-upgrade-infos').hide();
+  				_this._elm_container.find('.J_primary-upgrade-infos').hide();
+  				
+  				// 高级套餐
+  				if (json.data.seniorLevelStartTime) {
+  					_this._elm_container.find('.J_senior-upgrade-infos').show();
+  					_this._elm_container.find('.J_senior-upgrade-infos .start-date').html(RC.util.date.getdate(json.data['seniorLevelStartTime'], 'YY-MM-DD'));
+  					_this._elm_container.find('.J_senior-upgrade-infos .end-date').html(RC.util.date.getdate(json.data['seniorLevelEndTime'], 'YY-MM-DD'));
+  				}
+  				
+  				// 标准套餐
+  				if (json.data.primaryLevelStartTime) {
+  					_this._elm_container.find('.J_primary-upgrade-infos').show();
+  					_this._elm_container.find('.J_primary-upgrade-infos .start-date').html(RC.util.date.getdate(json.data['primaryLevelStartTime'], 'YY-MM-DD'));
+  					_this._elm_container.find('.J_primary-upgrade-infos .end-date').html(RC.util.date.getdate(json.data['primaryLevelEndTime'], 'YY-MM-DD'));
+  				}
+  				
+  				_this._elm_container.find('.J_payment').html(money);
+  				_this._fn_render_payment_type();
+  			}, function (json) {
+  				// 获取套餐价失败
+  				
+  			}, false, false, false);
+  		}
+  		
+  		/**
+  		 * @params {Object}
+  		 * {
+  		 * 	version: '' // 版本名称. 取值[试用型 | 标准型 | 尊贵型 | 企业型]
+  		 *  , id: '' // 兑换规则id
+  		 *  , money: '' // 当前价格
+  		 * }
+  		 */
+  		, buy_sms: function (params) {
+  			var _this = this
+  				, _data = _this.format_data('sms', params);
+  			
+  			_this.render(_data);
+  		}
+  		
+  		/**
+  		 * @params {Object} 参数结构同 buy_sms
+  		 */
+  		, buy_email: function (params) {
+  			var _this = this
+  				, _data = _this.format_data('email', params);
+  			
+  			_this.render(_data);
+  		}
+  		
+  		/**
+  		 * @version {String} 购买版本型号. 取值[primary | senior]
+  		 */
+  		, buy_meal: function (version) {
+  			var _this = this
+  				, _data = _this.format_data('meal', {
+  					version: version
+  				});
+  			
+  			_this.render(_data);
+  		}
+  		
+  		, format_data: function (product, params) {
+  			var _this = this
+  				, _data = {};
+  			
+  			if (!RC.user.get('_login_status')) {
+  				location.hash = '#/login/login/';
+  				return;
+  			}
+  			
+  			if (product == 'sms' || product == 'email') {
+  				$.extend(_data, {
+  					type: 'sms_email'
+  					, version: params.version + (product == 'sms' ? '短信' : '邮件')
+  					, money: params.money
+  					, changeRuleId: params.id
+  				});
+  				
+  				_this._gc_payment_params.item = product;
+  				_this._gc_payment_params.changeRuleId = params.id;
+  			}
+  			else if (product == 'meal') {
+  				var user_level = RC.user.get('level');
+  				_this._gc_payment_params.item = 'meal'
+  				
+  				$.extend(_data, {
+  					type: 'meal'
+  					, level: user_level
+  					, version: params.version
+  					, isUpgrade: (params.version != user_level)
+  					, isSeniorLevel: RC.user.get('isSeniorLevel')
+  					, isPrimaryLevel: RC.user.get('isPrimaryLevel')
+  					, _seniorLevelStartTime: RC.util.date.getdate(RC.user.get('seniorLevelStartTime'), 'YY-MM-DD')
+  					, _seniorLevelEndTime: RC.util.date.getdate(RC.user.get('seniorLevelEndTime'), 'YY-MM-DD')
+  					, _primaryLevelStartTime: RC.util.date.getdate(RC.user.get('primaryLevelStartTime'), 'YY-MM-DD')
+  					, _primaryLevelEndTime: RC.util.date.getdate(RC.user.get('primaryLevelEndTime'), 'YY-MM-DD')
+  					
+  				});
+  			}
+  			
+  			// 账户余额
+  			_data.balance = (RC.user.get('account').balance / 100).toFixed(2);
+  			return _data;
+  		}
+  		
+  		// 去付款
+  		, goto_payment_page: function () {
+  			var _this = this
+  				, paymentType = _this._elm_container.find('[name="payment-type"]:checked').val()
+  				, $mixBalance = _this._elm_container.find('[name="mix-balance"]:checked');
+  			
+  			_this._gc_payment_params.money = _this._elm_container.find('.J_payment').html() * 100;
+  			_this._gc_payment_params.userId = RC.user.get('id');
+  			
+  			// 购买监控套餐
+  			if (_this._gc_payment_params.item == 'meal') {
+  				var version = _this._elm_container.find('[name="order-meal-version"]').val()
+  					, duration = _this._elm_container.find('[name="order-meal-duration"]').val();
+  				
+  				_this._gc_payment_params.month = duration;
+  				_this._gc_payment_params.changeRuleId = version == 'primary' ? 10001 : 10002;
+  			}
+  			
+  			// 仅用余额并且余额够支付
+  			if (paymentType == 'balance') {
+  				// 请求接口
+  				!_this._gc_pay_dialog.closed && _this._gc_pay_dialog.close();
+  				RC.showLoading('正在付款中, 请稍等...');
+  				API.user_change_pay(_this._gc_payment_params, function (json) {
+  					var txt = {
+  						sms: '购买短信成功！'
+  						, email: '购买邮件成功！'
+  						, meal: '购买监控套餐成功！'
+  					}[_this._gc_payment_params.item];
+  					
+  					RC.showSuccess(txt);
+  					setTimeout(function () {
+  						location.reload();
+  					}, 500);
+  				}, function (json) {
+  					RC.showFail(json.message);
+  				}, false, false, false);
+  				return;
+  			}
+  			
+  			// 混合付款
+  			if ($mixBalance.length) {
+  				_this._gc_payment_params.money = _this._gc_payment_params.money - RC.user.get('account').balance;
+  			}
+  			
+  			var url_params = $.param({
+  				payment: _this._gc_payment_params.money
+  				, changeRuleId: _this._gc_payment_params.changeRuleId
+  				, userId: _this._gc_payment_params.userId
+  				, month: _this._gc_payment_params.month
+  				, model: version
+  			});
+  			var url = API.user_recharge_pay() + '?' + url_params;
+  			
+  			// 跳转到付款页面
+  			window.open(url);
+  			!_this._gc_pay_dialog.closed && _this._gc_pay_dialog.close();
+  			$('body').append(RC.template.get('_gc_pay_confirm_dialog'));
+  			$('body').css("overflow-y","hidden");
+  			$('._gc_pay_confirm_dialog').show();
+  			$('._gc_pay_confirm_dialog').on('click','.close',function(){
+  				$('._gc_pay_confirm_dialog').remove();
+  				$('body').css("overflow-y","visible");
+  				if(RC.pages._fn_act_get_hashs().recharge){
+  					RC.pub("_update_user_rechange_data");
+  				}
+  			});
+  			$('._gc_pay_confirm_dialog').on('click','.J_Submit',function(){
+  				$('._gc_pay_confirm_dialog').remove();
+  				$('body').css("overflow-y","visible");
+  				window.location.href="/index.html#/user/index/";
+  			});
+  			$('._gc_pay_confirm_dialog').on('click','.ui-button-yellow',function(){
+  				$('._gc_pay_confirm_dialog').remove();
+  				$('body').css("overflow-y","visible");
+  				window.scrollTo(0,2450);
+  				if(RC.pages._fn_act_get_hashs().recharge){
+  					RC.pub("_update_user_rechange_data");
+  				}else{
+  					window.location.href="/index.html#/user/recharge/?info=&change=&recharge=pageSize%3D10%26pageNo%3D1";
+  				}
+  				
+  			});
+  			// _this._gc_pay_confirm = $.dialog({
+  			// 	id: 'alert'
+  			// 	, icon: 'confirm.gif'
+  			// 	, title: '支付确认'
+  			// 	, content: '付款完成'
+  			// 	, okVal: '支付完成'
+  			// 	, ok: function () {
+  			// 		location.reload();
+  			// 	}
+  			// 	, cancel: false
+  			// });
+  		}
+  	};
+  	
+  	var TPL = [
+  		'<div class="J_payment-pop">',
+  			'<style>.J_payment-pop .meal-infos{padding:10px 15px;background:#FEF6D2;}.J_payment-pop .payment-product{padding:5px;margin:10px;}.J_payment-pop .payment-types{margin:0 10px;padding:15px 10px;border-top:1px solid #ddd;font-size:14px;}.J_payment-pop .payment-types .item.disabled{color:#999;}.J_payment-pop .payment-types .money{color:#f00;}.J_payment-pop .item.disabled .money{color:#999;}</style>',
+  			'<div act-if="level != normal" class="meal-infos">',
+  				'当前账户已订购：',
+  				'<span act-if="isSeniorLevel == 1" class="mr_20">',
+  					'{{_seniorLevelStartTime}} 至 {{_seniorLevelEndTime}} 的高级套餐',
+  				'</span>',
+  				'<span act-if="isPrimaryLevel == 1">',
+  					'{{_primaryLevelStartTime}} 至 {{_primaryLevelEndTime}} 的标准套餐',
+  				'</span>',
+  			'</div>',
+  			'<div class="payment-product">',
+  				'<div class="sms_email" act-if="type == sms_email">正在定购 <strong>{{version}}</strong><span class="ml_15 fc-red">共计 <em class="J_payment ft_16">{{money}}</em> 元</span></div>',
+  				'<div class="meal mb_10" act-if="type == meal">',
+  					'<span class="J_payment-type-txt" act-if="isUpgrade == true">升级</span>',
+  					'<span class="J_payment-type-txt" act-if="isUpgrade != true">定购</span>',
+  					'<span class="ml_5">',
+  						'<select style="width:74px;" name="order-meal-duration" data-select-type="mini" data-maxheight="200" data-minwidth="54" data-zindex="999999">',
+  							// '<option value="1">1个月</option>',
+  							'<option value="3" selected>1季度</option>',
+  							'<option value="6">6个月</option>',
+  							'<option value="12">12个月</option>',
+  						'</select>',
+  					'</span>',
+  					'<span class="ml_5">',
+  						'<select style="width:74px;" name="order-meal-version" data-select-type="mini" data-zindex="999999">',
+  							'<option act-if="version != primay" value="primary">标准版</option>',
+  							'<option act-if="version == primay" value="primary" selected>标准版</option>',
+  							'<option act-if="version != senior" value="senior">高级版</option>',
+  							'<option act-if="version == senior" value="senior" selected>高级版</option>',
+  						'</select>',
+  					'</span>',
+  					'&nbsp;监控套餐',
+  					'<span class="ml_15 fc-red">共计 <em class="J_payment ft_16"></em> 元</span>',
+  				'</div>',
+  				'<div class="upgrade-infos fc-gray" act-if="type == meal">',
+  					'<span class="J_senior-upgrade-infos mr_20" style="display:none;">',
+  						'高级套餐：<span class="start-date"></span> 至 <span class="end-date"></span>',
+  					'</span>',
+  					'<span class="J_primary-upgrade-infos" style="display:none;">',
+  						'标准套餐：<span class="start-date"></span> 至 <span class="end-date"></span>',
+  					'</span>',
+  					'<div class="mt_5">定购成功后，支持续费、升级，不提供折现、退款服务。</div>',
+  				'</div>',
+  			'</div>',
+  			'<div class="payment-types">',
+  				'<div class="J_balance-payment item mb_10">',
+  					'<label>',
+  						'<input type="radio" name="payment-type" value="balance" checked  />',
+  						'<span class="ml_5">',
+  							'通过余额支付，余额：<span class="money ft_12"><em class="J_balance-money ft_16">{{balance}}</em> 元</span>',
+  						'</span>',
+  					'</label>',
+  				'</div>',
+  				'<div class="J_alipay-payment item">',
+  					'<label>',
+  						'<input type="radio" name="payment-type" value="alipay" />',
+  						'<span class="ml_5">通过支付宝支付</span>',
+  					'</label>',
+  				'</div>',
+  			'</div>',
+  		'</div>'
+  	];
+  	
+  	var new_TPL = [
+  				'    <div class="_gc_pay_confirm_dialog"><style type="text/css">.mod-confirm{font:14px/1.5 "Microsoft YaHei",arial;color:#333}.mod-confirm .blackback{top:0;right:0;background-color:#000000;filter:alpha(opacity=50);background-color:rgba(0,0,0,0.5);width:100%;height:100%;position: fixed;z-index: 999;}.mod-confirm .modal-header{margin-top: -40px;position:relative;padding:0 20px;font-size:20px;line-height:50px;background:#f1f1f1;color:#666666}.mod-confirm .modal-header .modal-title{line-height:inherit;font-weight:400}.mod-confirm .close{padding:8px;width:30px;lheight:30px;position:absolute;top:10px;right:10px;z-index:2;background:0 0;border:0}.mod-confirm .close div{width:14px;height:14px;background-image:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6QkYyNUNEOTM0NDdEMTFFNUIwNDlBNDczRTJGN0U3MzMiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6QkYyNUNEOTQ0NDdEMTFFNUIwNDlBNDczRTJGN0U3MzMiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDpCRjI1Q0Q5MTQ0N0QxMUU1QjA0OUE0NzNFMkY3RTczMyIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDpCRjI1Q0Q5MjQ0N0QxMUU1QjA0OUE0NzNFMkY3RTczMyIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Puy2VgEAAAC6SURBVHjaYpw5cyYDELAB8S8G4gEbC5DgAeLzQBwKxBeI0NQCxHxMQOILEOcB8TYgNiBCkzsQ1zJBBbYDcTIBza1QTS5A/JEJSQJZsyEWTW4wTSABJjQFMM1bkTRjaAIBFixOgmneguR0FE24NMI0HwbiFCB2RNeEzanIflIG4kggXorFz1htRPfTR6izfaDxjdVGbAGxHerkLchRxURAEwOa5q0wzUxEaMKqGaSRF4gVCGhC1+wJEGAAIXwxbn0UZ64AAAAASUVORK5CYII=");}.mod-confirm .close:hover{background:#ffffff;cursor:pointer}.mod-confirm .close:hover div{background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6RUExODY2OUU0NDdEMTFFNUEwRkI4RTk4QTAyQkVBNjgiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6RUExODY2OUY0NDdEMTFFNUEwRkI4RTk4QTAyQkVBNjgiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDpFQTE4NjY5QzQ0N0QxMUU1QTBGQjhFOThBMDJCRUE2OCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDpFQTE4NjY5RDQ0N0QxMUU1QTBGQjhFOThBMDJCRUE2OCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PtqaP98AAAC6SURBVHjaYvzfackABGxA/IuBeMDGAiR4gPg8EIcC8QUiNLUAMR8TkPgCxHlAvA2IDYjQ5A7EtUxQge1AnExAcytUkwsQf2RCkkDWbIhFkxtME0iACU0BTPNWJM0YmkCABYuTYJq3IDkdRRMujTDNh4E4BYgd0TVhcyqyn5SBOBKIl2LxM1Yb0f30EepsH2h8Y7URW0Bshzp5C3JUMRHQxICmeStMMxMRmrBqBmnkBWIFAprQNXsCBBgAAyoxZBxp7w0AAAAASUVORK5CYII=" );}.mod-confirm .modal-content{-webkit-border-radius:0;border-radius:0}.mod-confirm .modal-body{padding:30px;text-align:center;font-size:20px}.mod-confirm .modal-footer{text-align:center;padding:10px 20px;background:#ffffff;padding-top:0px;padding-bottom:0px;height:80px;}.mod-confirm .modal-footer .ui-button{background-color: #ff8939;font-size: 16px;font-family: "Microsoft YaHei",arial;line-height: 40px;height: 40px;text-align: center;padding: 0 15px;margin: 0 1px;color: #fff;border: 0;}.mod-confirm .modal-footer .ui-button-yellow{background-color:#f5374d ;margin-left:20px;}body{overflow: visible;}</style>',
+  			'	<div class="mod-confirm">',
+  			'	<div class="blackback"></div>',
+  			'		<div class="modal-content" style="top:40%;margin-left:-200px;left: 50%;width:400px;z-index:1000;position:fixed;background-color:#fff;">',
+  			'			<div class="modal-header">',
+  			'				<button type="button" class="close" data-dismiss="modal" aria-label="Close">',
+  			'					<div aria-hidden="true"></div>',
+  			'				</button>',
+  			'				<h4 class="modal-title">提醒</h4>',
+  			'			</div>',
+  			'			<div class="modal-body">请在新打开的页面完成付款</div>',
+  			'			<div class="modal-footer">',
+  			'				<button class="ui-button ui-button-rasied J_Submit">已完成付款</button>',
+  			'				<button class="ui-button ui-button-rasied ui-button-yellow ml_30" data-dismiss="modal">付款有问题</button>',
+  			'			</div>',
+  			'		</div>',
+  			'	</div>',
+  			'	</div>'];
+  	RC.template.addTemp('_gc_pay_confirm_dialog', new_TPL);
+  	RC.template.addTemp(exports.name, TPL);
+      RC.controls.define(exports.name, exports);
+  })(jQuery, RayCloud);
+  
+
+});

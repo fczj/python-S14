@@ -1,0 +1,674 @@
+define('modules/user/charge_detail/module.user.recharge', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	
+  
+  
+  	var mdul = {
+  		name: 'user.charge_detail',
+  		depend: 'user',
+  		_elm_dom_root: '#main',
+  		_elm_template_name: 'template.user.charge_detail.info',
+  		_fn_dom_render: function(){ 
+  				if(this._elm_dom_container){
+  					return;
+  				}
+  				this._elm_dom_container = $(RC.template.get(this._elm_template_name)).appendTo(this._elm_dom_root);
+  				this._fn_event_bind();
+  			},
+  			
+  			_fn_event_bind: function(){
+  				RC.sub('page.sethash.user.recharge.recharge_list', this._fn_event_handler_subModule_recharge_setHash_proxy = $.proxy(this._fn_event_handler_subModule_recharge_setHash,this));
+  				RC.sub('page.sethash.user.recharge.change_list', this._fn_event_handler_subModule_change_setHash_proxy = $.proxy(this._fn_event_handler_subModule_change_setHash,this));
+  
+  			},
+  			_fn_event_unbind: function(){
+  				
+  			},
+  			_fn_event_handler_subModule_change_setHash: function(params){
+  				var hash = {
+  						change:  encodeURIComponent($.param(params)),
+  						recharge: ''
+  				};
+  				RC.pages.setCurHash($.extend({},this._status_last_hash,hash));
+  			},
+  			_status_changePop_dialog: null,
+  			_elm_dom_changePop: null,
+  			_fn_event_hander_socket_infoUpdate: function(){
+  				this._fn_ctrl_load_page(this._fn_get_lastHash(), null, true);
+  			},
+  
+  			_fn_data_unparams: function(string){
+  				string = string.replace(/.*(\?.*)$/,'$1').replace(/^\?/,'');
+  				var o = {},
+  					r = string.split('&');
+  				$.each(r,function(idx, item){
+  					var rr = item.split('='); 
+  					if(rr[0]){
+  						o[rr[0]] = rr[1] || '';
+  					}
+  				}); 
+  				return o;
+  			},
+  			////
+  			_fn_get_lastHash: function(){
+  				return $.extend({}, this._status_last_hash);
+  			},
+  			_status_last_hash: {},
+  			_status_prev_tab_module: null,
+  			_fn_ctrl_load_page: function(hashs, afterload, is_refresh){
+  				var hash, module;
+  				//根据hash展示不同的tab
+  				hashs.change = hashs.change || '';
+  				hashs.recharge = hashs.recharge||'';
+  				var module = null;
+  				var show_change = !hashs.recharge;
+  				// console.log('hashs.recharge:'+hashs.recharge);
+  				// console.log('hashs.show_change:'+show_change);
+  				if(hashs.change&&hashs.change!=''){
+  					module = subModule_recharge;
+  					this._status_last_hash['change'] = hashs.change;
+  					hash = this._fn_data_unparams(decodeURIComponent(hashs.change));
+  					module.update(hash, null, is_refresh);
+  
+  					if(this._status_prev_tab_module && this._status_prev_tab_module !== module){
+  						this._status_prev_tab_module.getContainer().hide();
+  					}
+  					this._status_prev_tab_module = module;
+  					module.getContainer().show();
+  				}else if(hashs.recharge&&hashs.recharge!=''){
+  					module = subModule_change_detail;
+  					this._status_last_hash['recharge'] = hashs.recharge||'';
+  					hash = this._fn_data_unparams(decodeURIComponent(hashs.recharge||''));
+  					module.update(hash, null, is_refresh);
+  					
+  					if(this._status_prev_tab_module && this._status_prev_tab_module !== module){
+  						this._status_prev_tab_module.getContainer().hide();
+  					}
+  					this._status_prev_tab_module = module;
+  					module.getContainer().show();
+  				}else{
+  					module = subModule_recharge;
+  					this._status_last_hash['change'] = hashs.change;
+  					hash = this._fn_data_unparams(decodeURIComponent(hashs.change));
+  					module.update(hash, null, is_refresh);
+  
+  					if(this._status_prev_tab_module && this._status_prev_tab_module !== module){
+  						this._status_prev_tab_module.getContainer().hide();
+  					}
+  					this._status_prev_tab_module = module;
+  					module.getContainer().show();
+  				}
+  				
+  				afterload && afterload();
+  			},
+  
+  			init: function(){},
+  			getContainer: function(){
+  				return this._elm_dom_container;
+  			},
+  			update: function(hashs,afterload, is_refresh){ 
+  				window.location.href="http://order.maijia.com/index.html";
+  				return;
+  				this._fn_dom_render();
+  				this._fn_ctrl_load_page(hashs, afterload, is_refresh);
+  				$('.personal-center-menu *').removeClass('active');
+  				$('.personal-center-menu ul li').eq(0).addClass('active');
+  			},
+  			disabled: function(){
+  				//this._fn_dom_destroy_dialog();
+  			},
+  			destroy: function(){
+  				if(this._elm_dom_container){
+  					this._fn_event_unbind();
+  
+  					//this._fn_dom_destroy_dialog();
+  					
+  					subModule_recharge.destroy();
+  					subModule_change_detail.destroy();
+  					this._status_last_hash = {};
+  					this._status_prev_tab_module = null;
+  					this._elm_dom_container.empty().remove();
+  					this._elm_dom_container = null;
+  				}
+  			}
+  	}
+  	
+  	var subModule_change_detail = {
+  		name: 'user.charge_detail.recharge',
+  		_elm_dom_root: '#J_Module_User_Recharge_Tab_Container',
+  		_elm_template_name: 'template.user.recharge.recharge_tab',
+  		_fn_dom_render: function(){
+  			if(this._elm_dom_container){
+  				return;
+  			}
+  			var $el = this._elm_dom_container = $(RC.template.get(this._elm_template_name)).appendTo(this._elm_dom_root);
+  			this._elm_dom_list = $el.find('.J_List');
+  			this._elm_dom_pages = $el.find('.J_Pages');
+  			this._fn_event_bind();
+  		},
+  		_fn_dom_update: function(data){
+  			
+  			this._fn_dom_update_list(data);
+  			this._fn_dom_update_pages(data);
+  			
+  		},
+  		_fn_dom_update_list: function(data){
+  			var r = [];
+  			if(!data.list.length){
+  				r.push(RC.template.get('template.user.recharge.recharge_tab_list_empty'));
+  			}else{
+  				$.each(data.list, function(idx, item){
+  					var d = {
+  						time: RC.util.date.getdate(item.closeTxnDatetime || item.openTxnDatetime,'YY-MM-DD HH:MM:SS'),
+  						payment: (item.payment/100).toFixed(2),
+  						payName: (item.payType === 0 ? '支付宝充值': item.payType === -1 ? '系统充值' : '账户支付'), 
+  						payStatus: ['等待充值','充值成功','充值失败'][item.payStatus],
+  						alipayTxnId: item.alipayTxnId || '-'
+  					};
+  					if (d.payStatus == '等待充值') {
+  						if (d.alipayTxnId != '-') {
+  							d.payUrl = 'https://lab.alipay.com/consume/record/buyerConfirmTrade.htm?tradeNo=' + d.alipayTxnId;
+  						} else {
+  							d.payUrl = 'http://www.maijia.com/tx/alipay_api?payment=' + item.payment;
+  						}
+  					}
+  
+  					r.push(RC.template.get('template.user.recharge.recharge_tab_list',d));
+  				});
+  			}
+  			
+  			this._elm_dom_list.empty().html(r.join(''));
+  		},
+  		_fn_dom_update_pages: function(data){
+  			var html;
+  			if(!data.total){
+  				html = '';
+  			}else{
+  				html = this._fn_dom_render_pagination({
+  						page_size: data.pageSize,
+  						total: data.total,
+  						page_num: data.pageNo
+  				});
+  			}
+  			this._elm_dom_pages.empty().html(html);
+  		},
+  		//////////////
+  		/**
+  		 * 取得分页html string
+  		 * @param page_size 每页条数
+  		 * @param page_total 总页数
+  		 * @param page_no 当前页码
+  		 */
+  		_fn_dom_render_pagination: function(data){
+  			var page_size = data.page_size - 0,
+  				page_total = Math.ceil((data.total-0)/page_size),
+  				page_no = data.page_num - 0,
+  				list = this._fn_act_dom_cal_page_links(page_total, page_no),
+  				html = this._fn_ctrl_dom_page_links_html_render(list, page_total, page_no);
+  			return html;
+  		},
+  		/**
+  		 * 组装页码链接方法
+  		 * @param page_num 当前页码
+  		 */
+  		_fn_act_dom_get_page_url: function(page_num){
+  			return '/index.html#/user/charge_detail/?'+'change=&recharge=pageSize%3D10%26pageNo%3D'+page_num
+  			//return page_num;
+  		},
+  		_fn_act_dom_cal_page_links: function(total, page_no) {
+  			var pages = [], index = 0;
+  			/**
+  			 * 来自 @ 刘明剑 
+  			 * 
+  			 * 计算页数的展现形式，算法如下：
+  			 * <pre>
+  			 * 如果页数小于等于3，那么页码全部显示；
+  			 * 如果页数大于3并且小于等于10，那么前三页码显示，然后再显示第10页；
+  			 * 如果页数大于10，那么算法是保留前3页，和最后两页，中间显示一页
+  			 * </pre>
+  			 */
+  			if (total <= 5) {
+  				for (var i = 1; i <= total; i++) {
+  					pages[index++] = i;
+  				}
+  				return pages;
+  			}
+  			if (page_no <= 3) {
+  				for (var i = 1; i <= page_no + 1; i++) {
+  					pages[index++] = i;
+  				}
+  				pages[index++] = '...';
+  			} else if (page_no > 3 && page_no < (total - 2)) {
+  				pages[index++] = 1;
+  				pages[index++] = '...';
+  				pages[index++] = page_no - 1;
+  				pages[index++] = page_no;
+  				pages[index++] = page_no + 1;
+  				pages[index++] = '...';
+  			} else {
+  				pages[index++] = 1;
+  				pages[index++] = '...';
+  				if (page_no == total - 2) {
+  					for (var i = page_no - 1; i <= total - 1; i++) {
+  						pages[index++] = i;
+  					}
+  				} else if (page_no == total - 1) {
+  					for (var i = total - 2; i <= total - 1; i++) {
+  						pages[index++] = i;
+  					}
+  				} else {
+  					pages[index++] = total - 1;
+  				}
+  			}
+  			pages[index++] = total;
+  			return pages;
+  		},
+  		_fn_ctrl_dom_page_links_html_render: function(list, page_total, page_no) {
+  		
+  			var html = ['<span class="page-prev">'], 
+  				//url = this._fn_act_dom_get_page_url(),
+  				_this = this,
+  				fill_url = function(page) {
+  					//return url + '&page_no=' + page;
+  					return _this._fn_act_dom_get_page_url(page);
+  				};
+  			if (page_no == 1) {
+  				html.push('<a class="disable" >上一页<b></b></a>');
+  			} else {
+  				html.push('<a href="' + fill_url(page_no - 1) + '">上一页<b></b></a></span>');
+  			}
+  			html.push('</span>');
+  			
+  			var i = 0, ni = list.length;
+  			for (; i < ni; i++) {
+  				if (list[i] == '...') {
+  					html.push('<span class="page-split">...</span>');
+  					continue;
+  				}
+  				if (list[i] == page_no) {
+  					html.push('<a class="page-no page-cur" href="' + fill_url(list[i]) + '">' + page_no + '</a>');
+  					continue;
+  				}
+  				html.push('<a class="page-no" href="' + fill_url(list[i]) + '">' + list[i] + '</a>');
+  			}
+  
+  			html.push('<span class="page-next">');
+  			if (page_no == page_total) {
+  				html.push('<a class="disable" >下一页<b></b></a>');
+  			} else {
+  				html.push('<a href="' + fill_url(page_no + 1) + '">下一页<b></b></a>');
+  			}
+  			html.push('</span>');
+  			return html.join('');
+  		},
+  		//////////////
+  		
+  		_fn_event_bind: function(){
+  			this._elm_dom_pages.on('click', 'a', this._fn_event_click_page_proxy = $.proxy(this._fn_event_handler_click_page,this));
+  			this._elm_dom_container.on('click', '.J_Charge_again', this._fn_event_hander_charge_again_proxy = $.proxy(this._fn_event_hander_charge_again, this));
+  		},
+  		_fn_event_unbind: function(){
+  			this._elm_dom_pages.on('click', 'a', this._fn_event_click_page_proxy);
+  			this._elm_dom_container.off('click', '.J_Charge_again', this._fn_event_hander_charge_again_proxy);
+  		},
+  		_fn_event_hander_charge_again: function(e) {
+  			$('body').append(RC.template.get('_gc_pay_confirm_dialog'));
+  			$('body').css("overflow-y","hidden");
+  			$('._gc_pay_confirm_dialog').show();
+  			$('._gc_pay_confirm_dialog').on('click','.close',function(){
+  				$('._gc_pay_confirm_dialog').remove();
+  				$('body').css("overflow-y","visible");
+  				if(RC.pages._fn_act_get_hashs().recharge){
+  					RC.pub("_update_user_rechange_data");
+  				}
+  			});
+  			$('._gc_pay_confirm_dialog').on('click','.J_Submit',function(){
+  				$('._gc_pay_confirm_dialog').remove();
+  				$('body').css("overflow-y","visible");
+  				window.location.reload();
+  			});
+  			$('._gc_pay_confirm_dialog').on('click','.ui-button-yellow',function(){
+  				$('._gc_pay_confirm_dialog').remove();
+  				$('body').css("overflow-y","visible");
+  				// window.scrollTo(0,2450);
+  				if(RC.pages._fn_act_get_hashs().recharge){
+  					RC.pub("_update_user_rechange_data");
+  				}else{
+  					window.location.reload();
+  				}
+  			});
+  			// $.dialog({
+  			// 	id: 'alert'
+  			// 	, icon: 'confirm.gif'
+  			// 	, title: '付款确认'
+  			// 	, content: '付款成功？点击确认查看账户余额，并购买相应服务。'
+  			// 	, okVal: '确定'
+  			// 	, ok: function () {
+  			// 		location.reload();
+  			// 	}
+  			// 	, cancel: false
+  			// });
+  		},
+  
+  		_fn_event_handler_click_page: function(e){
+  			// e.preventDefault();
+  			// if($(e.target).hasClass('disable')){
+  			// 	return;
+  			// }
+  			// var href = $(e.target).attr('href');
+  			// var r = href.match(/\?page_size=(\d+)&?/);
+  			// if(r && r[1]){
+  			// 	RC.pub('page.sethash.user.recharge.recharge_list',$.extend({},this._status_params, {pageNo: r[1]-0}));
+  			// }
+  
+  		},
+  		
+  		_status_params: null,
+  		_fn_ctrl_load: function(hashs, success, fail){
+  			// check
+  			// hashs.param {String|undefined}
+  			var pageNo = hashs.pageNo || '',
+  				pageSize = hashs.pageSize || '';
+  			if(!pageNo.match(/^[0-9]\d*$/)){
+  				pageNo = 1;
+  			}
+  			if(!pageSize.match(/^[0-9]\d*$/)){
+  				pageSize = 10;
+  			}
+  			var params = {
+  				"pageNo": pageNo, "pageSize": pageSize
+  			};
+  			API.user_get_recharge_list(params,$.proxy(function(json){
+  				this._status_params = $.extend({},params);
+  
+  				var data = $.extend(json.data, params);
+  				success(data);
+  				
+  				params = null;
+  			},this),fail);
+  		},
+  
+  		init: function(){},
+  		getContainer: function(){
+  			return this._elm_dom_container;
+  		},
+  		_fn_refresh_dom_data:function(){
+  			// var params = decodeURIComponent(RC.pages._fn_act_get_hashs().recharge).split("&");
+  			// var hashs = {};
+  			// for(var i=0,length=params.length;i<length;i++){
+  			// 	var per_params = params[i].split("=");
+  			// 	hashs[per_params[0]]=per_params[1];
+  			// }
+  			this._fn_ctrl_load(this._fn_this_hashs,$.proxy(this._fn_dom_update,this));
+  		},
+  		_fn_this_hashs:null,
+  		//充值记录,recharge
+  		update: function(hashs,afterload, is_refresh){
+  			this._fn_dom_render();
+  			this._fn_this_hashs = hashs;
+  			// RC.sub("_update_user_rechange_data",$.proxy(this._fn_refresh_dom_data,this));
+  			this._fn_ctrl_load(hashs,$.proxy(this._fn_dom_update,this));
+  			afterload && afterload();
+  		},
+  		disabled: function(){
+  			
+  		},
+  		destroy: function(){
+  			if(this._elm_dom_container){
+  				this._fn_event_unbind();
+  				this._elm_dom_list = null;
+  				this._elm_dom_pages = null;
+  				this._elm_dom_container.empty().remove();
+  				this._elm_dom_container = null;
+  				this._status_params = null;
+  			}
+  			RC.removeSub("_update_user_rechange_data",$.proxy(this._fn_refresh_dom_data,this));
+  		}
+  	};
+  
+  
+  	var subModule_recharge = {
+  		name: 'user.recharge.rechange',
+  		_elm_dom_root: '#J_Module_User_Recharge_Tab_Container',
+  		_elm_template_name: 'template.user.recharge.change_tab',
+  		_fn_dom_render: function(){
+  			if(this._elm_dom_container){
+  				return;
+  			}
+  			var $el = this._elm_dom_container = $(RC.template.get(this._elm_template_name)).appendTo(this._elm_dom_root);
+  			this._elm_dom_list = $el.find('.J_List');
+  			this._elm_dom_pages = $el.find('.J_Pages');
+  			this._fn_event_bind();
+  		},
+  		_fn_dom_update: function(data){
+  			
+  			this._fn_dom_update_list(data);
+  			this._fn_dom_update_pages(data);
+  			
+  		},
+  		_fn_dom_update_list: function(data){
+  			var r = [];
+  			if(!data.list.length){
+  				r.push(RC.template.get('template.user.recharge.recharge_tab_list_empty_2'));
+  			}else{
+  				var payName = {
+  					0: '-'
+  					, 1: '短信-试用型'
+  					, 2: '短信-标准型'
+  					, 3: '短信-尊贵型'
+  					, 4: '短信-企业型'
+  					, 5: '邮件-试用型'
+  					, 6: '邮件-标准型'
+  					, 7: '邮件-尊贵型'
+  					, 8: '邮件-企业型'
+  					, 10001: '标准版{{month}}个月'
+  					, 10002: '高级版{{month}}个月'
+  				};
+  				
+  				$.each(data.list, function(idx, item){
+  					var d = {
+  						time: RC.util.date.getdate(item.closeTxnDatetime || item.openTxnDatetime,'YY-MM-DD HH:MM:SS'),
+  						payment: (item.payment/100).toFixed(2),
+  						payName: payName[item.changeRuleId||0].replace('{{month}}', item.month || 1)
+  					};
+  					r.push(RC.template.get('template.user.recharge.change_tab_list',d));
+  				});
+  			}
+  			
+  			this._elm_dom_list.empty().html(r.join(''));
+  		},
+  		_fn_dom_update_pages: function(data){
+  			var html;
+  			if(!data.total){
+  				html = '';
+  			}else{
+  				html = this._fn_dom_render_pagination({
+  						page_size: data.pageSize,
+  						total: data.total,
+  						page_num: data.pageNo
+  				});
+  			}
+  			this._elm_dom_pages.empty().html(html);
+  		},
+  		//////////////
+  		_fn_dom_render_pagination: function(data){
+  			var page_size = data.page_size - 0,
+  				page_total = Math.ceil((data.total-0)/page_size),
+  				page_no = data.page_num - 0,
+  				list = this._fn_act_dom_cal_page_links(page_total, page_no),
+  				html = this._fn_ctrl_dom_page_links_html_render(list, page_total, page_no);
+  
+  			return html;
+  		},
+  		_fn_act_dom_get_page_url: function(page_num){
+  			return '/index.html#/user/charge_detail/?'+'recharge=&change=pageSize%3D10%26pageNo%3D'+page_num
+  		},
+  		_fn_act_dom_cal_page_links: function(total, page_no) {
+  			var pages = [], index = 0;
+  			/**
+  			 * 来自 @ 刘明剑 
+  			 * 
+  			 * 计算页数的展现形式，算法如下：
+  			 * <pre>
+  			 * 如果页数小于等于3，那么页码全部显示；
+  			 * 如果页数大于3并且小于等于10，那么前三页码显示，然后再显示第10页；
+  			 * 如果页数大于10，那么算法是保留前3页，和最后两页，中间显示一页
+  			 * </pre>
+  			 */
+  			if (total <= 5) {
+  				for (var i = 1; i <= total; i++) {
+  					pages[index++] = i;
+  				}
+  				return pages;
+  			}
+  			if (page_no <= 3) {
+  				for (var i = 1; i <= page_no + 1; i++) {
+  					pages[index++] = i;
+  				}
+  				pages[index++] = '...';
+  			} else if (page_no > 3 && page_no < (total - 2)) {
+  				pages[index++] = 1;
+  				pages[index++] = '...';
+  				pages[index++] = page_no - 1;
+  				pages[index++] = page_no;
+  				pages[index++] = page_no + 1;
+  				pages[index++] = '...';
+  			} else {
+  				pages[index++] = 1;
+  				pages[index++] = '...';
+  				if (page_no == total - 2) {
+  					for (var i = page_no - 1; i <= total - 1; i++) {
+  						pages[index++] = i;
+  					}
+  				} else if (page_no == total - 1) {
+  					for (var i = total - 2; i <= total - 1; i++) {
+  						pages[index++] = i;
+  					}
+  				} else {
+  					pages[index++] = total - 1;
+  				}
+  			}
+  			pages[index++] = total;
+  			return pages;
+  		},
+  		_fn_ctrl_dom_page_links_html_render: function(list, page_total, page_no) {
+  		
+  			var html = ['<span class="page-prev">'], 
+  				//url = this._fn_act_dom_get_page_url(),
+  				_this = this,
+  				fill_url = function(page) {
+  					//return url + '&page_no=' + page;
+  					return _this._fn_act_dom_get_page_url(page);
+  				};
+  			if (page_no == 1) {
+  				html.push('<a class="disable" >上一页<b></b></a>');
+  			} else {
+  				html.push('<a href="' + fill_url(page_no - 1) + '">上一页<b></b></a></span>');
+  			}
+  			html.push('</span>');
+  			
+  			var i = 0, ni = list.length;
+  			for (; i < ni; i++) {
+  				if (list[i] == '...') {
+  					html.push('<span class="page-split">...</span>');
+  					continue;
+  				}
+  				if (list[i] == page_no) {
+  					html.push('<a class="page-no page-cur" href="' + fill_url(list[i]) + '">' + page_no + '</a>');
+  					continue;
+  				}
+  				html.push('<a class="page-no" href="' + fill_url(list[i]) + '">' + list[i] + '</a>');
+  			}
+  
+  			html.push('<span class="page-next">');
+  			if (page_no == page_total) {
+  				html.push('<a class="disable" >下一页<b></b></a>');
+  			} else {
+  				html.push('<a href="' + fill_url(page_no + 1) + '">下一页<b></b></a>');
+  			}
+  			html.push('</span>');
+  			return html.join('');
+  		},
+  		//////////////
+  		
+  		_fn_event_bind: function(){
+  			this._elm_dom_pages.on('click', 'a', this._fn_event_click_page_proxy = $.proxy(this._fn_event_handler_click_page,this));
+  		},
+  		_fn_event_unbind: function(){
+  			this._elm_dom_pages.on('click', 'a', this._fn_event_click_page_proxy);
+  		},
+  
+  		_fn_event_handler_click_page: function(e){
+  			// e.preventDefault();
+  			// if($(e.target).hasClass('disable')){
+  			// 	return;
+  			// }
+  			// var href = $(e.target).attr('href');
+  			// var r = href.match(/\?page_size=(\d+)&?/);
+  			// if(r && r[1]){
+  			// 	RC.pub('page.sethash.user.recharge.change_list',$.extend({},this._status_params, {pageNo: r[1]-0}));
+  			// }
+  
+  		},
+  		
+  		_status_params: null,
+  		_fn_ctrl_load: function(hashs, success, fail){
+  			// check
+  			// hashs.param {String|undefined}
+  			var pageNo = hashs.pageNo || '',
+  				pageSize = hashs.pageSize || '';
+  			if(!pageNo.match(/^[0-9]\d*$/)){
+  				pageNo = 1;
+  			}
+  			if(!pageSize.match(/^[0-9]\d*$/)){
+  				pageSize = 10;
+  			}
+  			var params = {
+  				"pageNo": pageNo, "pageSize": pageSize
+  			};
+  
+  			
+  			API.user_get_change_list(params,$.proxy(function(json){
+  				this._status_params = $.extend({},params);
+  
+  				var data = $.extend(json.data, params);
+  				success(data);
+  				
+  				params = null;
+  			},this),fail);
+  		},
+  
+  		init: function(){},
+  		getContainer: function(){
+  			return this._elm_dom_container;
+  		},
+  		update: function(hashs,afterload, is_refresh){ 
+  			this._fn_this_hashs = hashs;
+  			this._fn_dom_render();
+  			this._fn_ctrl_load(hashs,$.proxy(this._fn_dom_update,this));
+  			// $('.pagination-page a').on('click',function(){
+  			// 		console.log('dsadsadsaewqeqw');
+  			// 		window.location.href=$(this).attr("href");
+  			// 	});
+  			afterload && afterload();
+  		},
+  		destroy: function(){
+  			if(this._elm_dom_container){
+  				this._fn_event_unbind();
+  				this._elm_dom_list = null;
+  				this._elm_dom_pages = null;
+  				this._elm_dom_container.empty().remove();
+  				this._elm_dom_container = null;
+  				this._status_params = null;
+  			}
+  		}
+  	};
+  
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+
+});

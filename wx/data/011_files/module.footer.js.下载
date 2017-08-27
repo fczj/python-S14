@@ -1,0 +1,71 @@
+define('modules/module.footer', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var mdul = {
+  		name: 'footer',
+  		type: 'basic',
+  		_elm_dom_root: '#footer',
+  		_elm_template_name: 'template.footer',
+  		_fn_dom_render: function(){
+  			require('components/maijia-footer/src/index').renderTo(this._elm_dom_root);
+  			require('components/maijia-tool/src/tool')();
+  			return;
+  		},
+  		_fn_event_bind: function() {
+  			this._fn_event_handler_click_qq();
+  		},
+  		_fn_event_handler_click_qq: function() {
+  			$(window).on('load', function() {
+  				if (BizQQWPA && BizQQWPA.addCustom) {
+  					BizQQWPA.addCustom({aty: '0', a: '0', nameAccount: 800098528, selector: 'BizQQWPA_1'});
+  				}
+  			});
+  		},
+  		_fn_baidu_tongji: function(){
+  			RC.removeSub('raycloud.pages.hashchange', this._fn_event_handler_init_tongji_proxy);
+  
+  			window._hmt = window._hmt || [];
+  			_hmt.push(['_setAutoPageview', false]);
+  			/*
+  			(function() {
+  			  var hm = document.createElement("script");
+  			  hm.src = "//hm.baidu.com/hm.js?aba526bdb67142824e5f30e155010346";
+  			  var s = document.getElementsByTagName("script")[0]; 
+  			  s.parentNode.insertBefore(hm, s);
+  			})();
+  			*/
+  			RC.sub('raycloud.pages.hashchange', this._fn_event_handler_tongji_proxy = $.proxy(this._fn_event_handler_tongji,this));
+  		},
+  		_fn_event_handler_tongji: function(e){
+  			var url = location.href,
+  				ind = url.indexOf('#'),
+  				pageURL = ind === -1 ? '' : url.slice(ind+1, url.length);
+  			var userId = $.cookie('auth');
+  			if(userId){
+  				pageURL = pageURL + (pageURL.indexOf('?') !== -1 ? '&' : '?') + '_u='+userId;
+  			}
+  			window._hmt.push(['_trackPageview', pageURL]);
+  		},
+  		init: function(){
+  			this._fn_dom_render();
+  			RC.sub('raycloud.pages.hashchange', this._fn_event_handler_init_tongji_proxy = $.proxy(this._fn_baidu_tongji,this));
+  		},
+  		getContainer: function(){
+  			return this._elm_dom_container;
+  		},
+  		update: function(){},
+  		destroy: function(){
+  			if(this._elm_dom_container){
+  				this._elm_dom_container.empty().remove();
+  				this._elm_dom_container = null;
+  				RC.removeSub('raycloud.pages.hashchange', this._fn_event_handler_tongji_proxy);
+  			}
+  		}
+  	};
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+
+});

@@ -1,0 +1,256 @@
+define('modules/shop/item/marketing/module.shop.item.marketing.outersite', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,_,RC){
+  	var querystring = RC.controls.get('control.querystring'),
+  		ItemModel   = RC.controls.get('control.item.model');
+  
+  	var mdul = {
+  		name: 'shop.item.marketing.outersite',
+  		depend: 'shop',
+  		_elem_root: '#main_marketing',
+  		_elem_template_name: 'template.shop.item.marketing.outersite',
+  		_fn_dom_render: function(data){
+  			if(this.$el){
+  				return;
+  			}
+  			data.box='detail';
+  			this.$el = $(RC.template.get(this._elem_template_name, data || {})).appendTo(this._elem_root);
+  			// this.$el = $(this._elem_root);
+  			this._fn_event_bind();
+  
+  			// RC.sub('raycloud.pages.hashchange', this._fn_event_handler_hashchange_proxy = $.proxy(this._fn_event_handler_hashchange,this));
+  		},
+  		_fn_event_handler_hashchange:function(hashs){
+  			// console.log("xxxxxxx");
+  		},
+  		_fn_dom_update_list: function(data, hashs, mixHashs){
+  			// translate for template
+  			data._stauts_view = 1;
+  			data.list = data.list || [];
+  			data.amountTotal = data.amountTotal||'-';
+  			data.priceTotal = data.priceTotal||'-';
+  			var dateUtil = RC.util.date;
+  			_.each(data.list, function(item){
+  				// translate
+  				item.date    = item.date ? dateUtil.getdate(item.date, 'YY-MM-DD') : '-';
+  				item.price   = item.price !== undefined ? item.price.toFixed(2) : '-';
+  				item.price_  = item.amount==0?0:(item.price !== undefined ? (item.price/item.amount).toFixed(2) : '-');
+  				item.commFee = item.commFee !== undefined ? item.commFee.toFixed(2) : '-';
+  				_.each({date: '-', price: '_', amount: '-', offer: '-', price_: '-', commFeeRate: '-', commFee: '-', promo: '-'}, function(value,key){
+  					item[key] = item[key] !== undefined ? item[key] : value;
+  				});
+  			});
+  			data._list_length = data.list.length;
+  			// date
+  			data._minDate          = mixHashs._minDate ? mixHashs._minDate.replace(/-/g,'/') : '';
+  			data._maxDate          = mixHashs._maxDate ? mixHashs._maxDate.replace(/-/g,'/') : '';
+  			data.hashs_startDate   = hashs.startDate;
+  			data.hashs_endDate     = hashs.endDate;
+  			data.hashs_startDate_  = hashs.startDate.replace(/-/g,'/');
+  			data.hashs_endDate_    = hashs.endDate.replace(/-/g,'/');
+  			data._hashs_startDate_ = dateUtil.tojsdate(hashs.startDate).getTime();
+  			data._hashs_endDate_   = dateUtil.tojsdate(hashs.endDate).getTime();
+  			data.hashs_pageNo     = hashs.pageNo;
+  			data.hashs_pageSize   = hashs.pageSize;
+  			data.hashs_shopId     = hashs.shopId;
+  			data.hashs_itemId     = hashs.itemId;
+  			data.id= hashs.itemId;
+  			data.sum_offer        = data.sum_offer || ' - ';
+  			data.sum_amount       = data.sum_amount || ' - ';
+  			data.sum_price        = data.sum_price || ' - ';
+  			data.dateRange = data.hashs_startDate_+"-"+data.hashs_endDate_;
+  			// render
+  			// console.log("hashs:"+JSON.stringify(hashs));
+  
+  			var detailStr = decodeURIComponent(hashs.detail);
+  			var positionStr = detailStr.substring(detailStr.indexOf("=")+1);
+  			data._detail= positionStr;
+  			//未知参数,店铺没有这个参数,先做1处理
+  			data._stauts_view=1;
+  			// data.__level = 'senior';
+  			// data.__status=-1;
+  			data.status = data.__status;
+  			data.box='detail';
+  			if((!data.list) || data.list.length==0){
+  				data.nodata = true;
+  			}else{
+  				data.nodata = false;
+  			}
+  			// console.log("页面info:"+RC.template.get(this._elem_template_name));
+  			this.$el.html(RC.template.get_node('if','_stauts_view',data,RC.template.get(this._elem_template_name),0));
+  			// render pages
+  			var pages = this.$el.find('.J_Pages_Container');
+  			var pagesHtml = RC.controls.get('controls.shop.pagination').getHtml({
+  					lk: function(pageNo){ 
+  						hashs.pageNo = pageNo;
+  						return '#/shop/item/marketing/?'+ querystring.stringify(hashs);
+  					},
+  					pageSize: hashs.pageSize -0,
+  					pageNo: hashs.pageNo - 0,
+  					maxNo: data.total,
+  					hasTotal: true,
+  					isEnd: true,
+  					goPage: false
+  				});
+  			if(pages && pages.length){
+  				if(hashs.root){delete hashs.root;}
+  				if(hashs.app){delete hashs.app;}
+  				if(hashs.classification){delete hashs.classification;}
+  				pages.html(pagesHtml);
+  			}
+  			// console.log("hashs:"+JSON.stringify(hashs));
+  			//init date
+  			$(".ui-tab-nav").each(function(){
+  				if("position="+$(this).attr("data-position")==decodeURIComponent(hashs.detail)){
+  					$('.ui-tab-nav').removeClass('current');
+  					$(this).addClass('current');
+  					return false;
+  				}
+  			});
+  		},
+  		_fn_event_bind: function(){
+  			this.$el.on('change', '.dateRangePicker', function(e){
+  				var value = $.trim($(e.currentTarget).val()).split(/\s*-\s*/);
+  				RC.pages.modifyCurHash({
+  					startDate: value[0].replace(/\//g,'-'),
+  					endDate  : value[1].replace(/\//g,'-'),
+  					pageNo   : '1'
+  				});
+  			});
+  			this.$el.on('change', '.pageSize', function(e){
+  				RC.pages.modifyCurHash({
+  					pageSize : $(e.currentTarget).val(),
+  					pageNo   : '1'
+  				});
+  			});
+  			this.$el.on('click', '.ui-tab-nav', $.proxy(function(e){ 
+  				var $target = $(e.currentTarget);
+  				if($target.hasClass('current')){
+  					return;
+  				}
+  				$('.ui-tab-nav').removeClass('current');
+  				// 暂时这里处理掉将
+  				var str = '';
+  				var obj = {}, 
+  					reg = /(\w+)=([^&]+)/g, 
+  					result;
+  				
+  				while (result = reg.exec(str)) {
+  					obj[result[1]] = decodeURIComponent(result[2]);
+  				}
+  				obj.position = $target.attr('data-position');
+  				//这里不会有空格，就用jquery的了
+  				RC.pages.modifyCurHash({detail: encodeURIComponent($.param(obj)),pageNo:1});
+  				$target.addClass('current');
+  
+  				//发起请求
+  			},this));
+  		},
+  		_fn_event_unbind: function(){
+  			// RC.removeSub('raycloud.pages.hashchange', this._fn_event_handler_hashchange_proxy = $.proxy(this._fn_event_handler_hashchange,this));
+  			this.$el.off('change', '.dateRangePicker');
+  			this.$el.off('change', '.pageSize');
+  		},
+  		init: function(){},
+  		getContainer: function(){return this.$el;},
+  		disabled: function(){},
+  		_status_hashs: {},
+  		update: function(hashs, afterload, refresh, itemInfo){
+  			hashs.detail = hashs.detail || encodeURIComponent('position=fanli');
+              // this._fn_dom_update_list('detail', 'data_shop_market_innersite', hashs, refresh);
+  			//默认为第一个tab
+  			// console.log("更新宝贝信息 module.shop.item.marketing.Innersite.js updatexxxxxx");
+  			// normalize hashs
+  			var dateUtil   = RC.util.date,
+  				updateTime = itemInfo.__updateTime,
+  				minDate,
+  				maxDate    = dateUtil.getdate(updateTime,'YY-MM-DD');
+  			// 一个月以31天计算
+  			switch(itemInfo.__level){
+  				case 'senior': 
+  					minDate = '2000-01-01';
+  					break;
+  				case 'primary': 
+  					minDate = dateUtil.getdiffdate(maxDate, '-182d', 'YY-MM-DD');
+  					break;
+  				default:
+  					minDate = dateUtil.getdiffdate(maxDate, '-30d', 'YY-MM-DD');
+  			}
+  			if(!hashs.startDate || !hashs.endDate || !dateUtil.is_date(hashs.startDate) || !dateUtil.is_date(hashs.endDate) || hashs.startDate - minDate < 0 || hashs.endDate - maxDate > 0){
+  				hashs.startDate = dateUtil.getdiffdate(updateTime, '-29d', 'YY-MM-DD');
+  				hashs.endDate   = dateUtil.getdate(updateTime, 'YY-MM-DD');
+  			}
+  			//初始化页码
+  			if(!hashs.pageNo || !String(hashs.pageNo).match(/^\d+$/)){
+  				hashs.pageNo = '1';
+  			}
+  			if(!hashs.pageSize || !String(hashs.pageSize).match(/^\d+$/) || _.indexOf(['10','20','30'], String(hashs.pageSize)) === -1){
+  				hashs.pageSize = '10';
+  			}
+  			// 只保存，有效的，正确的参数
+  			var require_params  = ['shopId', 'itemId', 'type', 'startDate', 'endDate', 'pageNo', 'pageSize'],
+  				oldHashs        = this._status_hashs,
+  				hashsChanged    = false;
+  				oldHashs.detail = hashs.detail;
+  			_.each(require_params, function(name, idx){
+  				if(oldHashs[name] != hashs[name]){
+  					hashsChanged = true;
+  					oldHashs[name] = hashs[name];
+  				}
+  			});
+  			//暂时去掉
+  			// if(refresh !== true && hashsChanged === false){
+  			// 	afterload && afterload();
+  			// 	return;
+  			// }
+  
+  			// cache hashs
+  			this._status_hashs = _.extend({},oldHashs);
+  			// render 基本结构
+  			this._fn_dom_render({_stauts_view: 1});
+  
+  			// load data then update dom,参数根据api文档修改
+  			//加载数据
+  			var detailStr = decodeURIComponent(hashs.detail);
+  			var positionStr = detailStr.substring(detailStr.indexOf("=")+1);
+  			var params = {
+  				shopId: hashs.shopId,
+  				itemId: hashs.itemId,
+  				position: positionStr,
+  				startDate: hashs.startDate,
+  				endDate: hashs.endDate,
+  				pageNo: hashs.pageNo,
+  				pageSize: hashs.pageSize
+  			};
+  			ItemModel.getModel(hashs.itemId).getData(_.bind(function(data_baobei){
+  				//这里是宝贝的基础信息概况
+  				// console.log("宝贝的基础信息概况:"+JSON.stringify(data_baobei));
+  				// this._update(hashs, afterload, refresh, data);
+  					ItemModel.getModel(hashs.itemId).data_item_market_outersite(params,
+  				 _.bind(function(data){
+  				 	data._shopInfo = data_baobei;
+  					this._fn_dom_update_list(data, oldHashs, {_minDate: minDate, _maxDate: maxDate});
+  					oldHashs = null;
+  					minDate  = null;
+  					maxDate  = null;
+  				},this));
+  			},this));
+  			$($(".ui-tab-nav")[0]).addClass('current');
+  			afterload && afterload();
+  		},
+  		destroy: function(){
+  			if(this.$el){
+  				this._fn_event_unbind();
+  				this._status_hashs = {};
+  				this.$el.empty().remove();
+  				this.$el = null;
+  			}
+  		}
+  	};
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,_,RayCloud);
+
+});

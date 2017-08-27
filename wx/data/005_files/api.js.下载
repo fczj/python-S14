@@ -1,0 +1,2113 @@
+define('framework/js/api', function(require, exports, module) {
+
+  /**
+   * @author xukang
+   */
+  ;(function($, RC) {
+  
+  	// var filter = require("www:filter/filter-config.js");
+  	/**
+  	 * API 层是与server层的调用, 页面只能够访问API而不能够直接越过API层对后面的数据调用.
+  	 */
+  	var doserverCall = function(opt, success, fail, show1, show2, show3){
+  		var after =  RC.serverCall;
+  		// filter({option:opt,success:success,fail:fail,call_show1:show1,call_show2:show2,call_show3:show3},after);
+  		RC.serverCall(opt, success, fail, show1, show2, show3)
+  	}
+  
+  var doserverCall_2 = function(opt, success, fail, show1, show2, show3){
+  		var after =  RC.serverCall;
+  		filter({option:opt,success:success,fail:fail,call_show1:show1,call_show2:show2,call_show3:show3},after);
+  		// RC.serverCall(opt, success, fail, show1, show2, show3)
+  	}
+  
+  
+  
+  	var API = {
+  		get_user_identifycode: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['get_user_identifycode'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'get_user_identifycode'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail, false, false, false);
+  		},
+  		get_user_email_identifycode: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['get_user_email_identifycode'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'get_user_email_identifycode'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail, false, false, false);
+  		},
+  		post_user_register: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['post_user_register'],
+  					type: 'POST',
+  					params: {
+  						'api_name': 'post_user_register'
+  					}
+  				};
+  
+  			// 添加注册 ga 跟踪
+  			var _success = function (json) {
+  				success && success(json);
+  			};
+  
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, _success, fail, false, false, false);
+  		},
+  		get_user_validatecode: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['get_user_validatecode'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'get_user_validatecode'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  
+  			// 不出现提示框信息
+  			return doserverCall(opt, success, fail, false, false, false);
+  		},
+  		post_user_login: function(params, success, fail, is_need_loading, is_need_success, is_need_fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['post_user_login'],
+  					type: 'POST',
+  					params: {
+  						'api_name': 'post_user_login'
+  					}
+  				};
+  
+  			// 添加登录 ga 登录
+  			var _success = function (json) {
+  				success && success(json);
+  			};
+  
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, _success, fail, is_need_loading, is_need_success, is_need_fail);
+  		},
+  		post_user_logout: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['post_user_logout'],
+  					type: 'POST',
+  					params: {
+  						'api_name': 'post_user_logout'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  
+  
+  		user_edit_passord: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_edit_passord'],
+  					type: 'POST',
+  					params: {
+  						'api_name': 'user_edit_passord'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		user_edit_email: function(){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_edit_email'],
+  					type: 'POST',
+  					params: {
+  						'api_name': 'user_edit_email'
+  					}
+  				};
+  
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  		get_hotshopes: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['get_hotshopes'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'get_hotshopes'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  
+  			// 不出现提示框信息
+  			return doserverCall(opt, success, fail, false, false, false);
+  		},
+  		get_hotkeys: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['get_hotkeys'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'get_hotkeys'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  
+  			// 不出现提示框信息
+  			return doserverCall(opt, success, fail, false, false, false);
+  		},
+  		get_user_levelinfo:function(user_info, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['get_user_levelinfo'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'get_user_levelinfo'
+  					}
+  				};
+  			var __success= function(json){
+  				if(json.result==1){
+  					user_info.data.level = json.data.level;
+  					user_info.data.isPrimaryLevel = json.data.ifPrimaryLevel;
+  				    user_info.data.primaryLevelStartTime = json.data.primaryLevelStartTime;
+  				    user_info.data.primaryLevelEndTime = json.data.primaryLevelEndTime;
+  				    user_info.data.isSeniorLevel = json.data.ifSeniorLevel;
+  				    user_info.data.seniorLevelStartTime = json.data.seniorLevelStartTime;
+  				    user_info.data.seniorLevelEndTime = json.data.seniorLevelEndTime;
+  				    user_info.data.isLuxuryLevel = json.data.ifLuxuryLevel;
+  				    user_info.data.luxuryLevelStartTime = json.data.luxuryLevelStartTime;
+  				    user_info.data.luxuryLevelEndTime = json.data.luxuryLevelEndTime;
+  
+  					if(user_info.data.level === 'luxury'){
+  						user_info.data.__level = 'luxury';
+  						user_info.data.level = 'senior';
+  					}
+  					// if(user_info.data.mobile == '18906538803'){
+  					// 	user_info.data.__level = 'luxury';
+  					// }
+  				}
+  				success&&success(user_info);
+  			}
+  			$.extend(opt.params, {});
+  			return doserverCall(opt, __success, fail, false, false, false);
+  		},
+  		get_user_info: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['get_user_info'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'get_user_info'
+  					}
+  				};
+  			$.extend(opt.params, {});
+  			var __success= function(json){
+  				if(json.result==1){
+  					API.get_user_levelinfo(json,success,fail);
+  				}else{
+  					success&&success(json);
+  				}
+  			}
+  			// 不出现提示框信息
+  			return doserverCall(opt, __success, fail, false, false, false);
+  		},
+  		user_edit_info: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_edit_info'],
+  					type: 'POST',
+  					params: {
+  						'api_name': 'user_edit_info'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		user_get_recharge_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_get_recharge_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'user_get_recharge_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		user_get_change_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_get_change_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'user_get_change_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		user_recharge_pay: function(params, success, fail){
+  			return SERVER_Path['user_recharge_pay'];
+  		},
+  		user_get_changerule_message: function(){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_get_changerule_message'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'user_get_changerule_message'
+  					}
+  				};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		user_get_changerule_email: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['user_get_changerule_email'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'user_get_changerule_email'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		user_change_pay: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['user_change_pay'],
+  				type: 'POST',
+  				params: {
+  					'api_name': 'user_change_pay'
+  				}
+  			};
+  
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  
+  			// isPreview 为真时, 表示套餐价格查询
+  			if (!opt.isPreview) {
+  				// 添加套餐购买 ga 跟踪
+  				var success = arguments[1]
+  					, tp = {
+  						'10001': '套餐,标准套餐'
+  						, '10002': '套餐,高级套餐'
+  						, '1': '短信,试用型'
+  						, '2': '短信,标准型'
+  						, '3': '短信,尊贵型'
+  						, '4': '短信,企业型'
+  						, '5': '邮件,试用型'
+  						, '6': '邮件,标准型'
+  						, '7': '邮件,尊贵型'
+  						, '8': '邮件,企业型'
+  					}[opt.params.changeRuleId].split(',')
+  					, val = '用户' + RC.user.get('mobile') + '_' + tp[1];
+  
+  				var _success = function (json) {
+  					success && success(json);
+  				};
+  
+  				arguments[1] = _success;
+  			}
+  
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		user_get_warnconfig_info: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_get_warnconfig_info'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'user_get_warnconfig_info'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		user_get_warnconfig_remind_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_get_warnconfig_remind_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'user_get_warnconfig_remind_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		user_add_warnconfig_remind: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_add_warnconfig_remind'],
+  					type: 'POST',
+  					params: {
+  						'api_name': 'user_add_warnconfig_remind'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		user_edit_warnconfig_remind: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_edit_warnconfig_remind'],
+  					type: 'POST',
+  					params: {
+  						'api_name': 'user_edit_warnconfig_remind'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		user_delete_warnconfig_remind: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_delete_warnconfig_remind'],
+  					type: 'POST',
+  					params: {
+  						'api_name': 'user_delete_warnconfig_remind'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  
+  
+  
+  		get_shop_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['get_shop_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'get_shop_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		user_shop_add: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_shop_add'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'user_shop_add'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_monitor_add: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['shop_monitor_add'],
+  				type: 'POST',
+  				params: {
+  					'api_name': 'shop_monitor_add'
+  				}
+  			};
+  
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  
+  
+  
+  			// 添加店铺监控 ga 跟踪
+  			var val = '用户' + RC.user.get('mobile') + '_' + opt.params.shopName
+  				, success = arguments[1]
+  				, _success = function (json) {
+  					success && success(json);
+  				}
+  
+  			arguments[1] = _success;
+  
+  
+  
+  
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		shop_monitor_delete: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_monitor_delete'],
+  					type: 'POST',
+  					params: {
+  						'api_name': 'shop_monitor_delete'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		industry_monitor_delete: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['industry_monitor_delete'],
+  					type: 'POST',
+  					params: {
+  						'api_name': 'industry_monitor_delete'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_get_info: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_info'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_info'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_get_offer_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_offer_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_offer_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_get_hotcat_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_hotcat_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_hotcat_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		data_shop_catratio_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['data_shop_catratio_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'data_shop_catratio_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_get_item_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_item_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_item_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_get_brandratio_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_brandratio_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_brandratio_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_get_rankhotratio_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_rankhotratio_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_rankhotratio_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_get_rank30amount_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_rank30amount_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_rank30amount_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_get_item_ontxn_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_item_ontxn_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_item_ontxn_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_get_item_onsale_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_item_onsale_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_item_onsale_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_get_item_onname_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_item_onname_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_item_onname_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_get_item_onprice_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_item_onprice_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_item_onprice_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_get_item_anatxn_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_item_anatxn_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_item_anatxn_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_get_item_anatxncat_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_item_anatxncat_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_item_anatxncat_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_get_item_anatxnbrand_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_item_anatxnbrand_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_item_anatxnbrand_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_item_anatxncat_chart_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_item_anatxncat_chart_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_item_anatxncat_chart_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_item_anatxnbrand_chart_list: function(params, success, fail){
+  				// url: SERVER_Path['shop_item_anatxnbrand_chart_list'],
+  				///data/shop/brandratio/list
+  				//换新接口
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_item_anatxnbrand_chart_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_item_anatxnbrand_chart_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_get_market_p4p_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_market_p4p_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_market_p4p_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_get_market_juhuasuan_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_market_juhuasuan_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_market_juhuasuan_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_get_market_zuanzhan_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_market_zuanzhan_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_market_zuanzhan_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_get_market_sales_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_market_sales_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_market_sales_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		data_shop_market_innersite: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['data_shop_market_innersite'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'data_shop_market_innersite'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		data_shop_market_outersite: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['data_shop_market_outersite'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'data_shop_market_outersite'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_item_get_market_p4p_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_item_get_market_p4p_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_item_get_market_p4p_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		data_item_np4p_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['data_item_np4p_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'data_item_np4p_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_item_get_market_juhuasuan_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_item_get_market_juhuasuan_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_item_get_market_juhuasuan_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_item_get_market_zuanzhan_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_item_get_market_zuanzhan_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_item_get_market_zuanzhan_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_item_get_market_sales_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_item_get_market_sales_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_item_get_market_sales_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		shop_compare: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_compare'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_compare'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		get_item_info: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['get_item_info'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'get_item_info'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		user_monitor_shop_list: function(params, success, fail, is_need_loading, is_need_success, is_need_fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_monitor_shop_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'user_monitor_shop_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail, is_need_loading, is_need_success, is_need_fail);
+  		},
+  		user_find_passord_by_mobile: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_find_passord_by_mobile'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'user_find_passord_by_mobile'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail, false, false, false);
+  		},
+  		user_find_passord_by_email: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_find_passord_by_email'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'user_find_passord_by_email'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail, false, false, false);
+  		},
+  		/////////////////////////////////
+  
+  
+  
+  		item_get_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['item_get_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'item_get_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  
+  
+  		user_item_group_info: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_item_group_info'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'user_item_group_info'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		user_warnconfig_edit: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_warnconfig_edit'],
+  					type: 'POST',
+  					params: {
+  						'api_name': 'user_warnconfig_edit'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		user_item_all_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_item_all_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'user_item_all_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		user_item_warning_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_item_warning_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'user_item_warning_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		user_item_warnlog_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_item_warnlog_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'user_item_warnlog_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		user_monitor_item_group_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_monitor_item_group_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'user_monitor_item_group_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		user_monitor_industry_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_monitor_industry_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'user_monitor_industry_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  
+  
+  		// 2014-06-07 13:04
+  		// add by zilong start
+  
+  		// 添加监控组
+  		add_mointor_group: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['add_mointor_group'],
+  				type: 'post',
+  				params: {
+  					'api_name': 'add_mointor_group'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		edit_mointor_group: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['edit_mointor_group'],
+  				type: 'post',
+  				params: {
+  					'api_name': 'edit_mointor_group'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  		// 获取提醒人列表
+  		get_remind_list: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['get_remind_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'get_remind_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  		// 添加宝贝监控
+  		add_mointor_item: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['add_mointor_item'],
+  				type: 'post',
+  				params: {
+  					'api_name': 'add_mointor_item'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  
+  			// 添加宝贝监控 ga 跟踪
+  			var val = '用户' + RC.user.get('id') + '_' + opt.params.title
+  				, success = arguments[1]
+  				, _success = function (json) {
+  					success && success(json);
+  				}
+  
+  			arguments[1] = _success;
+  
+  
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  		// 修改宝贝监控
+  		edit_mointor_item: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['edit_mointor_item'],
+  				type: 'post',
+  				params: {
+  					'api_name': 'edit_mointor_item'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  		// 取消监控
+  		del_mointor_item: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['del_mointor_item'],
+  				type: 'post',
+  				params: {
+  					'api_name': 'del_mointor_item'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  		// 添加提醒人
+  		add_remind_person: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['add_remind_person'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'add_remind_person'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  		// 编辑提醒人
+  		edit_remind_person: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['edit_remind_person'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'edit_remind_person'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  
+  		// add by zilong end
+  
+  
+  
+  
+  ////////////////////////////=========行情分析开始============///////////////////////
+  //////////////////////////// 2014-07-29 09:08 add by zilong ///////////////////////
+  
+  		// 行情分析——系统推荐词
+  		optimize_market_sys_reco_keyword: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['optimize_market_sys_reco_keyword'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'optimize_market_sys_reco_keyword'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		optimize_market_title_search_for_data:function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['optimize_market_title_search_for_data'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'api_data_canmou_title_diagnosis'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  		// 行情分析——我关注的热搜词
+  		optimize_market_my_fav_hot_keyword: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['optimize_market_my_fav_hot_keyword'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'optimize_market_my_fav_hot_keyword'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  
+  		// 行情分析——管理/修改我的热搜词
+  		optimize_market_modify_my_fav_hot_keyword: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['optimize_market_modify_my_fav_hot_keyword'],
+  				type: 'post',
+  				params: {
+  					'api_name': 'optimize_market_modify_my_fav_hot_keyword'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  
+  		// 行情分析——关键词关联宝贝排名
+  		optimize_market_keyword_rela_item_rank: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['optimize_market_keyword_rela_item_rank'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'optimize_market_keyword_rela_item_rank'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  
+  		// 行情分析——搜索类目类别
+  		optimize_market_item_category: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['optimize_market_item_category'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'optimize_market_item_category'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		// 行情分析——关键词搜索
+  		optimize_market_canmou_search_keyword_list: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['optimize_market_canmou_search_keyword_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_canmou_keyword_search_list'
+  
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		// 行情分析——关键词搜索
+  		optimize_market_search_keyword: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['optimize_market_search_keyword'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'optimize_market_search_keyword'
+  
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  
+  		// 行情分析——关键词关注/收藏
+  		optimize_market_add_fav_keyword: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['optimize_market_add_fav_keyword'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'optimize_market_add_fav_keyword'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  
+  		// 行情分析——取消关键词关注/收藏
+  		optimize_market_del_fav_keyword: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['optimize_market_del_fav_keyword'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'optimize_market_del_fav_keyword'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  
+  		// 行情分析——我收藏的热搜词
+  		optimize_market_my_fav_keyword: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['optimize_market_my_fav_keyword'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'optimize_market_my_fav_keyword'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  
+  		// 行情分析——关键词PK
+  		optimize_market_keyword_pk: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['optimize_market_keyword_pk'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'optimize_market_keyword_pk'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  
+  		// 行情分析——关键词趋势
+  		optimize_market_keyword_trend: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['optimize_market_keyword_trend'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'optimize_market_keyword_trend'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  
+  
+  ////////////////////////////=========行情分析结束============///////////////////////
+  
+  
+  
+  		// 推荐用户关注的类目
+  		get_sys_reco_category: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['get_sys_reco_category'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'get_sys_reco_category'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  
+  		// 更新用户关注的类目
+  		update_user_fav_category: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['update_user_fav_category'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'update_user_fav_category'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  		get_user_fav_category: function(){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['get_user_fav_category'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'get_user_fav_category'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  
+  
+  
+  ////////////////////////////=========第三方账户信息开始============///////////////////////
+  
+  		// 获取第三方账户信息
+  		get_sns_account: function () {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['get_sns_account'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'get_sns_account'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  		// 解绑第三方信息
+  		unbind_sns_account: function () {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['unbind_sns_account'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'unbind_sns_account'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  
+  
+  
+  
+  ////////////////////////////=========第三方账户信息结束============///////////////////////
+  
+  
+  		////////////////////////////二期新增
+  		data_shop_item_ontxn_time_list: function () {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_shop_item_ontxn_time_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_shop_item_ontxn_time_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_shop_search_trend_list: function () {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_shop_search_trend_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_shop_search_trend_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_shop_item_search_list: function () {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_shop_item_search_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_shop_item_search_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_shop_p4p_chart_list: function () {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_shop_p4p_chart_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_shop_p4p_chart_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_shop_tbk_chart_list: function () {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_shop_tbk_chart_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_shop_tbk_chart_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_shop_item_p4p_list: function () {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_shop_item_p4p_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_shop_item_p4p_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_shop_item_zz_list: function () {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_shop_item_zz_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_shop_item_zz_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_shop_item_unshelve_list: function () {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_shop_item_unshelve_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_shop_item_unshelve_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_shop_buyer_level_list: function () {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_shop_buyer_level_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_shop_buyer_level_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_shop_buyer_expense_list: function () {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_shop_buyer_expense_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_shop_buyer_expense_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_shop_buyer_area_list: function () {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_shop_buyer_area_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_shop_buyer_area_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_shop_buyer_buytime_list: function () {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_shop_buyer_buytime_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_shop_buyer_buytime_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_shop_market_tbk: function () {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_shop_market_tbk'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_shop_market_tbk'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		test_date: function () {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['test_date'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'test_date'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_item_market_p4p: function() {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_item_market_p4p'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_item_market_p4p'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_item_p4p_chart_list: function() {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_item_p4p_chart_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_item_p4p_chart_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_item_market_outersite: function() {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_item_market_outersite'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_item_market_outersite'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_item_market_innersite: function() {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_item_market_innersite'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_item_market_innersite'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_item_market_tbk: function() {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_item_market_tbk'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_item_market_tbk'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_item_market_jhs: function() {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_item_market_jhs'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_item_market_jhs'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_item_search_kw_list: function() {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_item_search_kw_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_item_search_kw_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_item_p4p_kw_chart_list: function() {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_item_p4p_kw_chart_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_item_p4p_kw_chart_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		data_item_market_sales: function() {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_item_market_sales'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'data_item_market_sales'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		get_cooper_list: function() {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['get_cooper_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'get_cooper_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		get_index_ad_list: function() {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['get_index_ad_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'get_index_ad_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		get_index_weekshop_list: function() {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['get_index_weekshop_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'get_index_weekshop_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		get_index_news_rssinfo: function() {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['get_index_news_rssinfo'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'get_index_news_rssinfo'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		get_index_kw_list: function() {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['get_index_kw_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'get_index_kw_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		oauth_friendship_create: function() {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['oauth_friendship_create'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'oauth_friendship_create'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		////message
+  		message_preview_count: function() {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['message_preview_count'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'message_preview_count'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		message_user_list: function() {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['message_user_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'message_user_list'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		hongbao_user_today: function() {
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['hongbao_user_today'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'hongbao_user_today'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall.apply(RC, arguments);
+  		},
+  		mission_new_status:function(params, success, fail){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['mission_new_status'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'api_user_fresh_task'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall(opt, success, fail);
+  		},
+  		mission_get_red_pkg:function(params, success, fail){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['mission_get_red_pkg'],
+  				type: 'post',
+  				params: {
+  					'api_name': 'api_user_fresh_hongbao'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall(opt, success, fail);
+  		},
+  		mission_get_my_red_pkgs_list:function(params, success, fail){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['mission_get_my_red_pkgs_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'api_user_fresh_myhongbao'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall(opt, success, fail);
+  		},
+  		_fn_my_history_shop:function(params, success, fail){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['user_monitor_shop_clist'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'api_user_monitor_shop_clist'
+  				}
+  			};
+  			$.extend(opt.params, arguments[0]);
+  			arguments[0] = opt;
+  			return doserverCall(opt, success, fail);
+  		},
+  		_fn_get_search_history_equities:function(success,fail){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_canmou_keyword_recent_list'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'api_data_canmou_keyword_recent_list'
+  				}
+  			};
+  			return doserverCall(opt, success, fail,false, false, false);
+  		},
+  		_fn_get_shop_like:function(id,success,fail){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['data_shop_similar'],
+  				type: 'get',
+  				params: {
+  					'id':id,
+  					'api_name': 'api_data_shop_similar'
+  				}
+  			};
+  			return doserverCall(opt, success, fail,false, false, false);
+  		},
+  		_fn_get_turntable_mychance:function(success,fail){
+  			var opt = {
+  				server: 'rc',
+  				url: SERVER_Path['api_turntable_mychance'],
+  				type: 'get',
+  				params: {
+  					'api_name': 'api_turntable_mychance'
+  				}
+  			};
+  			return doserverCall(opt, success, fail,false, false, false)
+  		},
+  		data_shop_item_onnew_list: function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['shop_get_item_new_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'shop_get_item_new_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		data_shop_detail_total:function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['data_shop_detail_total'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'data_shop_detail'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		data_shop_traffic_pc:function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['data_shop_flow_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'data_shop_flow_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		data_shop_traffic_pc_detail:function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['data_shop_flow_detail'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'data_shop_flow_detail'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		data_shop_traffic_pc_rank:function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['data_shop_item_flow_rank'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'data_shop_item_flow_rank'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		data_shop_marketing_ztc:function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['data_shop_item_np4p_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'data_shop_item_np4p_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		data_shop_marketing_ztc_detail:function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['data_shop_item_np4p_detail'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'data_shop_item_np4p_detail'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		data_shop_marketing_ztc_rank:function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['data_shop_item_np4p_rank'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'data_shop_item_np4p_rank'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		get_price_item_rate_pie_data:function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['data_shop_pricerange_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'data_shop_pricerange_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		data_shop_sale_analysis_unsale:function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['data_shop_item_unsale_list'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'data_shop_item_unsale_list'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		data_shop_item_hotlist:function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['data_shop_item_hotlist'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'data_shop_item_hotlist'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail);
+  		},
+  		data_shop_item_exist:function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['data_shop_item_exist'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'data_shop_exist'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail,false,false,false);
+  		},
+  		user_monitor_industry_clist:function(params, success, fail){
+  			var opt = {
+  					server: 'rc',
+  					url: SERVER_Path['user_monitor_industry_clist'],
+  					type: 'get',
+  					params: {
+  						'api_name': 'user_monitor_industry_clist'
+  					}
+  				};
+  			$.extend(opt.params, params);
+  			return doserverCall(opt, success, fail,true,false,false);
+  		},
+  		user_monitor_industry_add:function(){
+  		var opt = {
+  			server: 'rc',
+  			url: SERVER_Path['user_monitor_industry_add'],
+  			type: 'post',
+  			params: {
+  				'api_name': 'user_monitor_industry_add'
+  			}
+  		};
+  		$.extend(opt.params, arguments[0]);
+  		arguments[0] = opt;
+  		return RC.serverCall.apply(RC, arguments);
+  	},
+  	get_tx_change_info: function(params, success, fail){
+  		var opt = {
+  			server: 'rc',
+  			url: SERVER_Path['tx_change_info'],
+  			type: 'post',
+  			params: {
+  				'api_name': 'tx_change_info'
+  			}
+  		};
+  		$.extend(opt.params, params);
+  		return doserverCall(opt, success, fail,true,false,false);
+  	},
+  	get_tx_change_info_fenxiao: function(params, success, fail){
+  		var opt = {
+  			server: 'rc',
+  			url: SERVER_Path['tx_change_info_fenxiao'],
+  			type: 'post',
+  			params: {
+  				'api_name': 'tx_change_info_fenxiao'
+  			}
+  		};
+  		$.extend(opt.params, params);
+  		return doserverCall(opt, success, fail,true,false,false);
+  	},
+  
+  		xxx: function(){}
+  	};
+  
+  	window.API =API;
+  
+  })(jQuery, RayCloud);
+  
+
+});

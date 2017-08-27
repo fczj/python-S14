@@ -1,0 +1,74 @@
+define('modules/about/notices/module', function(require, exports, module) {
+
+  
+  ;(function($,RC){
+      var mdul = {
+          name: 'about.notices',
+          depend: 'about',
+          elm_dom_root: '#container',
+          elm_template_name: 'about.notices.page',
+  
+          init: function(){}
+  
+          , render: function () {
+              var _this = this;
+              $('.header-outer .header-inner').hide();
+              if (_this._gc_render_status) {
+                  return;
+              }
+              
+              _this._elm_page_container = $(RC.template.get(this.elm_template_name))
+                  .appendTo(this._elm_dom_root || '#container');
+              
+              
+              _this._gc_render_status = true;
+              _this.eventBind();
+          }
+  
+          , getContainer: function(){
+              return this._elm_page_container;
+          }
+  
+          , update: function(hashs, afterload, is_refresh){
+              var _this = this;
+              window.scroll(0, 0)
+              _this.render();
+              
+              afterload && afterload();
+          }
+  
+          , eventBind: function () {
+              var _this = this;
+          }
+  
+          , eventUnbind: function () {
+              var _this = this;
+          }
+  
+          , destroy: function(){
+              var _this = this;
+              $('.header-outer .header-inner').show();
+              if (!_this._gc_render_status) {
+                  return;
+              }
+  
+              _this.eventUnbind();
+  
+              // 关闭所有弹框
+              $.each($.dialog.list, function (i, o) {o.close();});
+  
+              _this._elm_page_container.remove();
+  
+              $.each(_this, function (key, o) {
+                  if (_this.hasOwnProperty(key) && /^_elm_|^_gc_/.test(key)) {
+                      delete _this[key];
+                  }
+              });
+          }
+  
+      };
+      
+      RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+
+});

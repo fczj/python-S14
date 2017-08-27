@@ -1,0 +1,18 @@
+define('modules/shop/item/marketing/template.shop.item.marketing', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function(RC){
+  	var temp = [
+  		'<div class="shop_item_marketing item_analysis mt_10 clearfix"><style>.shop_item_marketing div.ui-tab-hd{background-color: #f5f5f5;}.shop_item_marketing .innersite-detail .ui-tab .ui-tab-hd .ui-tab-navs .ui-tab-nav{height:36px;line-height:37px;}.shop_item_marketing .box-content{color:#666;}.shop_item_marketing .box-title{font-family: "Microsoft YaHei", arial;background-color:#f5f5f5;font-weight:normal;height:40px;line-height:32px;color:#333333;padding-top: 8px;font-size:14px;}.shop_item_marketing{font-size: 12px;font-family: "lucida grande",tahoma,arial,sans-serif,SimSun, arial;}.btn-new{text-decoration: none;padding:0px 10px;height: 30px;display: inline-block;min-width: 60px;color:#fff;font-size: 14px;font-family: "Microsoft YaHei", arial;border-radius: 3px;text-align: center;line-height: 30px;cursor: pointer;} .btn-success-new{background-color: #3bac8a;}.btn-warning-new{background-color: #ff8939;}.btn-inverse-new{ background-color: #999; cursor: default;}*.btn-new{text-decoration: none;}*.btn-new:hover{text-decoration: none;color:#fff;}.shop_item_marketing .ui-table-striped thead {border-bottom:1px solid #eeeeee;background-color:#fff;}.shop_item_marketing .ui-table-striped tr.striped, .ui-table-striped thead th{font-size:12px;color:#666666;font-size;12px;font-family:SimSun,arial;}.shop_item_marketing .ui-table-striped tr.striped, .ui-table-striped tbody tr{background-color: #fff;}.shop_item_marketing .ui-table-striped tr.striped, .ui-table-striped tbody tr{height:90px;}.shop_item_marketing .ui-table-striped tr.striped, .ui-table-striped tbody tr:nth-of-type(2n){background-color: #fbfbfb;}.shop_item_marketing .ui-table-striped tr.striped, .ui-table-striped tr td{border:0px;}.shop_item_marketing .ui-table-striped tbody tr:hover {background-color: #fff3da !important;}div.shop_item_marketing div.box-footer{background-color:#fff;color:#666;font-size: 14px;font-family: "Microsoft YaHei", arial;padding-top: 27px;padding-bottom: 27px;border: 0;}div.shop_item_marketing div.box-footer select.pageSize{height:25px;width:45px;}.shop_item_marketing .price-up{margin-right:5px;display: inline-block;width:10px;height:12px;position: relative;top: 2px;background-image:url(http://cdn.maijia.com/www/www-old/resources/css/build/images/price_up.png);}.shop_item_marketing .price-down{display: inline-block;width:10px;height:12px;margin-right:5px;position: relative;top: 2px;background-image:url(http://cdn.maijia.com/www/www-old/resources/css/build/images/price_down.png);}.shop_item_marketing .price-normal{display: inline-block;width:10px;height:12px;margin-right:5px;position: relative;top: 2px;}</style>',
+  			'<div class="mar-tabs J_mar-tabs">',
+  			'</div>',
+              '<div class="mar-panels" id="main_marketing" style="width:100%;"></div>',
+          '</div>'	
+  	];
+  
+  	RC.template.addTemp('template.shop.item.marketing', temp);
+  })(RayCloud);
+
+});

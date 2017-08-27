@@ -1,0 +1,645 @@
+define('modules/mission/new/module.mission.new', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){	
+  	var mdul = {
+  		name: 'mission.new',
+  		depend: 'mission',
+  		_elm_dom_root: '#container', //'#J_Login_Container',
+  		_elm_template_name: 'template.mission.new',
+  		red_pks_map:function(type_num){
+  			var type='';
+  			var money=0;
+  			switch(type_num){
+  					case 99:
+  						type='注册';
+  						money=5;
+  						break;
+  					case 0:
+  						type='邮箱绑定';
+  						money=5;
+  						break;
+  					case 1:
+  						type='分享活动';
+  						money = 10;
+  						break;
+  					case 2:
+  						type='监控任一店铺';
+  						money = 10;
+  						break;
+  					case 3:
+  						type='卖家资讯评论任一文章';
+  						money = 5;
+  						break;
+  					case 4:
+  						type='卖家招聘填写简历或发布职位';
+  						money = 30;
+  						break;
+  					case 5:
+  						type='卖家学院在线课程报名成功';
+  						money = 5;
+  						break;
+  					case 6:
+  						type='卖家资讯投稿并通过审核';
+  						money = 20;
+  						break;
+  					case 8:
+  						type='高级版三个月';
+  						money = 38;
+  						break;
+  					case 9:
+  						type='高级版半年';
+  						money = 88;
+  						break;
+  					case 10:
+  						type='高级版一年';
+  						money = 168;
+  						break;
+  					case 11:
+  						type='高级版两年';
+  						money = 888;
+  						break;
+  					case 12:
+  						type='高级版三年';
+  						money = 1688;
+  						break;
+  					case 13:
+  						type='宝箱';
+  						money = 188;
+  						break;
+  					case 14:
+  						type="下载APP";
+  						money= 100 ;
+  						break;
+  					default:
+  						type='系统奖励';
+  						break;
+  				}
+  				return {name:type,money:money};
+  		},
+  		// http://t.cn/RLVqUvI
+  		_share_mesg_arr : ['九大新手任务，新老用户都可参与，丰厚奖励送！送！送！红包拿到你手软，come on！@淘数据 红包传送门→ ','淘数据新手任务来啦，任务难么？NO！奖励多么？YES！最高红包可购买5年淘数据数据服务，完成任一任务就能拿到相应红包，完成所有任务还可以开启大宝箱，快跟小编一起开启你的寻宝之旅吧！@淘数据 '],
+  		_share_mesg_arr2:['淘数据送钱啦，完成任务就能领取红包，最高可得4800元，关键是任务都辣么简单！！ @淘数据 ','啦啦啦，我在淘数据做新手任务，已经拿到了3个红包，听说做完所有任务还能开启大宝箱，不多说了，我继续任务去了 @淘数据 ','淘数据新手任务做完送了我一个宝箱，好鸡冻，听说打开最高可拿1888元，拼人品的时候到了@淘数据 '],
+  		_fn_get_share_mesg:function(type){
+  			// for(var i=0;i<1000;i++){
+  			// 	var r = Math.random()*4;
+  			// 	console.log(r+":"+Math.floor(r)+":"+this._share_mesg_arr[Math.floor(r)]);
+  			// }
+  			if(type==1){
+  				return this._share_mesg_arr[Math.floor(Math.random()*2)];
+  			}else{
+  				return this._share_mesg_arr2[Math.floor(Math.random()*3)];
+  			}
+  		},
+  		_fn_to_share:function(type){
+  			// http%3A%2F%2Fcdn.maijia.com%2Fwww%2Fwww-old%2Fresources%2Fcss%2Fbuild%2Fimages%2Fmission-new%2Fweibo-img.png
+  			var imgurl = "http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/weibo-img.png";
+  			// imgurl = "http://www.baidu.com/img/bdlogo.png";
+  			var url = "http://service.weibo.com/share/share.php?title="+encodeURIComponent(this._fn_get_share_mesg(type))+"&url="+encodeURIComponent('/index.html#/mission/new/')+"&language=zh_cn&pic="+encodeURIComponent(imgurl);
+  			window.open(url, "_blank"); 
+  			this._fn_have_shared_sub();
+  		},
+  		_fn_have_shared_sub:function(){
+  			if(this._login_status){
+  				API["mission_get_red_pkg"]({type:1,click:1},
+                           	function(data){
+                           		// console.log("share back:"+JSON.stringify(data));
+  	                         	if(data.result==1){
+  	                         		// console.log('分享成功');
+  	                         	}else{
+  	                         		// console.log('领取失败,系统异常');
+  	                         	}
+  	                        },
+  	                        function(data){
+  	                        	// alert("领红包请求失败");
+  	                        }
+                  );
+  			}
+  		},
+  		_fn_dom_render: function(){
+  			var _this = this;
+  			// if (_this._elm_dom_container) {
+  			// 	return;
+  			// }
+  			$('#header .header-inner').hide();
+  			// $('#footer').hide();
+  			$('#container').css("width","auto");
+  			var qq = require("components/maijia-qq/qq");
+  			qq.bind('BizQQWPA_mission_new',3);
+  			$(function(){
+  				setTimeout(function(){$('.mod-site-tool').hide();}, 20);
+  			});
+  			this.$el = _this._elm_dom_container
+  				= $(RC.template.get(_this._elm_template_name))
+  					.appendTo(_this._elm_dom_root);
+  					// this._fn_showget_big_box(1);
+  		},
+  		_fn_dom_update: function() {
+  
+  		},
+  		_login_status:null,
+  		_fn_show_dialog:function(type,money,obj){
+  			var _this = this;
+  			var left = $(window).width();
+  			// if(left>1600){
+  			// 	left=1600;
+  			// }
+  			if(type==1){
+  				//领取红包
+  				$('.mission-new-page .red-pkg-open .red-pkg-open-back .money_span').text(money);
+  				$('.mission-new-page .red-pkg-open .red-pkg-open-back').css("left",left/2-445/2);
+  				$('.mission-new-page .red-pkg-open').show();
+  			}else if(type==2){
+  				$('.mission-new-page .red-pkg-open-fail>div a').attr("href",_this._fn_get_item_url(obj));
+  				$('.mission-new-page .red-pkg-open-fail>div').css("left",left/2-400/2);
+  				$('.mission-new-page .red-pkg-open-fail').show();
+  			}else if(type==3){
+  				$('.mission-new-page .J_red-pkg-open-npc>div').css("left",left/2-420/2);
+  				$('.mission-new-page .J_red-pkg-open-npc').show();
+  			}else if(type==4){
+  				$('.mission-new-page .red-pkg-open-check>div').css("left",left/2-400/2);
+  				$('.mission-new-page .red-pkg-open-check').show();
+  			}else if(type==5){
+  				$('.mission-new-page .red-pkg-open-share>div').css("left",left/2-400/2);
+  				$('.mission-new-page .red-pkg-open-share').show();
+  			}else if(type==14){
+  				$('.mission-new-page .J_red-pkg-open-app>div').css("left",left/2-420/2);
+  				$('.mission-new-page .J_red-pkg-open-app').show();
+  			}else if(type==20){
+  				$('.mission-new-page .red-pkg-open-repeat>div').css("left",left/2-400/2);
+  				$('.mission-new-page .red-pkg-open-repeat').show();
+  			}
+  
+  		},
+  		_fn_get_item_url:function(obj){
+  			return obj.parent().find("div.memo a").attr("href");
+  		},
+  		init: function(){},
+  		getContainer: function(){
+  			return this._elm_dom_container;
+  		},
+  		_fn_baidu_tj:function(){
+  			//接入百度统计
+  			var _hmt = _hmt || [];
+  	          (function() {
+  	            var hm = document.createElement("script");
+  	            hm.src = "//hm.baidu.com/hm.js?aba526bdb67142824e5f30e155010346";
+  	            var s = document.getElementsByTagName("script")[0]; 
+  	            s.parentNode.insertBefore(hm, s);
+  	          })();
+  		},
+  		update: function(hashs, afterload, is_refresh){
+  			this._fn_baidu_tj();
+  
+  			// 关闭所有弹框
+              // $.each($.dialog.list, function (i, o) {o.close();});
+  			var _this = this;
+  			// 自我销毁
+  			this.destroy();
+  			this._fn_dom_render();
+  			RC.user.get('info', function() {
+                      var data = RC.user.get();
+                       _this._fn_add_event_common();
+                      var render_data = {};
+                      _this._login_status = data._login_status;
+                      if(data._login_status){
+                          //已登录,请求任务状态
+                          // console.log('data._login_status');
+                           API["mission_new_status"]({},
+                           	function(data){
+  								_this._fn_deal_user_mission_status(data.data.type.split(','));
+  	                        },
+  	                        function(data){
+  
+  	                        }
+                           );
+                           // _this._fn_add_event_login();
+                      }else{
+                          //未登陆
+                          _this._fn_add_event_unlogin();
+                      }
+                      afterload && afterload();
+              });
+  
+  		},
+  		_fn_deal_user_mission_status:function(mission_arr){
+  			if(!mission_arr){
+  				return;
+  			}
+  			mission_arr.push("-1");
+  			var length = mission_arr.length;
+  			$('div[data-options]').each(function(){
+  				var _nowEl = $(this);
+  				for(var i=0;i<length;i++){
+  					if(mission_arr[i]==_nowEl.attr("data-options")){
+  						_nowEl.removeClass("reward-btn");
+  						_nowEl.addClass("have_been");
+  						_nowEl.text("已领取");
+  						break;
+  					}
+  				}
+  			});
+  			for(var i=0;i<length;i++){
+  				if(mission_arr[i]=='13'){
+  					$('.open-box').removeClass("open");
+  					$('.open-box').addClass("opened");
+  					$('.open-box').text("已开启");
+  					break;
+  				}
+  			}
+  			this._fn_add_event_login();
+  		},
+  		_fn_add_event_common:function(){
+  			var _this = this;
+  			$('.mission-new-page .right-menu ul li').eq(2).on("mouseover",function(){
+  				var weixin = $('.mission-new-page .my-share-erweima');
+  				var left = $(window).width();
+  					left = left-130-200;
+  				var top = $('.mission-new-page .right-menu').css("top");
+  				// console.log('top:'+top);
+  				weixin.css("left",left);
+  				weixin.css("top",top);
+  				weixin.show();
+  			});
+  			$('body').on("click",function(){
+  				var weixin = $('.mission-new-page .share-weixin-icon-erweima');
+  				weixin.hide();
+  			});
+  			$('.mission-new-page .right-menu ul li').eq(2).on("mouseout",function(){
+  				var weixin = $('.mission-new-page .my-share-erweima');
+  				weixin.hide();
+  			});
+  
+  			$('.mission-new-page .sina-icon').on("click",function(){
+  				//分享微博
+  				_this._fn_to_share(2);
+  			});
+  			$('.mission-new-page .weixin-icon').on("click",function(e){
+  				var weixin = $('.mission-new-page .share-weixin-icon-erweima');
+  				weixin.show();
+  				e.stopPropagation();
+  				_this._fn_have_shared_sub();
+  			});
+  			
+  			$('.mission-new-page .right-menu ul li').eq(1).on("click",function(){
+  				//分享微博
+  				_this._fn_to_share(1);
+  			});
+  		},
+  		_fn_add_event_login:function(){
+  			$('.reward-btn').off("click");
+  			$('.have_been').off("click");
+  			$('.open-box').off("click");
+  			var _this = this;
+  			$('.reward-btn').on("click",function(){
+  				var data_options=$(this).attr("data-options");
+  				if(data_options==1){
+  					// if(_this._have_been_share==1){
+  					// 	_this._fn_get_reward(1,$(this));
+  					// }else{
+  					// 	_this._fn_show_dialog(5);
+  					// }
+  					_this._fn_get_reward_share(1,$(this));
+  				}else if(data_options==14){
+  					//下载app
+  					_this._fn_show_dialog(14);
+  				}else if(data_options){
+  					_this._fn_get_reward(data_options,$(this));
+  				}else{
+  					// alert("联系客服");
+  						_this._fn_show_dialog(3);
+  				}
+  				
+  			});
+  
+  			$('.open-box.open').on('click',function(){
+  				_this._fn_get_reward(13,$(this));
+  			});
+  
+  			$('.mission-new-page .right-menu ul li').eq(0).on("click",function(){
+  				//请求红包数据
+  				_this._fn_get_my_red_pkgs_list();
+  
+  			});
+  
+  			$('.mission-new-page .red-pkg-open .close').on("click",function(){
+  				$('.mission-new-page .red-pkg-open').hide();
+  			});
+  
+  			$('.mission-new-page .red-pkg-open-share a').on("click",function(){
+  				$('.mission-new-page .red-pkg-open-share').hide();
+  			});
+  
+  			$('.mission-new-page .red-pkg-open-check a').on("click",function(){
+  				$('.mission-new-page .red-pkg-open-check').hide();
+  			});
+  
+  			$('.mission-new-page .red-pkg-open-share .close').on("click",function(){
+  				$('.mission-new-page .red-pkg-open-share').hide();
+  			});
+  
+  
+  			$('.mission-new-page .red-pkg-open-check .close').on("click",function(){
+  				$('.mission-new-page .red-pkg-open-check').hide();
+  			});
+  
+  			$('.mission-new-page .red-pkg-open-fail .close').on("click",function(){
+  				$('.mission-new-page .red-pkg-open-fail').hide();
+  			});
+  
+  			$('.mission-new-page .red-pkg-open-repeat .close').on("click",function(){
+  				$('.mission-new-page .red-pkg-open-repeat').hide();
+  			});
+  
+  			$('.mission-new-page .J_red-pkg-open-npc .close').on("click",function(){
+  				$('.mission-new-page .J_red-pkg-open-npc').hide();
+  			});
+  
+  			$('.mission-new-page .J_red-pkg-open-app .close').on("click",function(){
+  				$('.mission-new-page .J_red-pkg-open-app').hide();
+  			});
+  
+  			$('.mission-new-page .my-red-pkgs .close').on("click",function(){
+  				$('.mission-new-page .my-red-pkgs').hide();
+  			});
+  
+  			$('.mission-new-page .open-box-success .close').on("click",function(){
+  				$('.mission-new-page .open-box-success').hide();
+  				// location.reload();
+  				$('.mission-new-page .open-box').off('click');
+  				$('.mission-new-page .open-box').removeClass("open");
+  				$('.mission-new-page .open-box').addClass("opened");
+  				$('.mission-new-page .open-box').text("已开启");
+  			});
+  
+  			$('.mission-new-page .open-box-fail_id .close').on("click",function(){
+  				$('.mission-new-page .open-box-fail_id').hide();
+  			});
+  
+  			$('.mission-new-page .sina-icon-big').on('click',function(){
+  				_this._fn_to_share(2);
+  			});
+  
+  			$('.mission-new-page .weixin-icon-big').on('click',function(e){
+  				$('.mission-new-page .red-pkg-open-share').hide();
+  				var weixin = $('.mission-new-page .share-weixin-icon-erweima');
+  				weixin.show();
+  				e.stopPropagation();
+  				_this._fn_have_shared_sub();
+  			});
+  			//分享,微信,点击事件
+  
+  		},
+  		_fn_get_my_red_pkgs_list:function(){
+  			var _this = this;
+  			// [{type:0,count:1},{type:1,count:1},{type:2,count:1},{type:3,count:1},{type:5,count:1},{type:6,count:1},{type:4,count:1},{type:8,count:1},{type:9,count:1},{type:10,count:2},{type:11,count:1},{type:12,count:1},{type:13,count:1},]
+  			// var list_html = _this._fn_formate_red_paks_list();
+  			// $('.mission-new-page .my-red-pkgs .content ul').html(list_html.join(''));
+  			// var my_red_pkgs_content = $('.mission-new-page .my-red-pkgs .content');
+  			// 	//我的红包,
+  			// 	var top_px = $(window).height()/2-(105+list_html.length*46);
+  			// 	top_px = top_px<0?0:top_px;
+  			// 	my_red_pkgs_content.css("left",$(window).width()/2-180);
+  			// 	my_red_pkgs_content.css("top",top_px);
+  			// 	console.log('top_px:'+top_px);
+  			// 	$('.mission-new-page .my-red-pkgs').show();
+  			// return;
+  			 API["mission_get_my_red_pkgs_list"]({},
+                           	function(data){
+                           		var list_html = _this._fn_formate_red_paks_list(data);
+                           		$('.mission-new-page .my-red-pkgs .content ul').html(list_html.join(''));
+                           		var my_red_pkgs_content = $('.mission-new-page .my-red-pkgs .content');
+                           		var top_px = $(window).height()/2-(list_html.length*24);
+  								var left = $(window).width();
+  								// if(left>1600){
+  								// 	left=1600;
+  								// }
+  								top_px = top_px<0?0:top_px;
+  								my_red_pkgs_content.css("left",left/2-180);
+  								my_red_pkgs_content.css("top",top_px);
+  								$('.mission-new-page .my-red-pkgs').show();
+  	                        },
+  	                        function(data){
+  	                        	// console.log('请求失败-我的红包');
+  	                        }
+                  );
+  		},
+  		_fn_formate_red_paks_list:function(dataF){
+  			var mesg = [];
+  			// mesg.push('<li><label class="name">注册</label><label class="money">+5</label></li>');
+  			if(!dataF || !dataF.data || !dataF.data.list){
+  				return mesg;
+  			}
+  			data = dataF.data.list;
+  			data.sort(function(a,b){
+  				return a.type-b.type;
+  			});
+  			for(var j=0;j<data.length;j++){
+  				if(data[j].type==7){
+  					continue;
+  				}
+  				var red_type = this.red_pks_map(parseInt(data[j].type));
+  				// console.log('red_type:'+JSON.stringify(red_type));
+  				if(!red_type.money){
+  					continue;
+  				}
+  				red_type.money = red_type.money*data[j].count;
+  				if(data[j].count>1){
+  					mesg.push('<li><label class="name">'+red_type.name+' x'+data[j].count+'</label><label class="money">+'+red_type.money+'</label></li>');
+  				}else{
+  					mesg.push('<li><label class="name">'+red_type.name+'</label><label class="money">+'+red_type.money+'</label></li>');
+  				}
+  				// for(var i=0;i<data[j].count;i++){
+  					// mesg.push('<li><label class="name">'+type+' x'+data[j].count+'</label><label class="money">+'+money+'</label></li>');
+  					// mesg.push({name:type,money:"+"+money});
+  				// }
+  			}
+  			return mesg;
+  		},
+  		_fn_get_reward_share:function(type,obj){
+  			var _this = this;
+  			// $.dialog.tips('恭喜你，'+_this.red_pks_map(parseInt(type)).money+'元红包到手，赶紧拿去”承包“淘数据吧！',null,null,function(){location.reload();});
+  			// return;
+  			//cookie超时判断
+  			type = 1;
+  			 API["mission_get_red_pkg"]({type:type},
+                           	function(data){
+  	                         	if(data.result==1){
+  	                         		if(data.data.result=='success'){
+  	                         			// _this._fn_deal_btn_after_rewarded(type,obj);
+  										// _this._fn_show_dialog(1,_this.red_pks_map(parseInt(type)).money);
+  										window.open("http://hongbao.maijia.com/get.html?couponCode="+data.data.couponCode);
+  									}
+  									if(data.data.result=='failure'){
+  										_this._fn_show_dialog(5);
+  									}
+  									if(data.data.result=='repeated'){
+  										// console.log('重复领取');
+  										_this._fn_show_dialog(20);
+  									}
+  	                         	}else{
+  	                         		// console.log('领取失败,系统异常...');
+  	                         	}
+  									
+  	                        },
+  	                        function(data){
+  	                        	// alert("领红包请求失败");
+  	                        }
+                  );
+  		},
+  		_fn_get_reward:function(type,obj){
+  			var _this = this;
+  			// $.dialog.tips('恭喜你，'+_this.red_pks_map(parseInt(type)).money+'元红包到手，赶紧拿去”承包“淘数据吧！',null,null,function(){location.reload();});
+  			// return;
+  			//cookie超时判断
+  			 API["mission_get_red_pkg"]({type:type},
+                           	function(data){
+  	                         	if(data.result==1){
+  	                         		if(data.data.result=='success'&&type!=13){
+  	                         			// _this._fn_deal_btn_after_rewarded(type,obj);
+  										// console.log('领取成功');
+  										// _this._fn_show_dialog(1,_this.red_pks_map(parseInt(type)).money);
+  										window.open("http://hongbao.maijia.com/get.html?couponCode="+data.data.couponCode);
+  										return;
+  										// $.dialog.tips('恭喜你，'+_this.red_pks_map(parseInt(type)).money+'元红包到手，赶紧拿去”承包“淘数据吧！',null,null,function(){
+  										// });
+  										
+  									}
+  									if(data.data.result=='success'&&type==13){
+  										// console.log('领取大宝箱成功');
+  										// _this._fn_showget_big_box(1);
+  										window.open("http://hongbao.maijia.com/get.html?couponCode="+data.data.couponCode);
+  										return;
+  									}
+  									if(data.data.result=='failure'&&type==6){
+  										_this._fn_show_dialog(4);
+  										return;
+  									}
+  									if(data.data.result=='failure'&&type!=13){
+  										_this._fn_show_dialog(2,null,obj);
+  										return;
+  										// $.dialog.tips('别闹，任务还没完成呢，先去做任务才能领红包哦！');
+  									}
+  									if(data.data.result=='failure'&&type==13){
+  											// console.log('领取大宝箱失败');
+  										_this._fn_showget_big_box(2);
+  										return;
+  									}
+  									if(data.data.result=='repeated'){
+  										// alert("重复领取");
+  										// console.log('重复领取');
+  										_this._fn_show_dialog(20);
+  									}
+  	                         	}else{
+  	                         		// console.log('领取失败,系统异常');
+  	                         	}
+  									
+  	                        },
+  	                        function(data){
+  	                        	// alert("领红包请求失败");
+  	                        }
+                  );
+  		},
+  		_fn_deal_btn_after_rewarded:function(type,obj){
+  			obj.removeClass("reward-btn");
+  			obj.addClass("have_been");
+  			obj.off("click");
+  			obj.text("已领取");
+  		},
+  		_fn_add_event_unlogin:function(){
+  			$('.mission-new-page .reward-btn,.open-box,sina-icon,weixin-icon').on('click',function(){
+  				//登陆弹窗,暂时先跳到登陆界面
+  				RayCloud.pub('global.login.pop');
+  				// window.location.href="http://login.taosj.com/?redirectURL="+encodeURIComponent('/index.html#/mission/new/');
+  			});
+  
+  			$('.mission-new-page a').on('click',function(){
+  				var isgo = $(this).attr("href")=='http://login.taosj.com/register.htm';
+  				if(!isgo){
+  					RayCloud.pub('global.login.pop');
+  					// window.location.href="http://login.taosj.com/?redirectURL="+encodeURIComponent('/index.html#/mission/new/');
+  					return false;
+  				}
+  			});
+  		$('.mission-new-page .right-menu li').eq(0).on('click',function(){
+  				//登陆弹窗,暂时先跳到登陆界面
+  				RayCloud.pub('global.login.pop');
+  				// window.location.href="http://login.taosj.com/?redirectURL="+encodeURIComponent('/index.html#/mission/new/');
+  			});
+  		},
+  		_fn_showget_big_box:function(type){
+  			var left = $(window).width();
+  			// if(left>1600){
+  			// 	left=1600;
+  			// }
+  			if(type==1){
+  				var imgurl = "http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/weibo-img.png";
+  			// imgurl = "http://www.baidu.com/img/bdlogo.png";
+  				var url = "http://service.weibo.com/share/share.php?title="+encodeURIComponent('#淘数据新手任务#终极宝箱终于被我打开了，88元红包到手，听说最高可得1888，还不快来试试你的人品？？@淘数据')+"&url="+encodeURIComponent('/index.html#/mission/new/')+"&language=zh_cn&pic="+encodeURIComponent(imgurl);
+  				$('.mission-new-page .open-box-success .show_btn a').attr("href",url);
+  				$('.mission-new-page .open-box-success .back').css("left",left/2-428/2);
+  				$('.mission-new-page .open-box-success').show();
+  			}else{
+  				// var imgurl = "http://cdn.maijia.com/www/www-old/resources/css/build/images/mission-new/weibo-img.png";
+  				// var url = "http://service.weibo.com/share/share.php?title="+encodeURIComponent(this._fn_get_share_mesg(type))+"&url="+encodeURIComponent('/index.html#/mission/new/')+"&language=zh_cn&pic="+imgurl;
+  				$('.mission-new-page .open-box-fail_id .back').css("left",left/2-532/2);
+  				$('.mission-new-page .open-box-fail_id').show();
+  			}
+  		},
+  		_fn_unbind_event:function(){
+  			$('body').off("click");
+  		},
+  		destroy: function(){
+  			var _this = this;
+  			if(this._elm_dom_container){
+  				this._elm_dom_container.remove();
+  				this._elm_dom_container = null;
+  			}
+  			$('#container').css("width","1200px");
+  			// $('#header').show();
+  			$('#header .header-inner').show();
+  			_this._fn_unbind_event();
+  			// $('#footer').show();
+  			// $('.side-fixed-tools').show();
+  			$('.mod-site-tool').show();
+  		},
+  		// qq:{
+  		// 	_ready: false,
+  		// 	_readyList: [],
+  		// 	_load: function(callback){
+  		// 		$.getScript('http://wpa.b.qq.com/cgi/wpa.php', callback);
+  		// 	},
+  		// 	_done: function(){
+  		// 		this._ready = true;
+  		// 		for(var i=0; i<this._readyList.length; i++){
+  		// 			this._readyList[i]();
+  		// 		}
+  		// 		this._readyList = [];
+  		// 	},
+  		// 	ready: function(callback){
+  		// 		if(this._ready === true){
+  		// 			callback();
+  		// 			return;
+  		// 		}else{
+  		// 			var _this = this;
+  		// 			_this._readyList.push(callback);
+  		// 			this._load(function(){
+  		// 				_this._done();
+  		// 				_this = null;
+  		// 			});
+  		// 		}
+  		// 	},
+  		// 	bind: function(id){
+  		// 		this.ready(function(){
+  		// 			BizQQWPA.addCustom({aty: '0', a: '0', nameAccount: 800098528, selector: id});
+  		// 		});
+  		// 	}
+  		// }
+  	};
+  
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+
+});

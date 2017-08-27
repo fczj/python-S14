@@ -1,0 +1,148 @@
+define('widget/dateutils', function(require, exports, module) {
+
+    'use strict';
+    function DateUtils(){
+    	this.YEAR = 1;
+    	this.MONTH = 2;
+    	this.DAY = 3;
+    	this.HOUR = 4;
+    	this.MINUTE = 5;
+    	this.SECOND = 6;  
+    }
+    
+    DateUtils.prototype.format = function(date,formatter){
+    	if(!(date instanceof Date)){
+    		throw new Error('format() arg[0] is not a Date object!');
+    	}
+    	if(typeof formatter !== 'string'){
+    		throw new Error('format() arg[1] is not a string!');
+    	}
+    	var __result = formatter,
+    		__month = date.getMonth()+1,
+    		__fullyear = date.getFullYear(),
+    		__date = date.getDate(),
+    		__second = date.getSeconds(),
+    		__minute = date.getMinutes(),
+    		__24hours = date.getHours(),
+    		__12hours = __24hours>12?(__24hours-12):__24hours;
+    		
+    	__24hours = __24hours.toString().length<2?('0'+__24hours):__24hours;
+    	__12hours = __12hours.toString().length<2?('0'+__12hours):__12hours;
+    	__minute = __minute.toString().length<2?('0'+__minute):__minute;
+    	__second = __second.toString().length<2?('0'+__second):__second;
+    	__month = __month.toString().length<2?('0'+__month):__month;
+    	__date = __date.toString().length<2?('0'+__date):__date;
+    	__result = __result.replace(/yyyy|YYYY/g, __fullyear);
+    	__result = __result.replace(/yy|YY/g, __fullyear.toString().slice(2));
+    	__result = __result.replace(/MM/g, __month);
+    	__result = __result.replace(/dd|DD/g, __date);
+    	__result = __result.replace(/HH/g, __24hours);
+    	__result = __result.replace(/24H/g, __24hours);
+    	__result = __result.replace(/12H/g, __12hours);
+    	__result = __result.replace(/hh/g, __12hours);
+    	__result = __result.replace(/mm/g, __minute);
+    	__result = __result.replace(/mi/g, __minute);
+    	__result = __result.replace(/ss/g, __second);
+    	return __result;
+    }
+    
+    //TODO parse方法,时区处理
+    DateUtils.prototype.parse = function(){
+      
+    }
+  
+      //TODO parse方法,时区处理
+    DateUtils.prototype.set = function(field,date,num){
+      if(typeof field !== 'number'){
+        throw new Error('set() arg[0] is not allowed!');
+      }
+      if(!(date instanceof Date)){
+        throw new Error('set() arg[1] is not a Date object!');
+      }
+      var _num = parseInt(num);
+      if(num!=_num || _num<0){
+        throw new Error('set() arg[2] is not allowed!');
+      }
+      var __fullyear = date.getFullYear(),
+          __month = date.getMonth(),
+          __date = date.getDate(),
+          __hour = date.getHours(),
+          __minute = date.getMinutes(),
+          __second = date.getSeconds();
+      num = _num;
+      switch (field) {
+        case this.YEAR:
+          if(num.toString().length!==4){
+            throw new Error('set() year arg\'length must be 4 !');
+          }
+          __fullyear = num;
+          break;
+        case this.MONTH:
+          if(num<0||num>12){
+            throw new Error('set() month arg must between 1-12 !');
+          }
+          __month = num-1;
+        case this.MONTH:
+          if(num<0||num>12){
+            throw new Error('set() month arg must between 1-12 !');
+          }
+          __month = num-1;
+        default:
+          // statements_def
+          break;
+      }
+    }
+    
+    DateUtils.prototype.add = function(field,date,num){
+    	if(typeof field !== 'number'){
+    		throw new Error('add() arg[0] is not allowed!');
+    	}
+    	if(!(date instanceof Date)){
+    		throw new Error('add() arg[1] is not a Date object!');
+    	}
+    	var _num = parseInt(num);
+    	if(num!=_num){
+    		throw new Error('add() arg[2] is not allowed!');
+    	}
+      num = -_num;
+    	var __fullyear = date.getFullYear(),__offset_fullyear=0,
+    		__month = date.getMonth(),__offset_month=0,
+    		__date = date.getDate(),__offset_date=0,
+    		__hour = date.getHours(),__offset_hour = 0,
+    		__minute = date.getMinutes(),__offset_minute=0,
+    		__second = date.getSeconds(),__offset_second=0;
+    
+    	switch (field) {
+    		case this.YEAR:
+    			if((date.getFullYear()-1970)<num){
+    				__fullyear = 1970;
+    			}
+    			__fullyear = __fullyear - num;
+    			break;
+    		case this.MONTH:
+    			__offset_fullyear = parseInt(num/12);
+    			__offset_month = num%12;
+    			__fullyear = __fullyear - __offset_fullyear;
+    			__month = __month - __offset_month;
+    			break;
+    		case this.DAY:
+    			return new Date(date.getTime()-num*24*3600*1000);
+    		case this.HOUR:
+    			return new Date(date.getTime()-3600*num*1000);
+    		case this.MINUTE:
+    			return new Date(date.getTime()-60*num*1000);
+    		case this.SECOND:
+    			return new Date(date.getTime()-num*1000);
+    		default:
+          throw new Error('add() arg[1] is found!');
+    			break;
+    	}
+    	return new Date(__fullyear,__month,__date,__hour,__minute,__second);
+    }
+    
+    var __date = new DateUtils();
+    
+    module.exports = __date;
+  
+
+});

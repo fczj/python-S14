@@ -1,0 +1,110 @@
+define('modules/login/module.login', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var mdul = {
+  		name: 'login',
+  		type: 'basic',
+  
+  		_fn_event_bind: function(){
+  			if(this._event_binded){
+  				return;
+  			}
+  			RC.sub('global.user.sessionfail', this._fn_event_handler_sessionfail_proxy = $.proxy(this._fn_event_handler_sessionfail,this));
+  			$('body').on('click', '.J_Login', this._fn_event_handler_login_proxy = $.proxy(this._fn_event_handler_login, this));
+  			//RC.sub('page.user.login', this._fn_event_handler_login_proxy = $.proxy(this._fn_event_handler_login, this));
+  			RC.sub('socket.user.login.login', _fn_reset_status_proxy = $.proxy(this._fn_reset_status,this));
+  			this._event_binded = true;
+  		},
+  		_fn_event_unbind: function(){
+  			this._event_binded = false;
+  			RC.removeSub('global.user.sessionfail', this._fn_event_handler_sessionfail_proxy);
+  			//RC.removeSub('page.user.login', this._fn_event_handler_login_proxy);
+  			$('body').off('click', '.J_Login', this._fn_event_handler_login_proxy);
+  			RC.removeSub('socket.user.login.login', _fn_reset_status_proxy);
+  		},
+  		_status_prev_module: null,
+  		_status_prevent_close: false,
+  		_fn_reset_status: function(){
+  			//
+  			this._status_prevent_close = false;
+  			this._status_prev_module = null;
+  		},
+  		_fn_event_handler_sessionfail: function(){
+  			this._status_prevent_close = true;
+  			
+  			window.scrollTo(0,0);
+  			this._fn_event_handler_login({href: '#/login/login/'});
+  		},
+  		_fn_event_handler_login: function(e){ 
+  			if(e.preventDefault){
+  				e.preventDefault();
+  			}
+  			//var href = params.href,
+  			var href = $(e.target).attr('href'),
+  				name = href.replace(/^#(.+)/,'$1').replace(/\?.*/,'').replace(/^\/|\/$/g,'').replace('/','.'),
+  				prevModule = this._status_prev_module,
+  				module = this.getModule(name);
+  
+  			if(!prevModule){
+  				module.update();
+  				module.getContainer().show();
+  				this._status_prev_module = module;
+  			}else if(prevModule === module){
+  				if(this._status_prevent_close !== true){
+  					prevModule.getContainer().hide();
+  					this._status_prev_module = null;
+  				}
+  			}else{
+  				prevModule.getContainer().hide();
+  				module.update();
+  				module.getContainer().show();
+  				this._status_prev_module = module;
+  			}		
+  		},
+  		//login success event handler
+  
+  
+  		list: {},
+  		/** 
+  		 * @name define
+  		 * @params name {String} 模块名
+  		 * @params module {Object} 横块对象
+  		 */
+  		define: function(name, module){
+  			// this.list[name] = module;
+  		},
+  		getModule: function(name){
+  			// return this.list[name];
+  		},
+  		destroyModule: function(){
+  			// $.each(this.list, function(name, module){
+  			// 	module.destroy();
+  			// 	module = null;
+  			// });
+  			// //delete this.list;
+  			// this.list = {};
+  		},
+  		
+  		init: function(){
+  			// this._fn_event_bind();
+  		},
+  		getContainer: function(){},
+  		update: function(){},
+  		destroy: function(){ 
+  			// if(this._event_binded){
+  			// 	this._fn_event_unbind();
+  			// 	this.destroyModule();
+  			// 	this._status_prev_module = null;
+  			// 	this._status_prevent_close = false;
+  			// }
+  			// 	$('.mod-site-tool').show();
+  		}
+  	};
+  
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+
+});

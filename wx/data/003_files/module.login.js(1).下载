@@ -1,0 +1,109 @@
+define('modules/module.login', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var mdul = {
+  		name: 'login',
+  		type: 'basic',
+  
+  		_fn_event_bind: function(){
+  			if(this._event_binded){
+  				return;
+  			}
+  			$('body').on('click', '.J_Login', this._fn_event_handler_login_proxy = $.proxy(this._fn_event_handler_login, this));
+  			RC.sub('ajax.status.8', this._fn_event_handler_ajaxStstus8_proxy = $.proxy(this._fn_event_handler_ajaxStstus8, this));
+  			RC.sub('socket.user.login.login', this._fn_reset_status_proxy = $.proxy(this._fn_reset_status,this));
+  			this._event_binded = true;
+  		},
+  		_fn_event_unbind: function(){
+  			this._event_binded = false;
+  			RC.removeSub('ajax.status.8', this._fn_event_handler_ajaxStstus8_proxy);
+  			$('body').off('click', '.J_Login', this._fn_event_handler_login_proxy);
+  			RC.removeSub('socket.user.login.login', this._fn_reset_status_proxy);
+  		},
+  		_status_prev_module: null,
+  		_status_prevent_close: false,
+  		_fn_reset_status: function(){
+  			//
+  			this._status_prevent_close = false;
+  			this._status_prev_module = null;
+  		},
+  		_fn_event_handler_ajaxStstus8: function(){
+  			this._status_prevent_close = true;
+  			
+  			window.scrollTo(0,0);
+  			this._fn_ctrl_load_page('#/login/login/');
+  		},
+  		_fn_event_handler_login: function(e){ 
+  			e.preventDefault();
+  			this._fn_ctrl_load_page($(e.target).attr('href'));
+  		},
+  
+  
+  		_fn_ctrl_load_page: function(href){
+  			
+  			var name = href.replace(/^([^#]*)#(.+)/,'$2').replace(/\?.*/,'').replace(/^\/|\/$/g,'').replace('/','.'),
+  				prevModule = this._status_prev_module,
+  				module = this.getModule(name);
+  
+  			if(!prevModule){
+  				module.update();
+  				module.getContainer().show();
+  				this._status_prev_module = module;
+  			}else if(prevModule === module){
+  				if(this._status_prevent_close !== true){
+  					prevModule.getContainer().hide();
+  					this._status_prev_module = null;
+  				}
+  			}else{
+  				prevModule.getContainer().hide();
+  				module.update();
+  				module.getContainer().show();
+  				this._status_prev_module = module;
+  			}	
+  		},
+  		list: {},
+  		/** 
+  		 * @name define
+  		 * @params name {String} 模块名
+  		 * @params module {Object} 横块对象
+  		 */
+  		define: function(name, module){
+  			this.list[name] = module;
+  		},
+  		getModule: function(name){
+  			return this.list[name];
+  		},
+  		destroyModule: function(){
+  			$.each(this.list, function(name, module){
+  				module.destroy && module.destroy();
+  			});
+  			this.list = {};
+  		},
+  		
+  		init: function(){
+  			this._fn_event_bind();
+  		},
+  		getContainer: function(){},
+  		update: function(){},
+  		destroy: function(){
+  			this._fn_event_unbind();
+  			this._status_prev_module = null;
+  			this._status_prevent_close = false;
+  			this.destroyModule();
+  
+  		}
+  	};
+  	//注入
+  	mdul.define('login.login', RC.modules.get('login.login'));
+  	mdul.define('login.register', RC.modules.get('login.register'));
+  	mdul.define('login.find_password', RC.modules.get('login.find_password'));
+  
+  
+  
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+
+});

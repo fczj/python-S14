@@ -1,0 +1,95 @@
+define('conf/route.conf', function(require, exports, module) {
+
+  /**
+   * @author xukang
+   */
+  	var route_conf = {
+  		default_index: 'shop',
+  		cp_list: {
+  			'index': {
+  				title: "淘数据_电商卖家数据统计、行业资讯、电商招聘服务平台"
+  			},
+  			'surecharge':{
+  				'title': '确认订单信息'
+  			},
+  			'simplepay':{
+  				'title': '确认订单信息'
+  			},
+  			'recomcharge':{
+  				'title': '确认订单信息'
+  			},
+  			'seniorcharge':{
+  				'title': '确认订单信息'
+  			},
+  			'user': {
+  				default_index: 'index',
+  				app_list: {
+  					'index'        : {title: '淘数据_用户中心_首页'},
+  					'edit_info'    : {title: '淘数据_用户中心_修改个人信息'},
+  					'edit_password': {title: '淘数据_用户中心_修改密码'},
+  					'bind_email'   : {title: '淘数据_用户中心_绑定设置'},
+  					'recharge'     : {title: '淘数据_用户中心_账户充值'},
+  					'warnconfig'   : {title: '淘数据_用户中心_应用设置'},
+  					'order'        : {title: '淘数据_用户中心_套餐定购'},
+  					'message'      : {title: '淘数据_用户中心_消息提醒'}
+  				}
+  			},
+  			'mission': {
+  				default_index: 'new',
+  				app_list: {
+  					'new'  :  {title: '淘数据_新手任务'}
+  				}
+  			},
+  			'shop': {
+  				default_index: 'list',
+  				app_list: {
+  					'list': {title: '淘数据_店铺搜索'},
+  					'detail': {
+  							//title: '淘数据_店铺监控详情'
+  							default_index: 'index',
+  							classification_list: {
+  								'index': {title: '淘数据_店铺监控详情_店铺整体状况'},
+  								'traffic_analysis': {title: '淘数据_店铺监控详情_店铺流量分析'},
+  								'marketing': {title: '淘数据_店铺监控详情_店铺营销推广'},
+  								'item_analysis': {title: '淘数据_店铺监控详情_店铺宝贝分析'},
+  								'buyer_analysis': {title: '淘数据_店铺监控详情_买家分析'},
+  								'title_diagnosis': {title: '淘数据_店铺监控详情_标题诊断'}
+  							}
+  					},
+  					'compare': {title: '淘数据_店铺对比'},
+  					'item': {
+  						// title: '淘数据_店铺宝贝详情'
+  						default_index: 'index',
+  						classification_list: {
+  							'index': {title: '淘数据_店铺宝贝详情_宝贝基本状况'},
+  							'traffic_analysis': {title: '淘数据_店铺宝贝详情_宝贝流量分析'},
+  							'marketing': {title: '淘数据_店铺宝贝详情_宝贝营销推广'},
+  							'item_analysis': {title: '淘数据_店铺宝贝详情_宝贝上下架调价明细'}
+  						}
+  					},
+  					'temp_detail': {title: '淘数据_新增商家'}
+  				}
+  			},
+  			
+  			'item': {
+  				default_index: 'list',
+  				app_list: {
+  					'list': {title: '淘数据_价格监控'},
+  					'group': {title: '淘数据_价格监控组'}
+  				}
+  			},
+  			
+  			'about': {
+  				default_index: 'index',
+  				app_list: {
+  					'index': {title: '淘数据_关于我们'},
+  					'contact': {title: '淘数据_联系我们'},
+  					'job': {title: '淘数据_诚聘英才'},
+  					'notices': {title: '淘数据_法律声明'}
+  				}
+  			}
+  		}
+  	};
+  module.exports = route_conf;
+
+});

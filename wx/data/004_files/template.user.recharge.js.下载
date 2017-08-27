@@ -1,0 +1,191 @@
+define('modules/user/charge_detail/template.user.recharge', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	
+  	var temp = [
+  	'<div id="J_Module_User_Recharge_Tab_Container"><style>.ui-tab-hd ul.ui-tab-navs li.ui-tab-nav.current{border-right: 1px solid #eee;border-left: 1px solid #eee;border-top:none;}.ui-tab-hd ul.ui-tab-navs li.ui-tab-nav:hover span{color:#ff6600;}.ui-tab-hd ul.ui-tab-navs li.ui-tab-nav{position:relative;border-right:none;}ul.ui-tab-navs li.ui-tab-nav i{position:absolute;background-image:none;}ul.ui-tab-navs li.ui-tab-nav.current i{display:inline-block;background-color:#ff8939;height:3px;top:0px;left:0px;}.ui-table th, .ui-table td{border:none;}</style>',
+  				'</div>']
+  	var rechargeTab = [
+  		'<div class="ui-tab">',
+  			'<div class="ui-tab-hd" style="height:50px;border:none;border-left:1px solid #eee;border-bottom:1px solid #eee;">',
+  				'<ul class="ui-tab-navs">',
+  					'<a href="/index.html#/user/charge_detail/?recharge=&change=pageSize%3D10%26pageNo%3D1"><li class="ui-tab-nav J_Link" style="height:51px;border-left:0;border-right: 0;position: relative;color:#999999;line-height:48px;">',
+  					'<span>购买记录</span><i></i>',
+  						'</li></a>',
+  					'<li class="ui-tab-nav current" style="height:51px;color:#f60;line-height:48px;">',
+  					'<span>充值记录</span><i style="width: 105px;"></i>',
+  					'</li>',
+  				'</ul>',
+  			'</div>',
+  			'<div class="ui-tab-bd" style="padding:10px;">',
+  				'<div class="ui-tab-panels">',
+  					'<div class="ui-tab-panel nopadding" style="display:block;">',
+  						'<div class="ui-table-container J_List_Container">',
+  							'<table class="ui-table ui-table-striped ui-table-inbox tablefixed" style="clear: both;">',
+  								'<thead style="background-color:#f5f5f5;color:#333333;height:40px;">',
+  									'<th width="200">',
+  										'<div class="cell-box"><span class="ml_15">充值时间</span></div>',
+  									'</th>',
+  									'<th width="200">',
+  										'<div class="cell-box">支付宝订单号</div>',
+  									'</th>',
+  									'<th width="200">',
+  										'<div class="cell-box">充值金额</div>',
+  									'</th>',
+  									'<th width="">',
+  										'<div class="cell-box">充值方式</div>',
+  									'</th>',
+  									'<th width="150">',
+  										'<div class="cell-box">状态</div>',
+  									'</th>',
+  								'</thead>',
+  								'<tbody class="J_List"></tbody>',
+  							'</table>',
+  						'</div>',
+  						'<div class="pd_10 pr_0 clearfix">',
+  							 '<div class="pagination-pages f-rt">',
+  								 '<div class="pagination-page J_Pages"></div>',
+  							 '</div>',
+  						 '</div>',
+  					'</div>',
+  				'</div>',
+  			'</div>',
+  		'</div>'
+  	];
+  
+  	var rechargeList = [
+  		'<tr>',
+  			'<td>',
+  				'<div class="cell-box">',
+  					'<span class="ml_15">{{time}}</span>',
+  				'</div>',
+  			'</td>',
+  			'<td>',
+  				'<div class="cell-box">',
+  					'{{alipayTxnId}}',
+  				'</div>',
+  			'</td>',
+  			'<td>',
+  				'<div class="cell-box fm-arial">',
+  					'&#165;{{payment}}',
+  				'</div>',
+  			'</td>',
+  			'<td>',
+  				'<div class="cell-box">',
+  					'{{payName}}',
+  				'</div>',
+  			'</td>',
+  			'<td>',
+  				'<div class="cell-box">',
+  					'{{payStatus}}',
+  					'<a style="background:#c93e38; height:22px;line-height:22px;text-align:center;color:#fff;display:inline-block;padding:0 5px;border-radius:2px;" href="{{payUrl}}" act-if="payStatus ==  等待充值" class="ml_10 J_Charge_again" target="_blank">立即支付</a>',
+  				'</div>',
+  			'</td>',
+  		'</tr>'
+  	];
+  
+  	var changeTab = [
+  	'<div class="ui-tab">',
+  		'<div class="ui-tab-hd" style="height:50px;border:none;border-left:1px solid #eee;border-bottom:1px solid #eee;">',
+  			'<ul class="ui-tab-navs">',
+  				
+  				'<li class="ui-tab-nav current" style="height:51px;border-left: 0;position: relative;color:#f60;line-height:48px;">',
+  				'<span>购买记录</span><i style="width:105px;left:-1px;"></i>',
+  				'</li>',
+  				'<a href="/index.html#/user/charge_detail/?change=&recharge=pageSize%3D10%26pageNo%3D1"><li class="ui-tab-nav J_Link" style="color:#999999;height:48px;border-right:none;line-height:48px;" data-href="/index.html#/user/charge_detail/?change=&recharge=pageSize%3D10%26pageNo%3D1">',
+  					'<span>充值记录</span>',
+  					'</li></a>',
+  			'</ul>',
+  		'</div>',
+  		'<div class="ui-tab-bd" style="padding:10px;">',
+  			'<div class="ui-tab-panels">',
+  				'<div class="ui-tab-panel nopadding" style="display:block;">',
+  					'<div class="ui-table-container J_List_Container">',
+  						'<table class="ui-table ui-table-striped ui-table-inbox tablefixed" style="clear:both;">',
+  							'<thead style="background-color:#f5f5f5;color:#333333;height:40px;">',
+  								'<th width="33%">',
+  									'<div class="cell-box"><span class="ml_15">购买时间</span></div>',
+  								'</th>',
+  								'<th width="33%">',
+  									'<div class="cell-box">消费金额</div>',
+  								'</th>',
+  								'<th width="">',
+  									'<div class="cell-box">购买类型</div>',
+  								'</th>',
+  							'</thead>',
+  							'<tbody class="J_List">',
+  							'</tbody>',
+  						'</table>',
+  					'</div>',
+  					'<div class="pd_10 pr_0 clearfix" >',
+  						 '<div class="pagination-pages f-rt">',
+  							 '<div class="pagination-page J_Pages"></div>',
+  						 '</div>',
+  					 '</div>',
+  				'</div>',
+  			'</div>',
+  		'</div>',
+  	'</div>'	
+  	];
+  
+  	var changeList = [
+  		'<tr>',
+  			'<td>',
+  				'<div class="cell-box">',
+  					'<span class="ml_15">{{time}}</span>',
+  				'</div>',
+  			'</td>',
+  			'<td>',
+  				'<div class="cell-box fm-arial">',
+  					'&#165;{{payment}}',
+  				'</div>',
+  			'</td>',
+  			'<td>',
+  				'<div class="cell-box">',
+  					'{{payName}}',
+  				'</div>',
+  			'</td>',
+  		'</tr>'
+  	];
+  
+  	var emptyList = [
+  		'<tr style="background:#ffffff;">',
+  			'<td colspan="5">',
+  				'<div class="cell-box">',
+  					'<div class="ft-center pd_30">暂无数据</div>',
+  				'</div>',
+  			'</td>',
+  		'</tr>'
+  	];
+  
+  	var emptyList2 = [
+  		'<tr style="background:#ffffff;">',
+  			'<td colspan="3">',
+  				'<div class="cell-box">',
+  					'<div class="ft-center pd_30">暂无数据</div>',
+  				'</div>',
+  			'</td>',
+  		'</tr>'
+  	];
+  
+  
+  	RC.template.addTemp('template.user.charge_detail.info', temp);
+  
+  	RC.template.addTemp('template.user.recharge.recharge_tab', rechargeTab);
+  	RC.template.addTemp('template.user.recharge.recharge_tab_list', rechargeList);
+  	RC.template.addTemp('template.user.recharge.recharge_tab_list_empty', emptyList);
+  	RC.template.addTemp('template.user.recharge.recharge_tab_list_empty_2', emptyList2);
+  
+  	RC.template.addTemp('template.user.recharge.change_tab', changeTab);
+  	RC.template.addTemp('template.user.recharge.change_tab_list', changeList);
+  	RC.template.addTemp('template.user.recharge.change_tab_list_empty', emptyList);
+  
+  
+  
+  	
+  })(jQuery,RayCloud);
+
+});

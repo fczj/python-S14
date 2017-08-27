@@ -1,0 +1,845 @@
+define('controls/controls.mointor_price_pop', function(require, exports, module) {
+
+  ;(function($, RC) {
+  
+      var _API = function () {
+          var _default = {
+              name: ''
+              , params: {}
+              , success: function () {}
+              , fail: function () {}
+          };
+  
+          return function (config, is_dialog) {
+              config = $.extend(_default, config);
+  
+              if (!config.name) {
+                  return;
+              }
+  
+              if (is_dialog !== false) {
+                  is_dialog = true;
+              }
+              else {
+                  is_dialog = false;
+              }
+  
+  
+              API[config.name](config.params, config.success, config.fail, is_dialog, is_dialog, is_dialog);
+          }
+  
+      }();
+  
+      // 数据验证
+      var iVerify = {
+          number: function (number, type) {
+              if (number === undefined) {
+                  return false;
+              }
+  
+              number  = number + '';
+  
+              // 空字符串
+              if (number.replace(/\s/g, '') === '') {
+                  return true;
+              }
+  
+              if (type != 'int') {
+                  type = '';
+              }
+  
+              var reg = /^\s*(?:[1-9]\d*|0)\s*$/;
+  
+              // 在不转换为字符串情况下, 那么 reg.test(012) 也会通过.
+              number = number.replace(/\s/g, '');
+  
+              if (type == 'int') {
+                  return reg.test(number);
+              }
+              else {
+                  var num_arr = number.split('.');
+                  if (num_arr.length > 2) {
+                      return false;
+                  }
+                  else {
+                      var flag = true;
+                      $.each(num_arr, function (i, val) {
+                          if (!reg.test(val)) {
+                              flag = false;
+                              return false;
+                          }
+                      });
+                      return flag;
+                  }
+              }
+          }
+  
+          , price: function (val) {
+              return this.number(val);
+          }
+  
+          , phone: function (val) {
+              /* 号码段来自 http://t.cn/Rv6QvRr */
+              return /^(13[0-9]|14[57]|15[0-35-9]|17[6-8]|18[0-9])\d{8}|170[059]\d{7}$/.test(val);
+          }
+  
+          , email: function (val) {
+              var reg = /^([a-z\d]+[\._]?)*[a-z\d]+@([a-z\d]+[\._]?)*[a-z\d]+\.[a-z]{2,4}$/i;
+              return reg.test(val);
+          }
+      };
+  
+      // 小工具
+      var iUtil = {
+          isEmptyString: function (str) {
+              str = ('' + str).replace(/^\s+|\s+$/, '');
+  
+              if (str === '') {
+                  return true;
+              }
+              return false;
+          }
+      };
+  
+  
+  
+      var exports = {
+          name: 'controls.mointor_price_pop'
+  
+          , init: function () {
+              var _this = this;
+  
+              if (_this.initialized) {
+                  return;
+              }
+  
+              _this.container = $(HTML_TEMPLATE.join(''));
+              _this.container.find('input').iCheck();
+              _this.initialized = true;
+  
+              _this.eventBind();
+          }
+  
+          /**
+           * @param params
+           * {
+           *  itemId: '' // 宝贝id
+           *  , itemPrice: '' // 宝贝价格
+           *  , success: '' // 成功后的回调
+           * }
+           */
+          , show: function (params) {
+              var _this = this;
+              params = $.extend({
+                  itemId: ''
+  				, id: ''
+  				, groupId: ''
+                  , itemPrice: ''
+                  , warnScope: '-1'
+  				, itemImage: ''
+                  , success: function () {}
+              }, params);
+  
+              _this.opts = params;
+              _this.render(params);
+  
+              _this._dialog = $.dialog({
+                  title: '监控宝贝价格'
+                  , content: _this.container
+                  , padding: 0
+                  , fixed: false
+                  , okVal: '确定'
+                  , ok: function () {
+                      _this.save();
+                      return false;
+                  }
+              });
+          }
+  
+          , hide: function () {
+              this._dialog.close();
+          }
+  
+          , save: function () {
+              var _this = this;
+  
+              var lt_price = _this.container.find('[name=lt_price]').val()
+                  , gt_price = _this.container.find('[name=gt_price]').val();
+  
+  			if(!_this.container.find('[name=lt_price_]').prop('checked') && !_this.container.find('[name=gt_price_]').prop('checked')){
+  				RC.showWarn('请选择监控价格!', 1.5);
+                  return;
+  			}
+  			/*
+              if (iUtil.isEmptyString(lt_price) && iUtil.isEmptyString(gt_price)) {
+                  RC.showWarn('请填写监控价格!', 0.5);
+                  return;o m
+              }
+  
+              if (!iVerify.price(lt_price) && !iVerify.price(gt_price)) {
+                  RC.showWarn('请填写正确的监控价格!', 0.5);
+                  return;
+              }
+  			*/
+              if(lt_price>=gt_price&&_this.container.find('[name=lt_price_]').prop('checked')&&_this.container.find('[name=gt_price_]').prop('checked')){
+                   _this.container.find('[name=lt_price]').focus();
+                  RC.showWarn('宝贝报警规则配置不正确，请重新填写!', 1.5);
+                  return;
+              }
+  			if(_this.container.find('[name=lt_price_]').prop('checked')){
+  				if(!lt_price.match(/^\d+(\.\d+)?$/)){
+                      _this.container.find('[name=lt_price]').focus();
+  					RC.showWarn('宝贝报警规则配置不正确，请重新填写!', 1.5);
+  					return;
+  				}
+                  if(lt_price<=0){
+                      _this.container.find('[name=lt_price]').focus();
+                      RC.showWarn('宝贝报警规则配置不正确，请重新填写!', 1.5);
+                      return;
+                  }
+                   if((lt_price+"").indexOf(".")!=-1){
+                      lt_price = parseFloat(lt_price).toFixed(2)
+                  }
+  				lt_price = lt_price ? ('lt-' + lt_price) : '';
+  			}else{
+  				lt_price  = null;
+  			}
+  			if(_this.container.find('[name=gt_price_]').prop('checked')){
+  				if(!gt_price.match(/^\d+(\.\d+)?$/)){
+                      _this.container.find('[name=gt_price]').focus();
+  					 RC.showWarn('宝贝报警规则配置不正确，请重新填写!', 1.5);
+  					return;
+  				}
+                  if(gt_price<=0){
+                       _this.container.find('[name=gt_price]').focus();
+                      RC.showWarn('宝贝报警规则配置不正确，请重新填写!', 1.5);
+                      return;
+                  }
+                  if((gt_price+"").indexOf(".")!=-1){
+                      gt_price = parseFloat(gt_price).toFixed(2)
+                  }
+  				gt_price = gt_price ? ('gt-' + gt_price) : '';
+  			}else{
+  				gt_price  = null;
+  			}
+  			var price = [];
+  			if(lt_price){
+  				price.push(lt_price);
+  			}
+  			if(gt_price){
+  				price.push(gt_price);
+  			}
+              // var groupId = _this.container.find('.J_mointor-group').val();
+              // if (!groupId) {
+              //     RC.showWarn('请选择监控组!', 0.5);
+              //     return;
+              // }
+  
+              var warnType_doms = _this.container.find('[name=alarm-type]:checked');
+              if ($.inArray(warnType_doms.val(), ['0', '1', '3']) == -1) {
+                  RC.showWarn('请选择报警接收方式!', 1.5);
+                  return;
+              }
+              var i=0;
+              var warnType = 0,innerMesg,smsMesg,emailMesg;
+              for(;i<warnType_doms.size();i++){
+                  if($(warnType_doms[i]).val()==0){
+                      smsMesg = true;
+                  }else if($(warnType_doms[i]).val() == 1){
+                      emailMesg  =true;
+                  }else if($(warnType_doms[i]).val() == 3){
+                      innerMesg = true;
+                  }
+              }
+              warnType=0;
+              if(smsMesg){
+                  warnType=0;
+              }
+              if(emailMesg){
+                  warnType=1;
+              }
+              if(smsMesg&&emailMesg){
+                  warnType = 2;
+              }
+              if(innerMesg){
+                  warnType += 10;
+              }
+              if(!smsMesg&&!emailMesg&&innerMesg){
+                  warnType=3;
+              }
+              // alert(_this.container.find('[name=alarm-type]:checked').size());
+              // return;
+  
+              var warn_scop_arr = []
+                  , warn_scop_name_arr = [];
+  
+              $.each(_this.container.find('[name=alarm-receiver]:checked'), function (i, ele) {
+                  var $ele = $(ele);
+  				if($ele.val()){
+  					warn_scop_arr.push($ele.val());
+  					warn_scop_name_arr.push($ele.attr('data-name'));
+  				}
+              });
+  
+              if (!warn_scop_arr.length) {
+                  RC.showWarn('报警接收人不能为空!', 1.5);
+                  return;
+              }
+  
+              var params = {
+                  // groupId: groupId
+                  // , groupName: _this.container.find('.J_mointor-group option:selected').html(), 
+                  itemId: _this.opts.itemId
+  				, id: _this.opts.id
+  				, title: _this.opts.title
+  				// , groupId: _this.opts.groupId || _this.container.find('.J_mointor-group').val()
+  				, newGroupId: _this.container.find('.J_mointor-group').val()
+                  , warnType: warnType
+                  , warnRule: price.join(',')
+                  , warnScope: warn_scop_arr.join(',')
+                  , warnScopeNames: warn_scop_name_arr.join(',')
+  				, warnPrice: _this.container.find('.J_item-price').html()
+  				, itemImage: _this.container.find('.J_item-image').val()
+              };
+  
+  			var account = RC.user.get('account')
+  				, remain_sms = account.remainMessage
+  				, remain_email = account.remainEmail;
+  			
+  			var mointor_item = function () {
+  				RC.showLoading('正在保存监控信息，请稍等....');
+  				!_this._dialog.closed && _this._dialog.close();
+  				_API({
+  					name: _this.opts.type == 'modify' ? 'edit_mointor_item' : 'add_mointor_item'
+  					, params: params
+  					, success: function () {
+  						RC.showSuccess('恭喜您，监控成功！', 1);
+  						_this.opts.success(params);
+  					}
+  					, fail: function (json) {
+                          RC.clearShow();
+                          $.wDialog({
+                              title: '确认',
+                              id: 'Confirm',
+                              icon: 'confirm.gif',
+                              content: "<div style=\"display:table;\"><img style=\"margin-top:12px;margin-right:20px;height:50px;width:50px;\" src=\"http://cdn.maijia.com/www/www-old/resources/css/build/images/wDialog-warn.png\"><div style=\"display:table-cell; vertical-align:middle;margin-top:12px;width: 460px;\">"+(json.message || '监控失败，请重新尝试！')+"</div></div>",
+                              // content: ,
+                              ok: function(){
+                                  // mointor_item();
+                              },
+                              okVal: '我知道了',
+                              cancel: null
+                          });
+  						// RC.showFail(json.message || '监控失败，请重新尝试！');
+  					}
+  				}, false);
+  			}
+  			
+  			if ((warnType == '0' && !remain_sms)
+  				|| (warnType == '1' && !remain_email)
+  				|| (warnType == '2' && !(remain_sms && remain_email))) {
+  				
+  				!_this._dialog.closed && _this._dialog.close();
+  				$.wDialog({
+  					title: '确认',
+  					id: 'Confirm',
+  					icon: 'confirm.gif',
+                      content: "<div style=\"display:table;\"><img style=\"margin-top:12px;margin-right:20px;height:50px;width:50px;\" src=\"http://cdn.maijia.com/www/www-old/resources/css/build/images/wDialog-warn.png\"><div style=\"display:table-cell; vertical-align:middle;margin-top:12px;width: 460px;\">"+'当前账户没有兑换短信/邮件提醒服务，将无法收到报警信息。<br />报警信息可以在 个人中心 — 我监控的宝贝 中查询'+"</div></div>",
+  					// content: ,
+  					ok: function(){
+  						mointor_item();
+  					},
+  					okVal: '我知道了',
+  					cancel: null
+  				});
+  			}
+  			else {
+  				mointor_item();
+  			}
+          }
+  
+          , render: function (params) {
+              var _this = this,
+                  mointor_num_map = {
+                      'normal': 5
+                      , 'primary': 50
+                      , 'senior': 100
+                      , 'luxury': 500
+                  },
+                  level = RC.user.get('__level')||RC.user.get('level');
+              _this.init();
+  			API.user_item_all_list({},function(data){
+  			    sx = ((mointor_num_map[level]-data.data.total)>0?(mointor_num_map[level]-data.data.total):0);
+      			var tips = {
+      				normal: '您是免费版用户，可监控5个宝贝价格，还可以监控<strong class="fc-red ft-bold">'+ sx +'</strong>个。[<a class="fc-red J_close_btn" href="#/user/index/?type=item" target="_blank">查看已监控宝贝</a>]'
+      				, primary: '您是标准版用户，当前账户已定购标准监控版本，可监控50个宝贝价格，还可以监控<strong class="fc-red ft-bold">'+ sx +'</strong>个。<br/>[<a class="fc-red J_close_btn" href="#/user/index/?type=item" target="_blank">查看已监控宝贝</a>]'
+      				, senior: '您是高级版用户，可监控100个宝贝价格，还可以监控<strong class="fc-red ft-bold">'+ sx +'</strong>个。<br/>[<a class="fc-red J_close_btn" href="#/user/index/?type=item" target="_blank">查看已监控宝贝</a>]'
+                      , luxury: '您是豪华版用户，可监控500个宝贝价格，还可以监控<strong class="fc-red ft-bold">'+ sx +'</strong>个。[<a class="fc-red J_close_btn" href="#/user/index/?type=item" target="_blank">查看已监控宝贝</a>]'
+      			}[RC.user.get('__level')||RC.user.get('level')];
+      			_this.container.find('.J_mointor-tip').html(tips);
+      			_this.container.find('.J_remain-sms-num').html(RC.user.get('account').remainMessage);
+      			_this.container.find('.J_remain-email-num').html(RC.user.get('account').remainEmail);
+      			_this.container.find(".J_close_btn").off('click');
+                  _this.container.find(".J_close_btn").on('click',function(){
+                      _this.hide();
+                  });
+                  _this._fn_ctrl_update_item_price(params.itemPrice);
+      			_this._fn_ctrl_update_item_image(params.itemImage);
+                  _this._fn_ctrl_update_warn_rule_price(params.lt_price, params.gt_price);
+                  // _this._fn_ctrl_update_mointor_group(params.groupId);
+                  _this._fn_ctrl_update_warn_type(params.warnType);
+                  _this._fn_ctrl_update_receiver(params.warnScope, params.warnScopeNames);
+                  // alert(JSON.stringify(account));
+                   _this.container.find(".J_self_name").text(RC.user.get('nick')||'');
+                   _this.container.find(".J_self_name_checkbox").attr("data-name",RC.user.get('nick')||'');
+               });
+  
+              this._fn_ctrl_updata_receiver_list();
+          }
+  
+          , eventBind: function () {
+              var _this = this;
+              _this.container.find(".J_close_btn").off('click');
+              _this.container.find(".J_close_btn").on('click',function(){
+                  _this.hide();
+              });
+              _this.container.on('click', function (e) {
+                  var $target = $(e.target);
+  
+                  //// 控制 添加监控分组 显示
+                  // if ($target.hasClass('J_mointor-group-box-trigger')) {
+                  //     var txt = $target.html();
+  
+                  //     if (txt == '重新获取') {
+                  //         _this._fn_ctrl_update_mointor_group();
+                  //     }
+                  //     else {
+                  //         $target.hide();
+                  //         $('.J_add-mointor-group-box', _this.container)
+                  //             .show()
+                  //             .find('input').val('');
+                  //     }
+  
+                  // }
+  
+                  // // 保存监控分组
+                  // else if ($target.hasClass('J_save-mointor-group-btn')) {
+                  //     var name = $('.J_mointor-group-ipt', _this.container).val(),
+                  //         flag = true;
+  
+                  //     $.each($('.J_mointor-group option', _this.container), function (i, o) {
+                  //         if (o.innerText === name) {
+                  //             flag = false;
+                  //             return false;
+                  //         }
+                  //     });
+  
+                  //     if (!flag) {
+                  //         RC.showWarn('该监控组已存在，请修改！', 1);
+                  //     }
+                  //     else {
+                  //         API['user_monitor_item_group_list']({
+                  //         }, function(json){
+                  //             var _data = json.data;
+                  //             for(var i=0,length=_data.list?_data.list.length:0;i<length;i++){
+                  //                 if(name==_data.list[i].name){
+                  //                         RC.showWarn('该监控组已存在，请修改！', 1);
+                  //                         return;
+                  //                 }
+                  //             }
+                  //              _this._fn_ctrl_add_mointor_group(name);
+                  //         }, function(json){RC.showWarn(json.message, 1);
+                  //                         return;});
+                  //     }
+                  // }
+  
+                  // // 其它联系人弹框
+                  // else
+                   if ($target.hasClass('J_slt-receiver-btn')) {
+                      var btnTxt = $target.html()
+                          , showType = btnTxt == '选择' ? 'show' : 'hide';
+                      $('.J_receiver-list', _this.container)[showType]();
+                      $target.html(btnTxt == '选择' ? '隐藏' : '选择');
+  
+                      // 渲染列表
+                      _this._fn_ctrl_updata_receiver_list();
+                       _this._fn_reset_dialog(showType);
+                  }
+  
+                  // 添加联系人
+                  else if ($target.hasClass('J_add-receiver-btn')) {
+                      var add_remind = RC.controls.get('controls.add_receiver_pop');
+                      add_remind.add({
+                          success: function () {
+  							_this.container.find('.J_receiver-list tbody').attr('data-is-load', 'false');
+                              _this._fn_ctrl_updata_receiver_list();
+                          }
+                      });
+                  }
+  
+                  // 重新获取联系人
+                  else if ($target.hasClass('J_reload-receiver-btn')) {
+                      _this._fn_ctrl_updata_receiver_list();
+                  }
+              });
+  
+              // 全选
+              _this.container.find('.J_receiver-list input[name=all]').on('ifClicked', function () {
+                  var check = this.checked ? 'uncheck' : 'check';
+                  setTimeout(function () {
+                      _this.container.find('.J_receiver-list tbody input').iCheck(check);
+                      _this._fn_evt_update_receiver();
+                  }, 0);
+              });
+  
+          }
+  
+  
+          // 更新商品价格
+          , _fn_ctrl_update_item_price: function (price) {
+              this.container.find('.J_item-price').html(price);
+          }
+  		// 图片， 这里先也传过去
+  		,_fn_ctrl_update_item_image: function(image){
+  			this.container.find('.J_item-image').val(image);
+  		}
+  
+          // 更新报警价格
+          , _fn_ctrl_update_warn_rule_price: function (lt_price, gt_price) {
+              var $alarm_price = this.container.find('.J_alarm-price');
+              $alarm_price.filter('[name=lt_price]').val(lt_price || '');
+              $alarm_price.filter('[name=gt_price]').val(gt_price || '');
+  			if(lt_price){
+  				this.container.find('input[name="lt_price_"]').prop('checked',true).iCheck();
+  			}
+  			if(gt_price){
+  				this.container.find('input[name="gt_price_"]').prop('checked',true).iCheck();
+  			}
+          }
+  
+  
+          // 更新监控组
+          // , _fn_ctrl_update_mointor_group: function (groupId) {
+          //     var _this = this
+          //         , $slt = _this.container.find('.J_mointor-group')
+          //         , $trigger = _this.container.find('.J_mointor-group-box-trigger')
+          //         , $addBox = _this.container.find('.J_add-mointor-group-box')
+          //         , $prev = $slt.prev();
+  
+          //     if (!$prev.length) {
+          //         $slt.before('<span class="fc-orange" style="line-height: 30px;">正获取监控组...</span>');
+          //         $prev = $slt.prev();
+          //     }
+  
+          //     _API({
+          //         name:'user_monitor_item_group_list'
+          //         , success: function (json) {
+          //             var items = json.data.list;
+          //             if (!items.length) {
+          //                 $slt.hide();
+          //                 $prev.html('没有监控组，请点击新增');
+          //             }
+          //             else {
+          //                 var html = '';
+          //                 $.each(items, function (i, o) {
+          //                     html += '<option value="' + o.id + '">' + o.name + '</option>';
+          //                 });
+          //                 $slt.html(html).iSelect();
+  
+          //                 if (groupId) {
+          //                     $slt.val(groupId).trigger('change');
+          //                 }
+  
+          //                 $prev.hide();
+          //             }
+  
+          //             $addBox.hide();
+          //         }
+          //         , fail: function () {
+          //             $slt.hide();
+          //             $prev.html('获取监控组失败!');
+          //             $trigger.html('重新获取');
+          //             $addBox.hide();
+          //         }
+          //     }, false);
+          // }
+  
+          , _fn_ctrl_add_mointor_group: function (name) {
+              var _this = this;
+  
+              if (!name.replace(/\s/g, '').length) {
+                  RC.showWarn('监控组名称不可为空！', 0.5);
+                  return;
+              }
+  
+  			if(name.replace(/[^\x00-\xff]/g, "--").length>20){
+  				RC.showWarn('监控组名称长度超出限制！', 0.5);
+                  return;
+  			}
+  
+  			/*
+              if (/[^\w\u4e00-\u9fa5]/.test(name)) {
+                  RC.showWarn('监控组名含有非法字符，请修改！', 1);
+                  return;
+              }
+  			*/
+  			RC.showLoading('正在添加监控组，请稍候...');
+  			_API({
+  				name: 'add_mointor_group'
+  				, params: {
+  					name: name
+  				}
+  				, success: function (json) {
+  					RC.showSuccess('监控组添加成功！', 1);
+  					_this.container.find('.J_mointor-group')
+  						.append('<option value="' + json.data.id + '">' + name + '</option>')
+  						.val(json.data.id)
+  						.iSelect()
+  						.prev().hide();
+  
+  					_this.container.find('.J_mointor-group').iSelect('update');
+  					_this.container.find('.J_add-mointor-group-box').hide();
+  					_this.container.find('.J_mointor-group-box-trigger').show();
+  				}
+  				, fail: function () {}
+  			}, false);
+          }
+  
+          // 更新报警方式
+          , _fn_ctrl_update_warn_type: function (type) {
+              var type_arr = ['0', '1', '2'];
+  
+              if ($.inArray(type, type_arr) == -1) {
+                  type = '2';
+              }
+  
+              this.container.find('[name=alarm-type]')
+                  .iCheck('uncheck')
+                  .filter('[value=' + type + ']')
+                  .iCheck('check');
+          }
+  
+  
+  
+          // 更新接收人信息
+          , _fn_ctrl_update_receiver: function (val, name) {
+              val = val || '';
+              name = name || '';
+  
+              var val_arr = val.split(',')
+                  , name_arr = name.split(',')
+                  , index = $.inArray('-1', val_arr);
+  
+              // this.container.find('[name="alarm-receiver"]').iCheck('uncheck');
+  
+              if (index != -1) {
+                  this.container.find('.J_default-receiver-ipt').iCheck('check')
+                      .val('-1')
+                      .attr('data-name', name_arr[index]);
+  				// hack nick
+  				var nick = $('#header span.J_user-nick').text();
+                  this.container.find('.J_default-receiver').html(nick || name_arr[index]);
+                  val_arr.splice(index, 1);
+                  name_arr.splice(index, 1);
+              }
+  
+              if (val_arr.length) {
+                  this.container.find('.J_other-receiver-ipt').iCheck('check')
+                      .val(val_arr.join(','))
+                      .attr('data-name', name_arr.join(','));
+                  this.container.find('.J_other-receiver').html(name_arr.join(','));
+              }
+          }
+  
+          , _fn_ctrl_updata_receiver_list: function () {
+              // 
+              var _this = this
+                  , $tbody = _this.container.find('.J_other-receiver')
+                  , template = [
+                  '<lable style="margin-right:10px;"><input type="checkbox" class="J_other-receiver-ipt" name="alarm-receiver" value="{{id}}" data-name="{{name}}"/><span style="position:relative;top:1px;">{{name}}</span></lable>'
+                  ].join('');
+  
+              _this._fn_ctrl_updata_receiver_list = function () {
+                  if ($tbody.attr('data-is-load') == 'true') {
+                      return;
+                  }
+  
+                  $tbody.html('正在获取中...');
+                  $tbody.attr('data-is-load', 'true');
+  
+                  _API({
+                      name: 'get_remind_list'
+  
+                      , success: function (json) {
+                          var data = json.data
+                              , html = '';
+  
+                          if (!data.length) {
+                              $tbody.attr('data-is-load', 'false');
+                              html = '没有其他联系人';
+                          }
+                          else {
+  							//
+  							var warn_scop_arr = []
+  								, warn_scop_name_arr = [];
+  
+  							_this.container.find('[name=alarm-receiver]:checked')
+  
+  							var warnScopeList;
+  							if(_this.container.find('[name=alarm-receiver]').eq(1).prop('checked')){
+  								warnScopeList = _this.container.find('[name=alarm-receiver]').eq(1).val();
+  							}
+  							warnScopeList = (warnScopeList || _this.opts && _this.opts.warnScope || '').split(',');
+                              $.each(data, function (i, o) {
+  								
+  								o.checked = $.inArray(o.id+'', warnScopeList) !== -1 ? 'checked' : '';
+                                  html += template.replace(/{{(\w+)}}/g, function (str, key) {
+                                      if (o.hasOwnProperty(key)) {
+                                          return o[key];
+                                      }
+                                  });
+                              });
+                          }
+  
+                          $tbody.html(html)
+                              .find('input')
+                              .iCheck()
+                              .on('ifClicked', function () {
+                                  // setTimeout(function () {
+                                  //     _this._fn_evt_update_receiver();
+                                  // }, 0);
+                              });
+                      }
+  
+                      , fail: function () {
+                          $body.attr('data-is-load', 'false')
+                              .html('<tr><td colspan="5"><div class="pd_20 ft-center fc-red">获取联系人失败，请重试！<span class="J_reload-receiver-btn btn ml_10">重新获取</span></div></td></tr>');
+                      }
+  
+                  }, false);
+              };
+  
+              _this._fn_ctrl_updata_receiver_list();
+          },
+          _fn_reset_dialog:function(showType){
+              if(showType=='show'){
+                  $('.mointor-price-pop').width("1200");
+                  var left_offset = document.body.clientWidth/2-600;
+                  left_offset = left_offset<0?50:left_offset
+                 $('.ui-lhgdialog').parent().css("left",left_offset+"px");
+              }else{
+                   $('.mointor-price-pop').width("600");
+                    $('.ui-lhgdialog').parent().css("left",document.body.clientWidth/2-300+"px");
+              }
+              
+              // $('#footer').
+          }
+          , _fn_evt_update_receiver: function () {
+              var _this = this
+                  , val_arr = []
+                  , name_arr = []
+                  , $tbody = _this.container.find('.J_receiver-list tbody')
+                  , $allIpt = $tbody.find('input')
+                  , $checkedIpt = $tbody.find('input:checked')
+                  , $choiseAll = _this.container.find('.J_receiver-list thead input');
+  
+              $.each($checkedIpt, function (i, o) {
+                  var $o = $(o);
+                  val_arr.push($o.attr('value'));
+                  name_arr.push($o.attr('data-name'));
+              });
+  
+              if ($checkedIpt.length == $allIpt.length) {
+                  $choiseAll.iCheck('check');
+              }
+              else {
+                  $choiseAll.iCheck('uncheck');
+              }
+  
+              this._fn_ctrl_update_receiver(val_arr.join(','), name_arr.join(','));
+          }
+  
+      };
+  
+      RC.controls.define(exports.name, exports);
+  
+  	
+  	var HTML_TEMPLATE = [
+  		'<div class="mointor-price-pop" style=" width: 600px;">',
+  			'<style>.mointor-price-pop .rule td {padding: 7px 0;}</style>',
+  			'<table><tr><td valign="top">',
+              '<div class="J_mointor-tip pd_10 fc_666" style=" background: #FFF3DB;"></div>',
+  			'<table class="rule tablefixed ft_14" style=" width: 100%;">',
+  				'<tr>',
+  				'<td width="120" align="right">宝贝当前价格：</td>',
+  				'<td class="fm-yahei">￥<span class="J_item-price ft_18"></span><input type="hidden" class="J_item-image" value=""></td>',
+  			 '</tr>',
+  			 '<tr>',
+  				'<td align="right" valign="top"><div class="mt_3">宝贝报警规则：</div></td>',
+                  '<td>',
+                      '<div class="mb_10"><label class="mr_5"><input type="checkbox" name="lt_price_" value="0" /> 小于</label> <input type="text" class="J_alarm-price w70 ft-center" name="lt_price" /> 元</div>',
+                      '<div><label class="mr_5"><input type="checkbox" name="gt_price_" value="0" /> 大于</label> <input type="text" class="J_alarm-price w70 ft-center" name="gt_price" /> 元</div>',
+                  '</td>',
+  			 '</tr>',
+  			 // '<tr>',
+  				// '<td align="right">添加到监控组：</td>',
+  				// '<td>',
+  				// 	'<div class="f-lt">',
+  				// 	'<select class="J_mointor-group" data-zIndex="99999" style="display: none;"></select>',
+  				// 	'<span class="J_mointor-group-box-trigger btn ml_10">新增</span>',
+  				//  '</div>',
+  				//  '<div class="J_add-mointor-group-box f-lt ml_10" style="display: none;">',
+  				// 	'<input type="text" class="J_mointor-group-ipt w150">',
+  				// 	'<span class="J_save-mointor-group-btn btn btn-success ml_5">保存</span>',
+  				//  '</div>',
+  				// '</td>',
+  			 // '</tr>',
+  			 '<tr>',
+  				'<td align="right" valign="top">宝贝报警方式：</td>',
+  				'<td>',
+  					'<div class="mb_10">',
+  						'<label><input type="checkbox" name="alarm-type" value="0" /> 短信</label>',
+  						'<span class="fc_999 ml_10 ft_12">短信报警剩余：<strong class="J_remain-sms-num fc-red">0</strong> 条<a class="fc-red ml_10 J_close_btn" href="#/user/warnconfig/">[兑换]</a></span>',
+  					'</div>',
+  					'<div class="mb_10">',
+  						'<label><input type="checkbox" name="alarm-type" value="1" /> 邮件</label>',
+  						'<span class="fc_999 ml_10 ft_12">邮件报警剩余：<strong class="J_remain-email-num fc-red">0</strong> 封<a class="fc-red ml_10 J_close_btn" href="#/user/warnconfig/">[兑换]</a></span>',
+  					'</div>',
+                      '<div class="mb_10">',
+                          '<label class="fc_999"><input type="checkbox" name="alarm-type" value="3" /> 站内系统消息提醒（免费）</label>',
+                        
+                      '</div>',
+  					// '<div>',
+  					// 	'<label><input type="radio" name="alarm-type" value="2" checked /> 短信 + 邮件</label>',
+  					// '</div>',
+  				'</td>',
+  			 '</tr>',
+  			 '<tr class="J_receiver-tr">',
+  				'<td align="right" valign="top">报警接收人：</td>',
+  				'<td>',
+  					'<div class="mb_10">',
+  					'<label>',
+  						'<input class="J_default-receiver-ipt J_self_name_checkbox" type="checkbox" name="alarm-receiver" value="-1" /> 当前账号：<span class="J_default-receiver J_self_name"></span>',
+  					'</label>',
+  				 '</div>',
+  				 '<div class="clearfix">',
+  					// '<label class="mr_15">',
+  						'其他账号：<a class="fc-red J_close_btn" href="#/user/warnconfig/?type=list&tabtype=num">[管理联系人]</a><br/><span class="J_other-receiver"></span>',
+  					// '</label>',
+  				 '</div>',
+                   '<div style="margin-top:10px;">',
+                   // '<span class="J_slt-receiver-btn btn margin-left:50px;">选择</span>',
+                   //    '<span class="J_add-receiver-btn btn ml_10 mr_30">新增</span>',
+                   '</div>',
+  				'</td>',
+  			'</tr>',
+  			'</table>',
+              '</td><td valign="top">',
+              '</td></tr></table>',
+              '</div>'
+  	]
+  
+  })(jQuery, RayCloud);
+  
+
+});

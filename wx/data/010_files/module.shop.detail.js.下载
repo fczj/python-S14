@@ -1,0 +1,739 @@
+define('modules/shop/detail/module.shop.detail', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var Shop        = RC.controls.get('control.shop.model'),
+  		querystring = RC.controls.get('control.querystring'),
+  		monitor_shop_num = RC.user.get('monitor_shop_num');
+  	var tip_html = '<div class="help_tip_open" ><div class="help_tip_body" style="display: block;position: absolute;z-index:80;"><p style="display:inline-block;">下拉可查看演示店铺数据<span class="J_tip_html_span_close" style="margin-left:18px;cursor:pointer;">×</span></p><div class="arrow_top" style="margin-left:0px;display:block;margin-left:0px\\0;border-color:rgba(0,0,0,0.75) transparent transparent transparent;position: relative;"></div></div></div>';
+  	var mdul = {
+  		name: 'shop.detail',
+  		depend: 'shop',
+  		_elem_root: '#container',
+  		_old_hashs:{},
+  		_elem_template_name: 'template.shop.detail',
+  		_elem_template_title_name: 'template.shop.detail_title',
+  		_status_is_init: false,
+  		init: function(hashs){
+  			var _this = this;
+  			hashs = hashs || this._fn_get_cur_hashs();
+  			// 事件监听，实现update/disable
+  			RC.sub('raycloud.pages.hashchange', this._fn_event_handler_init_proxy = $.proxy(function(hash){
+  				this._init(hash);
+  			if(_this._old_hashs&&hash&&_this._old_hashs.root==hash.root&&_this._old_hashs.app==hash.app&&hash.classification==_this._old_hashs.classification&&hash.type==_this._old_hashs.type){
+  
+  			}else{
+  				if(window)
+  					window.scroll(0,0);
+  			}
+  			_this._old_hashs=JSON.parse(JSON.stringify(hash));
+  
+  			},this));
+  			// 页面从别的root进来，不会触发hashchange事件， 手动调用一次
+  			this._init(hashs);
+  			this._listenToWindow();
+  		},
+  		// 监听页面刷新或关闭事件
+  		_listenToWindow:function(){
+  			window.onbeforeunload = function(){
+  
+  			};
+  			window.onbeforeunload();
+  		},
+  		_init: function(hashs){
+  			hashs = hashs || {};
+  			// 不是当前app， 不理彩
+  			if(hashs.app != 'detail' || this._status_is_init){
+  				return;
+  			}
+  			// 没有参数ID， 只是跳转
+  			if(!RC.pages.getHashKey('id')){
+  				RC.pages.goPage('#/index/');
+  				return;
+  			}
+  			// 标识已执行_init
+  			// todo: 在上级模块监听hashschange来执行该模块的update
+  			this._status_is_init = true;
+  
+  			if(this._status_is_active !== true){
+  				this.update(_.extend({},hashs));
+  			}
+  		},
+  		_fn_dom_render: function(hashs){
+  			if(this.$el){
+  				return;
+  			}
+  			//_status_shop_nav 默认为0资源
+  			this.$el = $(RC.template.get(this._elem_template_name, {_id:hashs.id,_status_shop_nav:1})).appendTo(this._elem_root);
+  			this._fn_event_bind();
+  		},
+  		_fn_dom_update: function(data, hashs){
+  			data._status_shop_nav = 1;
+  			data._classification = hashs.classification || 'index';
+  			data._id = hashs.id;
+  			data._hash = this._fn_get_cur_hashs_string();
+  			//根据_status_shop_nav值重新生成.J_Shop_Detail_Global的html代码
+  			this.$el.find('#menu_shop_item_panel').html(RC.template.get_node('if','_status_shop_nav',data,RC.template.get(this._elem_template_name)), 0);
+  			//_elem_template_title_name
+  			this.$el.find('#J_shop-pin-bar').html(RC.template.get_node('if','_status_shop_nav',data,RC.template.get(this._elem_template_title_name)), 1);
+  			// this.$el.find('#menu_shop_item_panel').html(RC.template.get(this._elem_template_name, data));
+  			if(data.shopStatus==0){
+                  this.$el.find('#J_shop-pin-bar').append('<div class="J_shop_close_tips" style="font-size:14px;line-height:45px;height:45px;width:960px;background:#eee;text-align:center;color:#999999;font-family:微软雅黑;position:relative;top:10px;">当前店铺已被关闭，暂无近期数据</div>');
+              }
+  
+  			// this.$el.find('#J_shop-pin-bar').next() .each(function(){
+  			// 	if($(this).text()==''){
+  			// 		$(this).remove();
+  			// 	}
+  			// });
+  			if(document.cookie.indexOf("__hide_shop_tip")==-1){
+  				$(".J_shop_name_tip").prepend(tip_html);
+  				$(".J_tip_html_span_close").on("click",function(){
+  					$(".J_shop_name_tip").find(".help_tip_open").remove();
+  					var exp = new Date();
+  					exp.setTime(exp.getTime() + 30*24*60*60*1000);
+  					document.cookie = "__hide_shop_tip = 1; expires="+ exp.toGMTString();
+  
+  				});
+  			}
+  			this._fn_event_bind_menu();
+  			this._fn_dom_update_current(hashs);
+  			this._fn_get_shop_like(hashs.id);
+  			// this.$el.find('.J_Shop_Detail_Global').html(RC.template.get_node('if','_status_shop_nav',data,RC.template.get(this._elem_template_name)), 0);
+  		},
+  		_fn_get_shop_like:function(id){
+  			if (!RC.user.get('_login_status')) {
+  				return;
+  			}
+  			API._fn_get_shop_like(id,function(data){
+  				var shoplist = "";
+  				var list = data.data.list;
+  				if(!list || list.length==0){
+  					return;
+  				}
+  				// list = [{id:"",name:"天然名妆 英国NYR TBS有机精油护肤馆"},{id:"",name:"天然名妆 英国NYR TBS有机精油护肤馆"},{id:"",name:"天然名妆 英国NYR TBS有机精油护肤馆"}];
+  				for(var i=0;i<3&&i<list.length;i++){
+  					shoplist+='<a title="'+list[i].name+'" style="display: inline-block;line-height:46px;height:46px;max-width:145px;white-space:nowrap;text-overflow:ellipsis; -o-text-overflow:ellipsis;overflow: hidden;margin-right: 10px;font-size: 12px;color: #fff;" target="_blank" href="/index.html#/shop/detail/?id='+list[i].id+'">'+list[i].name+'</a>';
+  				}
+  				$('._shop_like_data_div').html("<span style='width: 90px;overflow: hidden;display: inline-block;line-height:46px;height:46px;'>数据相似店铺：</span>"+shoplist);
+  			});
+  		},
+  		_fn_dom_update_current: function(hashs, oldHashs){
+  			//处理当前点击,没有子菜单的就是本身
+  			if(hashs.root&&hashs.app&&hashs.classification){
+  			var now_url = hashs.root+"/"+hashs.app+"/"+hashs.classification;
+  			if(hashs.classification=='title_optimize'){
+  				now_url = hashs.root+"/"+hashs.app+"/title_diagnosis";
+  			}
+  			if(hashs.type){
+  				now_url+="/?type="+hashs.type;
+  			}
+  			if(!this.$el){
+  				return;
+  			}
+  			if(!this.$el.find('#menu_shop_item_panel')){
+  				return;
+  			}
+  
+  			if(now_url.indexOf("detail/item_analysis")==-1&&now_url.indexOf("detail/marketing")==-1){
+  				var _pa_index = now_url.indexOf("?");
+  				if(_pa_index!=-1){
+  					now_url = now_url.substr(0,_pa_index);
+  				}
+  			}
+  			this.$el.find('#menu_shop_item_panel p').removeClass("currentsub");
+  			this.$el.find('#menu_shop_item_panel p').removeClass("current");
+  			this.$el.find('#menu_shop_item_panel').find("a").each(function(){
+  				var this_a = $(this);
+  				if(this_a.attr("href")&&(this_a.attr("href").indexOf(now_url)!=-1)){
+  					if(this_a.parent().parent().hasClass("sub")){
+  						this_a.parent().addClass("currentsub");
+  					}else{
+  						this_a.parent().addClass("current");
+  						// this_a.parent().removeClass("current");
+  					}
+  					return false;
+  				}
+  			});
+  			}
+  		},
+  
+  		li_img:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAICAIAAAHNYULHAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA4ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpjN2JiZjFmMC1hYjAyLTQyMWItOGY1NC1hMTIyMWE0Y2NjY2UiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6QUQ1Q0Y0MzY2MjgxMTFFNTkwNjlDNUNDNEExNzU1NUUiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6QUQ1Q0Y0MzU2MjgxMTFFNTkwNjlDNUNDNEExNzU1NUUiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTUgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDozYjZhYzNiMy0xOTVhLTQ4NzktODliZi1jYTVmMDFkZDdjZDYiIHN0UmVmOmRvY3VtZW50SUQ9ImFkb2JlOmRvY2lkOnBob3Rvc2hvcDowYjIyYjA4YS05NjdjLTExNzgtOTYxOS05NmRiNWNiNjY1MjIiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz6ed4wyAAAAV0lEQVR42mIoKCgACCCG////AwQQA5AGUgABxAhiMjAwMYABQABBBSGABShQWFgIkQAIIIQMTClCEwMDQilAgDGCjGdg6O/vZ0ACTAzYAHZRFgiFsBkMAHEFJDei9XsiAAAAAElFTkSuQmCC",
+  
+  		_fn_dom_update_monitor_list: function(data){
+  			var _this = this;
+  			var html = '', id = this._status_hashs.id;
+  			//加入几个免费的店铺
+  			if(data){
+  				$.each(data, function (i, o) {
+  					// if(o.id != id){
+  						html += '<li style="height:25px;"><img style="  margin-top: 5px;margin-left: 15px;" src="'+_this.li_img+'" wiidth="7" height"8"><a style="display:inline-block;width:140px;color:#333;" href="#/shop/detail/?id=' + o.id + '">' + o.name + '</a></li>';
+  					// }
+  				});
+  			}else{
+  				html += '<li style="height:25px;"><a href="javascript:;" onclick="javascript:RayCloud.pub(\'global.login.pop\');" style="display:inline;" class="fc-orange">登录</a> 查看已监控店铺</li>';
+  			}
+  			var html_open='';
+  			var Shop = RC.controls.get('control.shop.model');
+  			for(var i=0,length=Shop.open_shop_list.length;i<length;i++){
+  				var o=Shop.open_shop_list[i];
+  				if(o.hide){
+  					continue;
+  				}
+  				html_open += '<li style="height:25px;"><img style="margin-top: 5px;margin-left: 15px;" src="'+_this.li_img+'" wiidth="7" height"8"><a style="display:inline-block;width:140px;color:#333;" href="#/shop/detail/?id=' + o.id + '">' + o.name + '</a></li>';
+  			}
+  			this.$el.find('.bd').attr('data-loading',1);
+  			this.$el.find('.bd ul.user').html(html);
+  			this.$el.find('.bd ul.open').html(html_open);
+  
+  		},
+  		_fn_dom_update_monitor_list_status: function(status){
+  			this.$el && this.$el.find('.bd').attr('data-loading',status ? 1 : 0);
+  		},
+  		_fn_event_bind: function(){
+  			RC.sub('raycloud.pages.hashchange', this._fn_event_handler_hashchange_proxy = $.proxy(this._fn_event_handler_hashchange,this));
+  			// 固定条的店铺下拉框
+  			this.$el.on('click', '#J_shop-monitor-list', this._fn_event_handler_dropdown_monitorList_proxy = $.proxy(this._fn_event_handler_dropdown_monitorList,this));
+  			this.$el.on('mouseleave', '#J_shop-monitor-list',this._fn_event_handler_mouseleave_monitorList_proxy = $.proxy(this._fn_event_handler_mouseleave_monitorList,this));
+  			// 添加监控
+  			this.$el.on('click', '.J_AddMonitor', this._fn_event_handler_click_monitor_proxy = $.proxy(this._fn_event_handler_click_monitor,this));
+  			// 导出没有权限提示， 统一处理了
+  			this.$el.on('click', '.J_Export', this._fn_event_handler_click_export_proxy = $.proxy(this._fn_event_handler_click_export,this));
+  			// 店铺对比， todo: 暂时放在这里处理, DOM是子模板的. 这里会根据DOM, 操作DOM了
+  			this.$el.on('click', '.J_AddCompare', this._fn_event_handler_click_compare_proxy = $.proxy(this._fn_event_handler_click_compare,this));
+  			// 排序权限弹框， 先统一处理了
+  			RC.sub('module.shop.detail.no_permisson_sort', this._fn_event_handler_noPermissionSort_proxy = $.proxy(this._fn_event_handler_noPermissionSort,this));
+  			// 下拉选时间权限弹框， 先统一处理了
+  			RC.sub('module.shop.detail.no_permisson_select', this._fn_event_handler_noPermissionSelect_proxy = $.proxy(this._fn_event_handler_noPermissionSelect,this));
+  			// 滚动统一处理了
+  			this.$el.on('click','.mar-tab', function(e){
+  				var $target = $('#main');
+  				// scroll to element
+  				$('html,body').stop().animate({
+  					scrollTop: 0
+  				}, 200);
+  			});
+  			this.$el.on('click','.J_page_jump', function(e){
+  				var $target = $(e.currentTarget).parents('.panel-box');
+  				// scroll to element
+  				$('html,body').stop().animate({
+  					scrollTop: $target.offset().top - 44
+  				}, 200);
+  			});
+  			this.$el.off("click",".J_show_help_flash");
+  			this.$el.on("click",".J_show_help_flash",function(e){
+  				var url = $(this).attr("data-url");
+  				// alert(url);
+  				if(url){
+  					RC.pub('show.help.flash', url);
+  				}
+  				try{
+  					e.stopPropagation();
+  					e.preventDefault();
+  					return false;
+  				}catch(e){
+  					console.log(e);
+  				}
+  			});
+  			// this.$el.on('change','.pageSize', function(e){
+  			// 	var $target = $(e.currentTarget).parents('.panel-box');
+  			// 	// scroll to element
+  			// 	$('html,body').stop().animate({
+  			// 		scrollTop: $target.offset().top - 44
+  			// 	}, 200);
+  			// });
+  			this._fn_event_bind_menu();
+  		},
+  		_fn_event_bind_menu:function(){
+  			var _that = this;
+  			var menu_shop=$('#menu_shop_item_panel');
+  			menu_shop.find("a").on('click',function(event){
+  				event.preventDefault();
+  			 });
+  			this.$el.find('.nav').each(function(){
+  				var _thisP = $(this).parent();
+  				var _this = $(this);
+  				var subs = _thisP.find('.sub');
+  				if(subs.size()>0){
+  					_this.off("click");
+  					_this.on("click",function(e){
+  						if(e.target.tagName=='SPAN'){
+  							return;
+  						}
+  						if(subs.css("display")!='none'){
+  							// subs.slideUp(500,_that._fn_reset_menu_shop_item_panel);
+  							subs.slideUp(500);
+  							_this.find("i").removeClass("up");
+  							_this.find("i").addClass("down");
+  						}else{
+  							// subs.slideDown(500,_that._fn_reset_menu_shop_item_panel);
+  							subs.slideDown(500);
+  							_this.find("i").removeClass("down");
+  							_this.find("i").addClass("up");
+  						}
+  					});
+  				}else{
+  					_this.on("click",function(){
+  						 if(!_this.find("a").attr('target')){
+  							$('.nav').removeClass('current');
+  							$('.sub p').removeClass("currentsub");
+  							_this.addClass('current');
+  						 	window.location.href=_this.find("a").attr("href");
+  						 }
+  
+  					});
+  				}
+  			});
+  
+  			$('.sub p').each(function(){
+  				var _this = $(this)
+  				_this.on("click",function(){
+  					 if(!_this.find("a").attr('target')){
+  						$('.nav').removeClass('current');
+  						$('.sub p').removeClass("currentsub");
+  						// _this.parent().parent().find('.nav').addClass('current');
+  						_this.addClass('currentsub');
+  						// 暂时先用这个策略
+  						 	window.location.href=_this.find("a").attr("href");
+  						 }
+  				})
+  			});
+  		},
+  
+  		_fn_menu_shop_item_scroll:function(){
+  		},
+  		_fn_event_unbind_menu:function(){
+  		},
+  		_fn_event_unbind: function(){
+  			RC.removeSub('raycloud.pages.hashchange', this._fn_event_handler_hashchange_proxy);
+  			this.$el.off('click', '#J_shop-monitor-list');
+  			this.$el.off('mouseleave', '#J_shop-monitor-list');
+  			// this._fn_event_unbind_menu();
+  			this.$el.off('click', '.J_AddMonitor', this._fn_event_handler_click_monitor_proxy);
+  			this.$el.off('click', '.J_Export', this._fn_event_handler_click_export_proxy);
+  			this.$el.off('click', '.J_AddCompare', this._fn_event_handler_click_compare_proxy);
+  			RC.removeSub('module.shop.detail.no_permisson_sort', this._fn_event_handler_noPermissionSort_proxy);
+  			RC.removeSub('module.shop.detail.no_permisson_select', this._fn_event_handler_noPermissionSelect_proxy);
+  			this._fn_event_unbind_scrollFixed();
+  
+  			this.$el.off('click','.mar-tab');
+  			this.$el.off('click','.J_page_jump');
+  			// this.$el.off('change','.pageSize');
+  
+  			this.$el.off("click",".J_show_help_flash");
+  		},
+  		_status_event_scrollFixed: false,
+  		  _fn_reset_menu_shop_item_panel:function(){
+              var scroll_y = $(window).scrollTop();
+              if(scroll_y>170){
+                  $('.J_shop_close_tips').hide();
+                  $('#J_shop-pin-bar').css("position","fixed");
+                  $("#J_shop-pin-bar").css("z-index",'101');
+                  $("#J_shop-pin-bar").css("top",'0');
+                  $("#J_shop-pin-bar").css("width",'960px');
+              }else{
+                  $('.J_shop_close_tips').show();
+                  $('#J_shop-pin-bar').css("position","static");
+              }
+              if(scroll_y>170&&$("#menu_shop_item_panel").height()<$("#container").height()){
+                      var max_absolute_top = $("#container").height()-$("#menu_shop_item_panel").height();
+                      $("#menu_shop_item_panel").css("position","absolute");
+                      var absolut_top = $(window).scrollTop()-170;
+                      absolut_top = absolut_top>max_absolute_top?max_absolute_top:absolut_top;
+                      $("#menu_shop_item_panel").css("top",absolut_top);
+              }else{
+                  $("#menu_shop_item_panel").css("position","static");
+              }
+          },
+  		_fn_event_bind_scrollFixed: function(){
+  			var _this = this;
+  			if(this._status_event_scrollFixed === true){
+  				return;
+  			}
+  			$('#J_shop-pin-bar').scrollToFixed({zIndex:101});
+  			$('#J_shop-pin-bar').trigger('detach.ScrollToFixed');
+  			// console.log('#menu_shop_item_panelall'+$("#menu_shop_item_panelall").offset().top);
+  			$(window).on("scroll",this._fn_reset_menu_shop_item_panel_proxy=$.proxy(_this._fn_reset_menu_shop_item_panel,this));
+  
+  
+  			this._status_event_scrollFixed = true;
+  		},
+  		_fn_event_unbind_scrollFixed: function(){
+  			if(this._status_event_scrollFixed === false){
+  				return;
+  			}
+  			$('#J_shop-pin-bar').trigger('detach.ScrollToFixed');
+  			this._status_event_scrollFixed = false;
+  			$(window).off("scroll",this._fn_reset_menu_shop_item_panel_proxy);
+  		},
+  		_fn_event_handler_dropdown_monitorList: function(e){
+  			var $this = $(e.currentTarget);
+  			if ($this.find('.bd').css('display') == 'none') {
+  				$this.find('.bd').show();
+  			}
+  			else {
+  				$this.find('.bd').hide();
+  			}
+  			if($this.find('.bd').attr('data-loading') == 0){
+  				this._fn_load_monitor_list($.proxy(this._fn_dom_update_monitor_list,this));
+  			}
+  		},
+  		_fn_event_handler_mouseleave_monitorList: function(e){
+  			var $this = $(e.currentTarget);
+  			$this.find('.bd').hide();
+  
+  		},
+  		_fn_event_handler_click_monitor: function(e){
+              var _this = this
+              if(!RC.user.get('monitor_shop_num')){
+  				API.user_monitor_shop_list({}, function (json) {
+  					RC.user.set({monitor_shop_num: json.data.total});
+  					action(_this);
+  				}, function () {
+  				}, false, false, false);
+              }else{
+                  action(_this);
+              }
+              function action(_this){
+                  var $target = $(e.target)
+                      //, id = _this._status_shop_info.id
+                      //, shopName = _this._status_shop_info.name
+                      , shopInfo = _this.shopModel.toJSON()
+                      , id = shopInfo.id
+                      , shopName = shopInfo.name
+                      , viplevel = RC.user.get('__level')||RC.user.get('level')
+                      , monitor_shop_num = RC.user.get('monitor_shop_num')
+                      , mointor_num_map = {
+                          'normal': 1
+                          , 'primary': 10
+                          , 'senior': 50
+                          , 'luxury': 200
+                      }
+                      , max_num = mointor_num_map[viplevel];
+  
+                  if ($target.hasClass('disabled')) {
+                      return;
+                  }
+  
+                  // todo: user数据同步
+                  if (!RC.user.get('_login_status')) {
+                      RC.pub('global.login.pop');
+                      return;
+                  }
+  
+                  var allow_mointor = function () {
+                      var tips = {
+                          'normal': '您是免费版用户，只能监控<span style="color:#f5374d;">' + mointor_num_map['normal'] + '</span> 家店铺，剩余可监控店铺<span style="color:#f5374d;">' + (mointor_num_map['normal'] - monitor_shop_num) + '</span>家，7天后到期。<br/><a onclick="javascript:$.wDialog.close();" href="/events/meal.html" style="color:#ff6600;display: inline-block;margin-top:5px;" target="_blank">[定购套餐监控更多店铺]</a>'
+                          , 'primary': '您是标准版用户，只能监控<span style="color:#f5374d;">' + mointor_num_map['primary'] + '</span>家店铺，剩余可监控店铺<span style="color:#f5374d;">' + (mointor_num_map['primary'] - monitor_shop_num) + '</span>家，满30天后可修改替换。<a onclick="javascript:$.wDialog.close();" href="/events/meal.html" style="color:#ff6600;display: inline-block;margin-top:5px;" target="_blank">[升级套餐监控更多店铺]</a>'
+  												,'senior': '您是高级版用户，只能监控<span style="color:#f5374d;">' + mointor_num_map['senior'] + '</span>家店铺，剩余可监控店铺<span style="color:#f5374d;">' + (mointor_num_map['senior'] - monitor_shop_num) + '</span>家，满30天后可修改替换。<a onclick="javascript:$.wDialog.close();" href="/events/meal.html" style="color:#ff6600;display: inline-block;margin-top:5px;" target="_blank">[升级套餐监控更多店铺]</a>'
+                          , 'luxury': '您是豪华版用户，只能监控<span style="color:#f5374d;">' + mointor_num_map['luxury'] + '</span>家店铺，剩余可监控店铺<span style="color:#f5374d;">' + (mointor_num_map['luxury'] - monitor_shop_num) + '</span>家，满30天后可修改替换。<a onclick="javascript:$.wDialog.close();" href="/events/meal.html" style="color:#ff6600;display: inline-block;margin-top:5px;" target="_blank">[续费套餐]</a>'
+                      }[viplevel];
+                      RC.clearShow();
+                      $.wDialog({ title: "添加监控",
+                          content: "<div style=\"display:table;\"><img style=\"margin-top:12px;margin-right:20px;height:50px;width:50px;\" src=\"http://cdn.maijia.com/www/www-old/resources/css/build/images/wDialog-warn.png\"><div style=\"display:table-cell; vertical-align:middle;margin-top:12px;width: 460px;\">"+tips+"</div></div>",
+                          width: "",
+                          height: "",
+                          okVal: "添加监控",
+                          cancelVal: "取消",
+                          ok:$.proxy(function(){
+                              API.shop_monitor_add({id: id}, $.proxy(function(){
+                                  RC.user.set({monitor_shop_num: RC.user.get('monitor_shop_num') + 1});
+                                  _this.shopModel && this.shopModel.save({isMonitor: 1});
+                                  RC.showSuccess('添加监控成功！',1,function(){window.location.reload();});
+                              }, _this), function () {
+                                  forbid_mointor();
+                              }, false, false, false);
+                          }, _this),
+                          cancel:function(){
+                              RC.clearShow();
+                          }
+                      });
+                  };
+  
+                  var forbid_mointor = function () {
+                      var tips = {
+                          // 'low':""
+                          'normal': '您是免费版用户，只能监控<span style="color:#f5374d;">' + mointor_num_map['normal'] + '</span> 家店铺，剩余可监控店铺<span style="color:#f5374d;">' + (mointor_num_map['normal'] - monitor_shop_num) + '</span>家，7天后到期。<br/><a onclick="javascript:$.wDialog.close();" href="/events/meal.html" style="color:#ff6600;display: inline-block;margin-top:5px;" target="_blank">[定购套餐监控更多店铺]</a>'
+                          , 'primary': '您是标准版用户，只能监控<span style="color:#f5374d;">' + mointor_num_map['primary'] + '</span>家店铺，剩余可监控店铺<span style="color:#f5374d;">' + (mointor_num_map['primary'] - monitor_shop_num) + '</span>家，满30天后可修改替换。<a onclick="javascript:$.wDialog.close();" href="/events/meal.html" style="color:#ff6600;display: inline-block;margin-top:5px;" target="_blank">[升级套餐监控更多店铺]</a>'
+                          , 'senior': '您是高级版用户，只能监控<span style="color:#f5374d;">' + mointor_num_map['senior'] + '</span>家店铺，剩余可监控店铺<span style="color:#f5374d;">' + (mointor_num_map['senior'] - monitor_shop_num) + '</span>家，满30天后可修改替换。<a onclick="javascript:$.wDialog.close();" href="/events/meal.html" style="color:#ff6600;display: inline-block;margin-top:5px;" target="_blank">[升级套餐监控更多店铺]</a>'
+                          , 'luxury': '您是豪华版用户，只能监控<span style="color:#f5374d;">' + mointor_num_map['luxury'] + '</span>家店铺，剩余可监控店铺<span style="color:#f5374d;">' + (mointor_num_map['luxury'] - monitor_shop_num) + '</span>家，满30天后可修改替换。<a onclick="javascript:$.wDialog.close();" href="/events/meal.html" style="color:#ff6600;display: inline-block;margin-top:5px;" target="_blank">[续费套餐]</a>'
+                      }[viplevel];
+                      RC.user.set({monitor_shop_num: max_num});
+  
+                      RC.clearShow();
+  
+                      $.wDialog({ title: "添加失败",
+                          content: "<div style=\"display:table;\"><img style=\"margin-right:20px;height:50px;width:50px;\" src=\"http://cdn.maijia.com/www/www-old/resources/css/build/images/wDialog-error.png\"><div style=\"display:table-cell; vertical-align:middle;margin-top:12px;width: 460px;\">"+tips+"</div></div>",
+                          width: "",
+                          height: "",
+                          okVal: "查看已监控的店铺",
+                          ok:function(){
+                              $.wDialog.close();
+                              window.open("/index.html#/user/index/");
+                          }
+                      });
+                  };
+  
+                  if (monitor_shop_num >= max_num) {
+                      forbid_mointor();
+                      return;
+                  }
+  
+                  if (!monitor_shop_num) {
+                      // 获取已监控店铺数
+                      RC.showLoading('正在添加监控，请稍等...');
+                      API.user_monitor_shop_list({}, function (json) {
+                          RC.user.set({monitor_shop_num: json.data.total});
+  
+                          if (json.data.total >= max_num) {
+                              forbid_mointor();
+                          }
+                          else {
+                              allow_mointor();
+                          }
+                      }, function () {
+                          RC.showWarn('添加监控失败，请重试！');
+                      }, false, false, false);
+                  }
+                  else {
+                      allow_mointor();
+                  }
+              }
+  		},
+  		_fn_event_handler_click_export: function(e){
+  			var data = this.shopModel.toJSON(),
+  				normal = data.__level === 'normal';
+  			if (data.result === 8) {
+  				RC.pub('global.login.pop');
+  				return;
+  			}
+  			$.wDialog({ title: "提示",
+                  content: '<div style=\"display:table;\"><img style=\"margin-top:12px;margin-right:20px;height:50px;width:50px;\" src=\"http://cdn.maijia.com/www/www-old/resources/css/build/images/wDialog-warn.png\"><div style=\"display:table-cell; vertical-align:middle;margin-top:12px;width: 460px;\">导出功能仅针对定购 <span style="color:red;">高级版和豪华版监控套餐</span> 的用户开放，当前为'+ (normal ? '免费版': '标准版' ) +'用户。</div></div>',
+                  width: "",
+                  height: "",
+                  okVal: (normal ? '定购套餐': '升级套餐' ),
+                  ok:function(){
+                      window.open("/events/meal.html");
+                  },
+                  cancel:function(){}
+              });
+  		},
+  		_fn_event_handler_click_compare: function(e){
+  			if(!this._status_compare){
+  				return;
+  			}
+  			var compareControl = this._status_compare,
+  				compareElem    = $(e.currentTarget),
+  				id             = this._status_hashs.id;
+  
+              if (compareElem.text() == "加入对比") {
+              	if (compareControl.get().length === 5) {
+  					RC.showWarn('最多只能添加5个');
+  					return;
+  				}
+                  compareControl.add({id: id,name: this.shopModel.toJSON().name});
+                  compareElem.text('取消对比');
+              } else {
+                  compareControl.remove(id);
+                  compareElem.text('加入对比');
+              }
+  		},
+  		_fn_event_handler_noPermissionSort: function(e){
+  			var data = this.shopModel.toJSON(),
+  				normal = data.__level === 'normal';
+  			$.wDialog({ title: "提示",
+                  content: '<div style=\"display:table;\"><img style=\"margin-top:12px;margin-right:20px;height:50px;width:50px;\" src=\"http://cdn.maijia.com/www/www-old/resources/css/build/images/wDialog-warn.png\"><div style=\"display:table-cell; vertical-align:middle;margin-top:12px;width: 460px;\">排序功能仅针对定购 <span style="color:red;">高级版和豪华版监控套餐</span> 的用户开放，当前为'+ (normal ? '免费版': '标准版' ) +'用户。</div></div>',
+                  width: "",
+                  height: "",
+                  okVal: (normal ? '定购套餐': '升级套餐' ),
+                  ok:function(){
+                      window.open("/events/meal.html");
+                  },
+                  cancel:function(){}
+              });
+  		},
+  		_fn_event_handler_noPermissionSelect: function(e){
+  			var data = this.shopModel.toJSON(),
+  				normal = data.__level === 'normal';
+  			$.wDialog({ title: "提示",
+                  content: '<div style=\"display:table;\"><img style=\"margin-top:12px;margin-right:20px;height:50px;width:50px;\" src=\"http://cdn.maijia.com/www/www-old/resources/css/build/images/wDialog-warn.png\"><div style=\"display:table-cell; vertical-align:middle;margin-top:12px;width: 460px;\">该功能仅针对定购 <span style="color:red;">高级版和豪华版监控套餐</span> 的用户开放，当前为'+ (normal ? '免费版': '标准版' ) +'用户。</div></div>',
+                  width: "",
+                  height: "",
+                  okVal: (normal ? '定购套餐': '升级套餐' ),
+                  ok:function(){
+                      window.open("/events/meal.html");
+                  },
+                  cancel:function(){}
+              });
+  		},
+  		_fn_event_handler_hashchange: function(hashs){
+  			// @todo: 注意 框架中的hashchange !== window.hashchange, 有些情况下， 框架并不派发。 如未找到route config, module.
+  			// 其它同级root,不同app下切换，不理彩
+  			if(this._status_is_active === false && hashs.app !== 'detail'){
+  				return;
+  			}
+  			// update/disabled
+  			if(this._status_is_active !== false && hashs.app !== 'detail'){
+  				this.disabled();
+  			}else if((this._status_is_active !== true || hashs.id != this._status_hashs.id) && hashs.app == 'detail'){
+  				this.update(hashs);
+  			}else if(this._status_is_active === true){
+  				hashs.classification = hashs.classification || 'index';
+  				// classification change
+  				if(this._status_hashs.classification !== hashs.classification){
+  					// $(window).scrollTop($(this._elem_root).offset().top);
+  					this._fn_dom_update_current(hashs, _.extend({},this._status_hashs));
+  				}
+  				this._status_hashs = hashs;
+  			}
+  		},
+  		_status_hashs: {},
+  		_fn_get_cur_hashs: function(){
+  			return RC.pages._fn_act_get_hashs();
+  		},
+  		// todo: 检查 _fn_get_cur_hashs_string和pages同步
+  		_fn_get_cur_hashs_string: function(hashs){
+  			hashs = _.extend({}, hashs || this._status_hashs);
+  			if(hashs.root){delete hashs.root;}
+  			if(hashs.app){delete hashs.app;}
+  			if(hashs.classification){delete hashs.classification;}
+  			return querystring.stringify(hashs);
+  		},
+  		_fn_load_monitor_list: function(success){
+  			//todo: 这里是否要检查用户是否登录
+  			var data = RC.user.get();
+  			if(data._login_status){
+  				API.user_monitor_shop_list({}, function (json) {
+  					var list = [];
+  					$.each(json.data.list, function(idx,item){
+  						if(item.id && item.name){
+  							list.push(item);
+  						}
+  					});
+  					success(list);
+  				}, null, false, false, false);
+  			}else{
+  				success();
+  			}
+  		},
+  		_fn_dom_update_bottom_banner: function(hashs) {
+  			var data = {
+  				from : hashs.from || '',
+  				_status_shop_nav : 0
+  			};
+  			var that = this;
+  			this.shopModel.getData(function() {
+  				data.login  = !!RC.user.get('_login_status');
+  				if(that._data_bottom_banner){
+  					that._data_bottom_banner.remove();
+  				}
+  				that._data_bottom_banner = $(RC.template.get('template.shop.detail.bottom_banner', data)).appendTo(that.$el);
+  			});
+  		},
+  		getContainer: function(){
+  			return this.$el;
+  		},
+  		_status_is_active: false,
+  		disabled: function(){
+  			this.$el && this.$el.hide && this.$el.hide();
+  			this._fn_event_unbind_scrollFixed();
+  			this._status_is_active = false;
+  
+  			if(this._status_compare){
+  				this._status_compare.destroy();
+  				this._status_compare = null;
+  			}
+  			if (this._data_bottom_banner) {
+  				this._data_bottom_banner.remove();
+  			}
+  			// 关闭所有弹框
+  			$.each($.dialog.list, function (i, o) {o.close();});
+  		},
+  		update: function(hashs, afterload, refresh){
+  			//刷新一次就会丢失current样式,添加回去
+  			var menu_id = hashs.id;
+  			hashs.classification = hashs.classification || 'index';
+  			// 如果已render dom， 显示
+  			this.$el && this.$el.show && this.$el.show();
+  			// render dom
+  			this._fn_dom_render(hashs);
+  			// 更新一次， 有可能上次切换的时候， 和入口的不一样
+  			this._fn_event_bind_scrollFixed();
+  			// 切换ID的时候，销毁model
+  			if(hashs.id != this._status_hashs.id && this.shopModel){
+  				this.shopModel.destroy();
+  				this.shopModel = null;
+  			}
+  			// shop id没变， shopModel又存在，只是显示出来. 这里(每次进入detail)做一次数据更新 & 清空店铺监控数据
+  			// todo: 如果data变化， 派发事件， 子模块update load data的时候, 会调用两次
+  			this.shopModel && this.shopModel.reload();
+  			this.shopModel && this._fn_dom_update_monitor_list_status(false);
+  			this._fn_dom_update_current(hashs);
+  			// model不存在，初时化
+  			if(!this.shopModel){
+  				this.shopModel = new Shop(hashs.id,hashs.name);
+  				// load data then update dom
+  				this.shopModel.load(_.bind(function(data){
+  					// 更新dom
+  					this._fn_dom_update(data, _.extend({},hashs));
+  					//
+  					if(!this._status_compare){
+  						this._status_compare = RC.controls.get('control.shop.compare', {
+  							add: function(id) {
+  								RC.pub('module.shop.detail.add_compare', id);
+  							},
+  							remove: function(id) {
+  								RC.pub('module.shop.detail.remove_compare', id);
+  							}
+  						});
+  					}
+  					this._status_compare.render();
+  
+  				},this));
+  			}else{
+  				if(!this._status_compare){
+  					this._status_compare = RC.controls.get('control.shop.compare', {
+  						add: function(id) {
+  							RC.pub('module.shop.detail.add_compare', id);
+  						},
+  						remove: function(id) {
+  							RC.pub('module.shop.detail.remove_compare', id);
+  						}
+  					});
+  				}
+  				this._status_compare.render();
+  			}
+  			this._fn_dom_update_bottom_banner(hashs);
+  			this._status_is_active = true;
+  			this._status_hashs = hashs;
+  		},
+  		destroy: function(){
+  			RC.removeSub('raycloud.pages.hashchange', this._fn_event_handler_init_proxy);
+  			if(this.$el){
+  				this._status_hashs = {};
+  				this._status_is_active = false;
+  				this._status_is_init = false;
+  				this.shopModel && this.shopModel.destroy();
+  				this.shopModel = null;
+  
+  				this._fn_event_unbind();
+  				this.$el.empty().remove();
+  				this.$el = null;
+  
+  				if(this._status_compare){
+  					this._status_compare.destroy();
+  					this._status_compare = null;
+  				}
+  				// 关闭所有弹框
+  				$.each($.dialog.list, function (i, o) {o.close();});
+  			}
+  		}
+  	};
+  
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+  
+
+});

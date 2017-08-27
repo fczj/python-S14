@@ -1,0 +1,196 @@
+define('modules/shop/detail/title/optimize/module', function(require, exports, module) {
+
+  /**
+      @author xukang
+  */
+  ;(function($,RC){
+      var view = require('modules/shop/detail/title/optimize/view');
+      var mdul = {
+          name: 'shop.detail.title_optimize',
+          depend: 'shop.detail',
+          _elm_dom_root: '#main',
+          init: function(){},
+          getContainer: function(){
+              return view.getEl();
+          },
+          render:function(){
+              view.render(this._elm_dom_root,this,this.hashs);
+          },
+          getPageTable:function (url,params) {
+              $.ajax({
+                  url:url,
+                  dataType: 'json',
+                  data: params,
+                  success:$.proxy(function(json){
+                      if(json.result==1){
+                          var resultData = {};
+                          resultData.dataList = json.data;
+                          if(json.data.list.length<10){
+                              view.updateMap.updateHotTable(resultData,params.pageNo,true);
+                          }else{
+                              params.pageNo = +params.pageNo+1;
+                              $.ajax({
+                                  url:url,
+                                  dataType: 'json',
+                                  data: params,
+                                  success:$.proxy(function(json2){
+                                      if(json2.result==1){
+                                          var resultData = {};
+                                          resultData.dataList = json.data;
+                                          if(json.data.list.length==0){
+                                              view.updateMap.updateHotTable(resultData,params.pageNo-1,true);
+                                          }else{
+                                              view.updateMap.updateHotTable(resultData,params.pageNo-1,false);
+                                          }
+                                      }else{
+                                           view.updateMap.updateHotTable(resultData,params.pageNo-1,true);
+                                      }
+                                  },this)
+                              });
+                          }
+                      }
+                  },this)
+              });
+          },
+          getTable:function(type,keyword,pageNo){
+              type = type ||1;
+              type = parseInt(type);
+              var url = '/data/shop/dgs/item/keywordSearch';
+              var params = {
+                  itemId: this.hashs.itemId
+              }
+              switch (type) {
+                  case 1:
+                  case 5:
+                      params.keyword = keyword||this.property[0]||'';
+                      params.catId = this.info.catId;
+                      break;
+                  case 2:
+                      url = '/data/shop/dgs/item/bidWords';
+                      // params.keyword = keyword||this.property[0]||'';
+                      params.catId = this.info.catId;
+                      break;
+                  case 3:
+                      url = '/data/shop/dgs/item/longTailkeywordSearch'
+                      params.catId = this.info.catId;
+                      break;
+                  case 4:
+                      url = '/data/shop/dgs/item/promotionWord';
+                      break;
+                  case 6:
+                      url = '/data/shop/dgs/item/hotTitlelist';
+                      params.catId = this.info.catId;
+                      params.pageNo = pageNo||1;
+                      //这个有分页
+                      break;
+                  default:
+                      break;
+              }
+              this.property = this.property||[];
+              if(type==6){
+                  this.getPageTable(url,params);return;
+              }
+              $.ajax({
+                  url:url,
+                  dataType: 'json',
+                  data: params,
+                  success:$.proxy(function(json){
+                      if(json.result==1){
+                          var resultData = {};
+                          switch (type) {
+                              case 1:
+                              case 5:
+                              case 2:
+                              case 3:
+                                  resultData.dataList = json.data.dataList||[];
+                                  break;
+                              case 4:
+                                  resultData.dataList = json.data||[];
+                                  break;
+                              case 6:
+                                  resultData.dataList = json.data;
+                                  break;
+                              default:
+                                  break;
+                          }
+                          if(type==6){
+                              view.updateMap.updateHotTable(resultData,pageNo);
+                          }else{
+                              view.updateMap.updateTable(resultData);
+                          }
+                      }
+                  },this),
+                  error:function(json){
+  
+                  }
+              });
+          },
+          getInfo:function(){
+              var itemId = this.hashs.itemId;
+              var shopId = this.hashs.id;
+              $.ajax({
+                  url:'/data/shop/dgs/item/detail',
+                  dataType: 'json',
+                  data: {
+                      itemId: itemId
+                  },
+                  success:$.proxy(function(json){
+                      if(json.result==1){
+                          this.info = json.data;
+                          json.data.id = this.hashs.id;
+                          json.data.itemId = this.hashs.itemId;
+                          view.updateMap.updateInfo(json.data);
+                          view.updateMap.updateTitle(itemId,json.data.title);
+                          this.getPropertyList();
+                          // this.getTable(1);
+                      }else{
+                          location.href="#/shop/detail/title_diagnosis/?id="+shopId;
+                      }
+                  },this),
+                  error:function(json){
+  
+                  }
+              });
+          },
+          getPropertyList:function () {
+              $.ajax({
+                  url:'/data/shop/dgs/item/propertylist',
+                  dataType: 'json',
+                  data: {
+                      itemId: this.hashs.itemId
+                  },
+                  success:$.proxy(function(json){
+                      if(json.result==1){
+                          this.property = json.data||[];
+                          view.updateMap.updateSubtab(json.data);
+                          this.getTable(6);
+                      }
+                  },this),
+                  error:function(json){
+  
+                  }
+              });
+          },
+          update: function(hashs, afterload, is_refresh){
+              if(!hashs.id || !hashs.itemId){
+                  history.back();return;
+              }
+              this.hashs = hashs;
+              this.render();
+              this.getInfo();
+              // this.checkTitle();
+              afterload&&afterload();
+          },
+          disabled: function(){view.getEl().hide();},
+          destroy: function(){
+              this._elm_dom_container = null;
+              if(view){
+                  view.destroy();
+              }
+          }
+          
+      };
+      RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+
+});

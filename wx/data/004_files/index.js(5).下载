@@ -1,0 +1,113 @@
+define('modules/shop/detail/title/optimize/new-title/index', function(require, exports, module) {
+
+  var $ = require('components/jquery/jquery'),
+      $el = $("<div class=\"new-title\">\r\n    <h1>新标题</h1>\r\n    <div class=\"input J_input_con\">\r\n        <input type=\"text\" placeholder=\"请输入新标题\" calss=\"J_input\"><span class=\"text-num\"><span class=\"J_left_num\">0</span>/30</span>\r\n    </div>\r\n    <div class=\"btns\">\r\n        <div class=\"title-btn test-title-btn J_test\">检测新标题</div>\r\n        <div class=\"title-btn copy-title-btn J_copy\">复制新标题</div>\r\n    </div>\r\n</div>\r\n<!-- @require 'modules/shop/detail/title/optimize/new-title/index.less' -->"),
+      $input = $el.find('input'),
+      $test = $el.find('.J_test'),
+      $copy = $el.find('.J_copy'),
+      $leftNum = $el.find('.J_left_num'),
+      $container = null;
+  
+  var inputTips = require('modules/shop/detail/title/optimize/input-tips/index');
+  
+  var currentCursour = 0;
+  
+  function getLength(str) {
+      var strtemp = str.replace(/[\u4e00-\u9fa5]/ig, 'aa');
+      var l = Math.floor(strtemp.length / 2);
+      return l;
+  }
+  
+  function bindEvent() {
+      $input.off('keydown');
+      $input.on('keydown', function(e) {
+          $leftNum.html(getLength($input.val()));
+          currentCursour = getTxt1CursorPosition($input[0]);
+      });
+  
+      $input.off('click');
+      $input.on('click', function(e) {
+          currentCursour = getTxt1CursorPosition($input[0]);
+      });
+      
+  
+      $copy.off('click')
+      $copy.on('click', function() {
+          if ($input.val()) {
+              $input.select();
+              $input.focus();
+              inputTips.show('按ctrl+c进行复制');
+          } else {
+              $input.focus();
+              inputTips.show('请输入新标题');
+          }
+      });
+  }
+  
+  function getTxt1CursorPosition(oTxt1){
+      var cursurPosition=-1;
+      if(oTxt1.selectionStart){//非IE浏览器
+          cursurPosition= oTxt1.selectionStart;
+      }else{//IE
+          var range = document.selection.createRange();
+          range.moveStart("character",-oTxt1.value.length);
+          cursurPosition=range.text.length;
+      }
+      return cursurPosition;
+  }
+  
+  function insertText(text){
+      var obj = $input.get(0);
+      var tmpStr = obj.value;
+      obj.value = tmpStr.substring(0, currentCursour) + text + tmpStr.substring(currentCursour, tmpStr.length);
+  }
+  
+  module.exports = {
+      mount: function(container, text) {
+          if (!$container) {
+              $(container).html($el);
+              bindEvent();
+              $container = container;
+              inputTips.mount($el.find('.J_input_con'));
+              if (text) {
+                  $input.val(text);
+              }
+          }
+      },
+      dismount: function() {
+          $el.remove();
+          inputTips.dismount();
+      },
+      appendTitle: function(str) {
+          // var left = 30 - getLength($input.val());
+          // if(getLength(str)>left){
+          //     str = str.substr(0,left-1);
+          // }
+          insertText(str);
+          currentCursour = currentCursour+str.length;
+          // $input.val($input.val() + str);
+          $leftNum.html(getLength($input.val()));
+      },
+      setText: function(str) {
+          $input.val(str);
+          currentCursour = $input.val().length;
+          $leftNum.html(getLength($input.val()));
+      },
+      onCheck: function(fn) {
+          $test.off('click');
+          $test.on('click', function() {
+              if (getLength($input.val()) > 30) {
+                  inputTips.show('标题不能多于30个字');
+                  return;
+              }
+              if (!$input.val()) {
+                  $input.focus();
+                  inputTips.show('请输入新标题');
+              } else {
+                  fn($input.val());
+              }
+          });
+      }
+  }
+
+});

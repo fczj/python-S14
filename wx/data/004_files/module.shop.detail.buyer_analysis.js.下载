@@ -1,0 +1,364 @@
+define('modules/shop/detail/buyer_analysis/module.shop.detail.buyer_analysis', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var Shop        = RC.controls.get('control.shop.model'),
+  		querystring = RC.controls.get('control.querystring');
+  
+  	var mdul = {
+  		name: 'shop.detail.buyer_analysis',
+  		depend: 'shop',
+  		_elem_root: '#main',
+  		_elem_template_name: 'template.shop.detail.buyer_analysis',
+  		_fn_dom_render: function(data){
+  			if(this.$el){
+  				return;
+  			}
+  			this.$el = $(RC.template.get(this._elem_template_name, data)).appendTo(this._elem_root);
+  			this._fn_event_bind();
+  		},
+  		// 买家等级
+  		_fn_dom_update_shop_buyer_level_list: function(data){
+  			// translate for template
+  			data._status_shop_buyer_level_list = 1;
+  			data.list = data.list || [];
+  			data._list_length = data.list.length;
+  			// render
+  			this.$el.find('.J_shop_buyer_level_list').html(RC.template.get_node('if','_status_shop_buyer_level_list',data,RC.template.get(this._elem_template_name),0));
+  			var $elem = this.$el.find('.J_shop_buyer_level_list').find('.J_Charts');
+  			if($elem){
+  				this._fn_dom_update_shop_buyer_level_list_charts(data.list, $elem);
+  			}
+  		},
+  		_fn_dom_update_shop_buyer_level_list_charts: function(list, $elem){
+  			if(!$elem.highcharts){
+  				return;
+  			}
+  			var chartColor = RC.controls.get('control.config').chartColor;
+  			var r = [];
+  			$.each(list, function(idx, item){
+  				r.push({color: chartColor[idx], name: item.rank, y: item.ratio});
+  			});
+  			var opt = {
+  				chart: {
+  					plotBackgroundColor: null,
+  					plotBorderWidth: null,
+  					plotShadow: false
+  				},
+  				credits: {
+  					 enabled: false
+  				 },
+  				exporting: {
+  					 enabled: false
+  				 },
+  				title: {
+  					text: '',
+  				},
+  				tooltip: {
+  					pointFormat: '{series.name}: <b>{point.percentage:.2f}%</b>'
+  				},
+  				plotOptions: {
+  					pie: {
+  						allowPointSelect: true,
+  						cursor: 'pointer',
+  						dataLabels: {
+  							enabled: true,
+  							color: '#000000',
+  							connectorColor: '#000000',
+  							format: '<b>{point.name}</b>: {point.percentage:.2f} %'
+  						},
+  						showInLegend: true
+  					}
+  				},
+  				series: [{
+  					type: 'pie',
+  					name: '销量占比',
+  					data: r
+  				}]
+  			};
+  
+  			// var chartColor = RC.controls.get('control.config').chartColor;
+  			// var r = [];
+  			// _.each(list, function(item, idx){
+  			// 	// r.push([item.title, item.rate]);
+  			// 	r.push({color: chartColor[idx], name: item.title, y: item.rate});
+  			// });
+  			
+  			// var opt = {
+  			// 	chart: {
+  			// 		plotBackgroundColor: null,
+  			// 		plotBorderWidth: null,
+  			// 		plotShadow: false
+  			// 	},
+  			// 	credits: {
+  			// 		 enabled: false
+  			// 	 },
+  			// 	exporting: {
+  			// 		 enabled: false
+  			// 	 },
+  			// 	title: {
+  			// 		text: ' ',
+  			// 		align: 'left'
+  			// 	},
+  			// 	tooltip: {
+  			// 		pointFormat: '{series.name}: <b>{point.percentage:.2f}%</b>'
+  			// 	},
+  			// 	plotOptions: {
+  			// 		pie: {
+  			// 			allowPointSelect: true,
+  			// 			cursor: 'pointer',
+  			// 			dataLabels: {
+  			// 				enabled: true,
+  			// 				color: '#000000',
+  			// 				connectorColor: '#000000',
+  			// 				format: '<b>{point.name}</b>: {point.percentage:.2f} %'
+  			// 			}
+  			// 		}
+  			// 	},
+  			// 	series: [{
+  			// 		type: 'pie',
+  			// 		name: '买家等级',
+  			// 		data: r
+  			// 	}]
+  			// };
+  
+  			$elem.highcharts(opt);
+  		},
+  		//买家层级
+  		_fn_dom_update_shop_buyer_expense_list: function(data){
+  			// translate for template
+  			data._status_shop_buyer_expense_list = 1;
+  			data.list = data.list || [];
+  			data._list_length = data.list.length;
+  			// render
+  			this.$el.find('.J_shop_buyer_expense_list').html(RC.template.get_node('if','_status_shop_buyer_expense_list',data,RC.template.get(this._elem_template_name),0));
+  			var $elem = this.$el.find('.J_shop_buyer_expense_list').find('.J_Charts');
+  			if($elem){
+  				this._fn_dom_update_shop_buyer_expense_list_charts(data.list, $elem);
+  			}
+  		},
+  		_fn_dom_update_shop_buyer_expense_list_charts: function(list, $elem){
+  			if(!$elem.highcharts){
+  				return;
+  			}
+  			var chartColor = RC.controls.get('control.config').chartColor;
+  			var r = [];
+  			_.each(list, function(item, idx){
+  				// r.push([item.level, item.rate]);
+  				r.push({color: chartColor[idx], name: item.level, y: item.rate});
+  			});
+  			
+  			var opt = {
+  				chart: {
+  					plotBackgroundColor: null,
+  					plotBorderWidth: null,
+  					plotShadow: false
+  				},
+  				credits: {
+  					 enabled: false
+  				 },
+  				exporting: {
+  					 enabled: false
+  				 },
+  				title: {
+  					text: ' ',
+  					align: 'left'
+  				},
+  				tooltip: {
+  					pointFormat: '{series.name}: <b>{point.percentage:.2f}%</b>'
+  				},
+  				plotOptions: {
+  					pie: {
+  						allowPointSelect: true,
+  						cursor: 'pointer',
+  						dataLabels: {
+  							enabled: true,
+  							color: '#000000',
+  							connectorColor: '#000000',
+  							format: '<b>{point.name}</b>: {point.percentage:.2f} %'
+  						}
+  					}
+  				},
+  				series: [{
+  					type: 'pie',
+  					name: '消费层级',
+  					data: r
+  				}]
+  			};
+  
+  			$elem.highcharts(opt);
+  		},
+  		// 所在地区分布
+  		_fn_dom_update_shop_buyer_area_list: function(data){
+  			//功能暂无
+  			return;
+  
+  			// translate for template
+  			data._status_shop_buyer_area_list = 1;
+  			data.list = data.list || [];
+  			data._list_length = data.list.length;
+  			// render
+  			this.$el.find('.J_shop_buyer_area_list').html(RC.template.get_node('if','_status_shop_buyer_area_list',data,RC.template.get(this._elem_template_name),0));
+  			var $elem = this.$el.find('.J_shop_buyer_area_list').find('.J_Charts');
+  			if($elem && $elem.length){
+  				this._fn_dom_update_shop_buyer_area_list_charts(data.list, $elem);
+  			}
+  		},
+  		_fn_dom_update_shop_buyer_area_list_charts: function(list, $elem){
+  			if(!echarts){
+  				return;
+  			}
+  			
+  			var r = [];
+  			_.each(list, function(item, idx){
+  				r.push({
+  					name: item.area,
+  					value: Math.round(item.rate * 100)
+  				});
+  			}); 
+  	
+  			var option = {
+  					dataRange: {
+  						//precision: 2,
+  						min: 0,
+  						max: 100,
+  						//color: ['#1e90ff','#f0ffff'],
+  						text:['高','低'],           // 文本，默认为数值文本
+  						calculable : true
+  					},
+  					tooltip : {
+  						trigger: 'item'
+  						, formatter: function (value) {
+  							var val = value[2];
+  							if(_.isNumber(val)){
+  								val = val + '%';
+  							}
+  							return value[1] + ': ' + val;
+  						}
+  					},
+  					series : [
+  						{
+  							name: '买家所在地分布',
+  							type: 'map',
+  							mapType: 'china',
+  							itemStyle:{
+  								normal:{label:{show:true}},
+  								emphasis:{label:{show:true}}
+  							},
+  							data: r
+  						}
+  					]
+  				};
+  			
+  			var myChart = echarts.init($elem[0]);
+  			myChart.setOption(option);
+  		},
+  		// 最近30天买家分析
+  		_fn_dom_update_shop_buyer_buytime_list: function(data){
+  			//功能暂无
+  			return;
+  			
+  			// translate for template
+  			data._status_shop_buyer_buytime_list = 1;
+  			data.list = data.list || [];
+  			data._list_length = data.list.length;
+  			_.each(data.list, function(item, idx){
+  				item._idx = idx+1;
+  				item.buyers = item.buyers || '';
+  				item.rate = item.rate ? Math.round(item.rate * 100) + '%' : '-';
+  			});
+  			// render
+  			this.$el.find('.J_shop_buyer_buytime_list').html(RC.template.get_node('if','_status_shop_buyer_buytime_list',data,RC.template.get(this._elem_template_name),0));
+  		},
+  		_fn_event_bind: function(){
+  			// 权限变更(登录/等级变化)
+  			RC.sub('control.shop.model.permission_change', this._fn_event_handler_shopModelPermissionChange_proxy = $.proxy(this._fn_event_handler_shopModelPermissionChange,this));
+  		},
+  		_fn_event_unbind: function(){
+  			RC.removeSub('control.shop.model.permission_change', this._fn_event_handler_shopModelPermissionChange_proxy);
+  		},
+  		_fn_event_handler_shopModelPermissionChange: function(e){
+  			if(e.id != this._status_hashs.id){
+  				return;
+  			}
+  			this._status_shop_stauts_changed = true; 
+  			if(this._status_module_active === true){
+  				this.update(this._status_hashs, null, true);
+  			}
+  		},
+  		init: function(){},
+  		getContainer: function(){
+  			return this.$el;
+  		},
+  		_status_hashs: {},
+  		_status_shop_stauts_changed: false,
+  		_status_module_active: false,
+  		disabled: function(){ 
+  			this._status_module_active = false;
+  		},
+  		update: function(hashs, afterload, refresh){
+  			// 实现 module.is_active
+  			this._status_module_active = true;
+  			// 参数是否和原先一致
+  			if(this._status_shop_stauts_changed !== true && refresh != true && querystring.stringify(hashs) ===  querystring.stringify(this._status_hashs)){
+  				afterload && afterload();
+  				return;
+  			}  
+  
+  			// 加载店铺基本信息
+  			Shop.getModel(hashs.id).getData(_.bind(function(data){
+  				// copy hash保存, _status_hashs只用作对比， 处理过的HASHS只传给调用者，不记录
+  				var newHashs = _.extend({},hashs);
+  
+  				this._fn_dom_render({
+  					_status_shop_buyer_level_list: 0,
+  					_status_shop_buyer_expense_list: 0,
+  					_status_shop_buyer_area_list: 0,
+  					_status_shop_buyer_buytime_list: 0
+  				});
+  
+  				// 买家等级
+  				Shop.getModel(hashs.id).data_shop_rankhotratio_list({},_.bind(function(data){
+  					this._fn_dom_update_shop_buyer_level_list(data);
+  				},this));
+  				//功能暂无
+  				//买家层级
+  				// Shop.getModel(hashs.id).data_shop_buyer_expense_list({},_.bind(function(data){
+  				// 	this._fn_dom_update_shop_buyer_expense_list(data);
+  				// },this));
+  				// 所在地区分布
+  				// Shop.getModel(hashs.id).data_shop_buyer_area_list({type: 0},_.bind(function(data){
+  				// 	this._fn_dom_update_shop_buyer_area_list(data);
+  				// },this));
+  				// // 最近30天买家分析
+  				// Shop.getModel(hashs.id).data_shop_buyer_buytime_list({},_.bind(function(data){
+  				// 	this._fn_dom_update_shop_buyer_buytime_list(data);
+  				// },this));
+  			
+  				
+  				// cache只是为了下次进来做比较
+  				this._status_hashs = newHashs;
+  				this._status_shop_stauts_changed = false;
+  				
+  				afterload && afterload();
+  			},this));
+  		},
+  		destroy: function(){
+  			if(this.$el){
+  				this._status_hashs = {};
+  				this._status_shop_stauts_changed = false;
+  				this._status_module_active = false;
+  
+  				this._fn_event_unbind();
+  				this.$el.empty().remove();
+  				this.$el = null;
+  			}
+  		}
+  	};
+  
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+
+});

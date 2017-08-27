@@ -1,0 +1,354 @@
+define('controls/controls.add_receiver_pop', function(require, exports, module) {
+
+  ;(function($, RC) {
+  
+      var _API = function () {
+          var _default = {
+              name: ''
+              , params: {}
+              , success: function () {}
+              , fail: function () {}
+          };
+  
+          return function (config, is_dialog) {
+              config = $.extend(_default, config);
+  
+              if (!config.name) {
+                  return;
+              }
+  
+              if (is_dialog !== false) {
+                  is_dialog = true;
+              }
+              else {
+                  is_dialog = false;
+              }
+  
+  
+              API[config.name](config.params, config.success, config.fail, is_dialog, is_dialog, is_dialog);
+          }
+  
+      }();
+  
+      // 数据验证
+      var iVerify = {
+          number: function (number, type) {
+              if (number === undefined) {
+                  return false;
+              }
+  
+              number  = number + '';
+  
+              // 空字符串
+              if (number.replace(/\s/g, '') === '') {
+                  return true;
+              }
+  
+              if (type != 'int') {
+                  type = '';
+              }
+  
+              var reg = /^\s*(?:[1-9]\d*|0)\s*$/;
+  
+              // 在不转换为字符串情况下, 那么 reg.test(012) 也会通过.
+              number = number.replace(/\s/g, '');
+  
+              if (type == 'int') {
+                  return reg.test(number);
+              }
+              else {
+                  var num_arr = number.split('.');
+                  if (num_arr.length > 2) {
+                      return false;
+                  }
+                  else {
+                      var flag = true;
+                      $.each(num_arr, function (i, val) {
+                          if (!reg.test(val)) {
+                              flag = false;
+                              return false;
+                          }
+                      });
+                      return flag;
+                  }
+              }
+          }
+  
+          , price: function (val) {
+              return this.number(val);
+          }
+  
+          , phone: function (val) {
+              /* 号码段来自 http://t.cn/Rv6QvRr */
+              return /^(13[0-9]|14[57]|15[0-35-9]|17[6-8]|18[0-9])\d{8}|170[059]\d{7}$/.test(val);
+          }
+  
+          , email: function (val) {
+              var reg = /^([a-z\d]+[\._]?)*[a-z\d]+@([a-z\d]+[\._]?)*[a-z\d]+\.[a-z]{2,4}$/i;
+              return reg.test(val);
+          }
+      };
+  
+      // 小工具
+      var iUtil = {
+          isEmptyString: function (str) {
+              str = ('' + str).replace(/^\s+|\s+$/, '');
+  
+              if (str === '') {
+                  return true;
+              }
+              return false;
+          }
+      };
+  
+  
+  
+      var exports = {
+          name: 'controls.add_receiver_pop'
+  
+          , init: function () {
+              var _this = this;
+  
+              if (_this.initialized) {
+                  return;
+              }
+  
+              _this.container = $(HTML_TEMPLATE.join(''));
+              _this.initialized = true;
+          }
+  
+          , render: function (params) {
+              var _this = this;
+              _this.init();
+  
+              params = params || {};
+              _this.opts = params;
+  
+              _this._fn_ctrl_update_name(params.name);
+              _this._fn_ctrl_update_mobile(params.mobile);
+              _this._fn_ctrl_update_email(params.email);
+              _this._fn_ctrl_update_role(params.role);
+  
+  			_this.container.find('.J_name-tip').html('');
+              _this.container.find('.J_email-tip').html('');
+              _this.container.find('.J_mobile-tip').html('');
+              _this.container.find('.J_role-tip').html('');
+          }
+  
+          , add: function (params) {
+              var _this = this;
+              _this.render(params);
+  
+              _this._dialog = $.dialog({
+                  title: '添加提醒人'
+                  , content: _this.container
+                  , padding: 0
+                  , fixed: false
+                  , okVal: '确定'
+                  , ok: function () {
+                      var params = _this._fn_act_verify_form();
+  
+                      if (params) {
+                          RC.showLoading('正在添加提醒人信息，请稍等...');
+                          _API({
+                              name: 'user_add_warnconfig_remind'
+                              , params: params
+                              , success: function () {
+                                  _this._dialog.close();
+                                  RC.showSuccess('添加提醒人成功！', 2);
+                                  _this.opts.success && _this.opts.success();
+                              }
+                              , fail: function () {
+                                  _this._dialog.close();
+                                  RC.showFail('添加失败，请重新添加！');
+                              }
+                          });
+                      }
+  
+                      return false;
+                  }
+              });
+          }
+  
+          , modify: function (params) {
+              var _this = this;
+              _this.render(params);
+  
+              _this._dialog = $.dialog({
+                  title: '修改提醒人'
+                  , content: _this.container
+                  , padding: 0
+                  , fixed: false
+                  , okVal: '确定'
+                  , ok: function () {
+                      var params = _this._fn_act_verify_form();
+  
+                      if (params) {
+                          params.id = _this.opts.id;
+                          RC.showLoading('正在保存提醒人信息，请稍等...');
+                          _API({
+                              name: 'user_edit_warnconfig_remind'
+                              , params: params
+                              , success: function () {
+                                  _this._dialog.close();
+                                  RC.showSuccess('修改提醒人信息成功！', 2);
+                                  _this.opts.success && _this.opts.success();
+                              }
+                              , fail: function () {
+                                  RC.showFail('修改失败，请重新提交！');
+                              }
+                          });
+                          RC.showSuccess('修改提醒人信息成功！', 2);
+                      }
+  
+                      return false;
+                  }
+              });
+          }
+  
+          , _fn_act_verify_form: function () {
+              var _this = this
+                  , name = _this.container.find('.J_name').val()
+                  , mobile = _this.container.find('.J_mobile').val()
+                  , email = _this.container.find('.J_email').val()
+                  , role = _this.container.find('.J_role').val()
+                  , reg = /[^\w\u4e00-\u9fa5]/;
+  
+              var name_tip = '';
+              if (iUtil.isEmptyString(name)) {
+                  name_tip = '名称不能为空';
+              }
+              else if (reg.test(name)) {
+                  name_tip = '名称含有特殊字符'
+              }
+  
+              var mobile_tip = '';
+              if (iUtil.isEmptyString(mobile)) {
+                  mobile_tip = '手机号不能为空';
+              }
+              else if (!iVerify.phone(mobile)) {
+                  mobile_tip = '手机号不正确';
+              }
+  
+              var email_tip = '';
+              if (iUtil.isEmptyString(email)) {
+                  email_tip = '邮箱不能为空';
+              }
+              else if (!iVerify.email(email)) {
+                  email_tip = '邮箱地址非法';
+              }
+  
+              var role_tip = '';
+  			/*
+              if (reg.test(role)) {
+                  role_tip = '备注含有特殊字符';
+              }
+  			*/
+  			if(role.replace(/[^\x00-\xff]/g, "--").length>20){
+  				RC.showWarn('备注长度超出限制！', 0.5);
+                  return;
+  			}
+  
+              if (name_tip || mobile_tip || email_tip || role_tip) {
+                  _this.container.find('.J_name-tip').html(name_tip).show();
+                  _this.container.find('.J_email-tip').html(email_tip).show();
+                  _this.container.find('.J_mobile-tip').html(mobile_tip).show();
+                  _this.container.find('.J_role-tip').html(role_tip).show();
+                  return false;
+              }
+  
+              return {
+                  name: name
+                  , mobile: mobile
+                  , email: email
+                  , role: role
+              };
+          }
+  
+          , _fn_ctrl_update_name: function (name) {
+              this.container.find('.J_name').val(name || '');
+          }
+  
+          , _fn_ctrl_update_mobile: function (mobile) {
+              this.container.find('.J_mobile').val(mobile || '');
+          }
+  
+          , _fn_ctrl_update_email: function (email) {
+              this.container.find('.J_email').val(email || '');
+          }
+  
+          , _fn_ctrl_update_role: function (role) {
+              this.container.find('.J_role').val(role || '');
+          },
+  		destroy: function(){
+  			if(this.initialized){
+  				//this._dialog && this._dialog.close();
+  				this._dialog = null;
+  				this.container = null;
+  				this.initialized = false;
+  			}
+  		}
+  
+  
+      };
+  
+      RC.controls.define(exports.name, exports);
+  
+  	
+  	var HTML_TEMPLATE = [
+  		'<div class="add_receiver_pop" style="width: 600px;">',
+  			'<div class="J_receiver-list ui-table-container">',
+  				'<table class="ui-table ui-table-inbox tablefixed">',
+  					'<thead>',
+  					'<tr>',
+  						'<th width="110" style=" padding: 5px 0;">',
+  						'<div class="cell-box ml_5">姓名</div>',
+  					 '</th>',
+  						'<th width="130" style=" padding: 5px 0;">',
+  						'<div class="cell-box ml_5">手机</div>',
+  					 '</th>',
+  						'<th width="180" style=" padding: 5px 0;">',
+  						'<div class="cell-box ml_5">邮箱</div>',
+  					 '</th>',
+  						'<th style=" padding: 5px 0;">',
+  						'<div class="cell-box ml_5">备注</div>',
+  					 '</th>',
+  					'</tr>',
+  					'</thead>',
+  				'<tbody>',
+  				'<tr>',
+  					'<td valign="top" style=" padding: 7px 0;">',
+  					'<div class="cell-box">',
+  						'<input type="text" class="J_name w80 ipt-small"/>',
+  					 '<div class="J_name-tip fc-orange mt_5" style=" display: none;"></div>',
+  					'</div>',
+  				 '</td>',
+  					'<td valign="top" style=" padding: 7px 0;">',
+  					'<div class="cell-box">',
+  						'<input type="text" class="J_mobile w100 ipt-small"/>',
+  					 '<div class="J_mobile-tip fc-orange mt_5" style=" display: none;"></div>',
+  					'</div>',
+  				 '</td>',
+  					'<td valign="top" style=" padding: 7px 0;">',
+  					'<div class="cell-box">',
+  						'<input type="text" class="J_email w150 ipt-small"/>',
+  					 '<div class="J_email-tip fc-orange mt_5" style=" display: none;"></div>',
+  					'</div>',
+  				 '</td>',
+  					'<td valign="top" style=" padding: 7px 0;">',
+  					'<div class="cell-box">',
+  						'<input type="text" class="J_role w150 ipt-small"/>',
+  					 '<div class="J_role-tip fc-orange mt_5" style=" display: none;"></div>',
+  					'</div>',
+  				 '</td>',
+  				'</tr>',
+  				'</tbody>',
+  				'</table>',
+  			'</div>',
+  		'</div>'
+  	]
+  
+  })(jQuery, RayCloud);
+  
+
+});

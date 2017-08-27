@@ -1,0 +1,557 @@
+define('modules/shop/compare/module.shop.compare', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  	var mdul = {
+  		name: 'shop.compare',
+  		depend: 'shop',
+  		_elm_dom_root: '#container',
+  		_elm_template_name: 'template.shop.compare',
+  		_fn_dom_render: function(){
+  			if(this._elm_dom_container){
+  				return;
+  			}
+  			this._elm_dom_container = $('<div></div>').appendTo(this._elm_dom_root);
+  			this._fn_event_bind();
+  		},
+  		_fn_data_format_dsr: function(dsr){
+  			dsr = dsr || '';
+  			dsr = dsr.replace(/^\{/,'');
+  			dsr = dsr.split(';');
+  			var o = {};
+  			$.each(dsr, function(idx, item){
+  				var x = item.split(':'),
+  					key = x[0],
+  					value = x[1];
+  				if(key){
+  					o[key] = value;
+  				}
+  				
+  			});
+  
+  			if(o.sgr){
+  				o.sgr = o.sgr.replace(/\%$/,'') - 0;
+  			}
+  			if(o.mg){
+  				o.mg = o.mg.replace(/\%$/,'') - 0;
+  			}
+  			if(o.sg){
+  				o.sg = o.sg.replace(/\%$/,'') - 0;
+  			}
+  			if(o.cg){
+  				o.cg = o.cg.replace(/\%$/,'') - 0;
+  			}
+  
+  			return o;
+  		},
+  		_fn_dom_update: function(data){
+  			if(!data.list.length){
+  				this._elm_dom_container.empty().html('<div class="pd_30 ft-center">暂无数据</div>');
+  				return;
+  			}
+  			var i,len = 5-data.list.length;
+  		
+  			
+  			data.th = '';
+  			for(i=0;i<len;i++){
+  				data.th += '<th width="220"><div class="cell-box"></div></th>';
+  			}
+  
+  			this._elm_dom_container.empty().html(RC.template.get(this._elm_template_name,data));
+  			this._elm_dom_container.find('.J_Compare_Length').html('共'+data.list.length+'家店铺对比');
+  			
+  			var list = data.list; 
+  			// 店铺对比
+  			this._elm_dom_container.find('.J_name').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html('<div>{{name}}</div><span class="rank seller-rank-{{type}}"></span>'.replace('{{name}}', d.name).replace('{{type}}', d.type));
+  				}else{
+  					$(item).html('<select style="width:160px;"><option>选择已监控的店铺</select>');
+  				}
+  			});
+  			this._elm_dom_container.find('.J_openShopDate').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.openShopDate ? RC.util.date.getdate(d.openShopDate,'YY-MM-DD') : '-');
+  				}
+  			});
+  
+  			this._elm_dom_container.find('.J_address').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.address);
+  				}
+  			});
+  
+  			var format_dsr = this._fn_data_format_dsr;
+  			this._elm_dom_container.find('.J_dsr').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					var dsr = format_dsr(d.dsr).srn || '-';
+  					$(item).html(dsr);
+  				}
+  			});
+  
+  			this._elm_dom_container.find('.J_favor').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.favor);
+  				}
+  			});
+  
+  			this._elm_dom_container.find('.J_amount30').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.amount30);
+  				}
+  			});
+  
+  			this._elm_dom_container.find('.J_price30').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.price30);
+  				}
+  			});
+  			this._elm_dom_container.find('.J_offer30').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.offer30);
+  				}
+  			});
+  
+  			this._elm_dom_container.find('.J_amount90').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.amount90);
+  				}
+  			});
+  
+  			this._elm_dom_container.find('.J_price90').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.price90);
+  				}
+  			});
+  			this._elm_dom_container.find('.J_offer90').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.offer90);
+  				}
+  			});
+  
+  			this._elm_dom_container.find('.J_amount180').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.amount180);
+  				}
+  			});
+  
+  			this._elm_dom_container.find('.J_price180').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.price180);
+  				}
+  			});
+  			this._elm_dom_container.find('.J_offer180').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.offer180);
+  				}
+  			});
+  
+  			this._elm_dom_container.find('.J_catCount').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.catCount);
+  				}
+  			});
+  			this._elm_dom_container.find('.J_catAll').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.catAll);
+  				}
+  			});
+  			this._elm_dom_container.find('.J_brandCount').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.brandCount);
+  				}
+  			});
+  			this._elm_dom_container.find('.J_brandAll').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.brandAll);
+  				}
+  			});
+  
+  			this._elm_dom_container.find('.J_itemCount').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.itemCount);
+  				}
+  			});
+  			this._elm_dom_container.find('.J_itemAll').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.itemAll);
+  				}
+  			});
+  
+  			this._elm_dom_container.find('.J_priceChange30').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.priceChange30);
+  				}
+  			});
+  			this._elm_dom_container.find('.J_titleChange30').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.titleChange30);
+  				}
+  			});
+  			this._elm_dom_container.find('.J_updateChange30').each(function(idx, item){
+  				var d = list[idx];
+  				if(d){
+  					$(item).html(d.updateChange30);
+  				}
+  			});
+  
+  			this._fn_ctrl_load_monitorList($.proxy(this._fn_dom_update_select, this));
+  			
+  
+  		},
+  		/** 
+  		 * 得到字节长度
+  		 * @method byteLen
+  		 * @static
+  		 * @param {String} s 字符串
+  		 * @return {number}  返回字节长度
+  		 */
+  		byteLen: function(s) {
+  			return s.replace(/[^\x00-\xff]/g, "--").length;
+  		},
+  
+  		/** 
+  		 * 得到指定字节长度的子字符串
+  		 * @method subByte
+  		 * @static
+  		 * @param {String} s 字符串
+  		 * @param {number} len 字节长度
+  		 * @param {string} tail (Optional) 结尾字符串
+  		 * @return {string}  返回指定字节长度的子字符串
+  		 */
+  		subByte: function(s, len, tail) {
+  			if (this.byteLen(s) <= len) {return s; }
+  			tail = tail || '';
+  			len -= this.byteLen(tail);
+  			return s.substr(0, len).replace(/([^\x00-\xff])/g, "$1 ") //双字节字符替换成两个
+  				.substr(0, len) //截取长度
+  				.replace(/[^\x00-\xff]$/, "") //去掉临界双字节字符
+  				.replace(/([^\x00-\xff]) /g, "$1") + tail; //还原
+  		},
+  		_fn_dom_update_select: function(list){
+  			var r = ['<option value="-1">选择已监控的店铺</option>'],
+  				ids = this._status_compare_ids.split(',');
+  
+  			var _this = this;
+  			$.each(list, function(idx, item){
+  				var disabled = $.inArray(item.id+'', ids) === -1 ? '' : 'disabled', 
+  					name = item.name ? _this.subByte(item.name, 26, '...') : '-',
+  					title = item.name || '-';
+  				r.push('<option value="'+item.id+'" '+ disabled +' title="'+title+'">'+name+'</option>');
+  			});
+  			_this = null;
+  			this._elm_dom_container.find('select').each(function(idx, item){
+  				$(item).html(r.join(''));
+  				$(item).iSelect();
+  			});
+  		},
+  
+  		_fn_event_bind: function(){
+  			this._elm_dom_container.on('click', '.J_ToLeft', this._fn_event_handler_click_left_proxy = $.proxy(this._fn_event_handler_click_left,this));
+  			this._elm_dom_container.on('click', '.J_ToRight', this._fn_event_handler_click_right_proxy = $.proxy(this._fn_event_handler_click_right,this));
+  			this._elm_dom_container.on('click', '.J_Delete', this._fn_event_handler_click_delete_proxy = $.proxy(this._fn_event_handler_click_delete,this));
+  			this._elm_dom_container.on('change', 'select', this._fn_event_handler_select_change_proxy = $.proxy(this._fn_event_handler_select_change,this));
+  		},
+  		_fn_event_unbind: function(){
+  			this._elm_dom_container.off('click', '.J_ToLeft', this._fn_event_handler_click_left_proxy);
+  			this._elm_dom_container.off('click', '.J_ToRight', this._fn_event_handler_click_right_proxy);
+  			this._elm_dom_container.off('click', '.J_Delete', this._fn_event_handler_click_delete_proxy);
+  			this._elm_dom_container.off('change', 'select', this._fn_event_handler_select_change_proxy);
+  		},
+  		_fn_event_handler_click_left: function(e){
+  			var list = this._status_compare_data.list;
+  			var id = $(e.currentTarget).attr('data-id');
+  			var ids = this._status_compare_ids.split(',');
+  
+  			var l = [], data = this._status_compare_data;
+  			$.each(this._status_compare_ids.split(','), function(idx, id){
+  				var ii = $.inArray(id, data.ids);
+  				if(ii !== -1){
+  					l.push($.extend({},data.list[ii]));
+  				}
+  			});
+  			for(var i=0; i<l.length; i++){
+  				if(list[i].id == id){
+  					break;
+  				}
+  			}
+  
+  			if(i === 0){
+  				return false;
+  			}
+  			
+  			var a = list[i], 
+  				b = list[i-1];
+  			list[i] = b;
+  			list[i-1] = a;
+  
+  			var idds = this._status_compare_data.ids;
+  			a = idds[i]; 
+  			b = idds[i-1];
+  			idds[i] = b;
+  			idds[i-1] = a;
+  
+  
+  			var r = [],
+  				ids = this._status_compare_ids.split(','); 
+  			$.each(this._status_compare_data.list, function(idx, item){
+  				if($.inArray(item.id+'', ids) !== -1){
+  					r.push(item);
+  				}
+  			});
+  
+  			this._fn_dom_update({list:r});
+  			//this._fn_dom_update(this._status_compare_data);
+  
+  		},
+  
+  		_fn_event_handler_click_right: function(e){
+  			var list = this._status_compare_data.list;
+  			var id = $(e.currentTarget).attr('data-id');
+  
+  			var l = [], data = this._status_compare_data;
+  			$.each(this._status_compare_ids.split(','), function(idx, id){
+  				var ii = $.inArray(id, data.ids);
+  				if(ii !== -1){
+  					l.push($.extend({},data.list[ii]));
+  				}
+  			});
+  			for(var i=0; i<l.length; i++){
+  				if(list[i].id == id){
+  					break;
+  				}
+  			}
+  			if(i >= l.length -1){
+  				return false;
+  			} 
+  			var a = list[i], 
+  				b = list[i+1];
+  			list[i] = b;
+  			list[i+1] = a;
+  
+  			var idds = this._status_compare_data.ids;
+  			a = idds[i]; 
+  			b = idds[i+1];
+  			idds[i] = b;
+  			idds[i+1] = a;
+  
+  			var r = [],
+  				ids = this._status_compare_ids.split(','); 
+  			$.each(this._status_compare_data.list, function(idx, item){
+  				if($.inArray(item.id+'', ids) !== -1){
+  					r.push(item);
+  				}
+  			});
+  
+  			this._fn_dom_update({list:r});
+  
+  			//this._fn_dom_update(this._status_compare_data);
+  
+  		},
+  		_fn_event_handler_click_delete: function(e){
+  			var r = this._status_compare_ids.split(',');
+  			if(r.length<=1){
+  				return;
+  			}
+  
+  			var id = $(e.currentTarget).attr('data-id');
+  			var i = $.inArray(id, r);
+  				
+  			if(i<0){
+  				return;
+  			}
+  			
+  			r.splice(i,1);
+  			this._status_compare_ids = r.join(',');
+  			
+  			RC.pages.setCurHash({
+  				shopIds: this._status_compare_ids
+  			});
+  
+  			
+  
+  		},
+  		_fn_event_handler_select_change: function(e){ 
+  			var $select = $(e.currentTarget),
+  				id = $select.val();
+  			if(id == -1){
+  				return;
+  			}
+  
+  			/*
+  			var list = this._status_compare_data.list; 
+  			var found = false;
+  			for(var i=0; i<list.length; i++){
+  				if(list[i].id == id){
+  					found = true;
+  					break;
+  				}
+  			}
+  			*/
+  			var found = $.inArray(id, this._status_compare_ids.split(',')) !== -1;
+  			
+  			if(found){
+  				$.dialog.alert('该店铺已加入对比', function(){ 
+  					$select.data('iSelect').select('', false);
+  				});
+  				return;
+  			}
+  			RC.pages.setCurHash({
+  				shopIds: this._status_compare_ids + ','+id
+  			});
+  		},
+  
+  		_status_monitor_list: [],
+  		_status_compare_data: {},
+  		_status_compare_ids: '',
+  		_fn_get_status_compare_data: function(){
+  			return $.extend(true, {}, this._status_compare_data);
+  		},
+  		_fn_format_data: function(data){
+  			var def = {
+  				//"openShopDate": "-",
+  				"address"     : "-",
+  				"dsr"         : "-",
+  				"favor"       : "-",
+  				"amount30"    : "-",
+  				"price30"     : "-",
+  				"offer30"     : "-",
+  				"amount90"    : "-",
+  				"price90"     : "-",
+  				"offer90"     : "-",
+  				"amount180"   : "-",
+  				"price180"    : "-",
+  				"offer180"    : "-",
+  				"catCount"    : "-",
+  				"catAll"      : "-",
+  				"brandCount"  : "-",
+  				"brandAll"    : "-",
+  				"itemCount"   : "-",
+  				"itemAll"     : "-",
+  				"updateChange30": "-",
+  				"titleChange30": "-",
+  				"priceChange30": "-"
+  			};
+  			
+  			$.each(data.list, function(idx, item){
+  				data.list[idx] = $.extend({}, def, item);
+  			});
+  			
+  			return data;
+  		},
+  		_fn_ctrl_load_monitorList: function(success, fail){
+  			if(this._status_monitor_list.length){
+  				success(this._status_monitor_list);
+  				return;
+  			}
+  			API.user_monitor_shop_list({},$.proxy(function(json){
+  				var data = json.data.list;
+  				this._status_monitor_list = data;
+  				success(data);
+  			},this), fail);
+  		},
+  		_fn_ctrl_load: function(params, success, fail){
+  			
+  			var ids = params.shopIds;
+  			var d = this._status_compare_data;
+  			if(d.list){
+  				ids = ids.split(',');
+  				var found = true, r = [];
+  				$.each(ids, function(idx, id){
+  					var i = $.inArray(id, d.ids);
+  					if(i === -1){
+  						found = false;
+  						return false;
+  					}else{
+  						r.push($.extend({}, d.list[i]));
+  					}
+  				});
+  				
+  				if(found){
+  					success({list: r});
+  					return;
+  				}
+  			}
+  			
+  			
+  				API.shop_compare(params, $.proxy(function(json){
+  					var data = this._fn_format_data({list:json.data}); 
+  					data.ids = [];
+  					$.each(data.list, function(idx, item){
+  						if(item.id){
+  							data.ids.push(item.id+'');
+  						}
+  					});
+  					this._status_compare_data = data;
+  					// 正确性
+  					this._status_compare_ids = data.ids.join(',');
+  					success($.extend({},{list: data.list})); 
+  				},this), fail);
+  			
+  		},
+  
+  		init: function(){},
+  		getContainer: function(){
+  			return this._elm_dom_container;
+  		},
+  		update: function(hashs, afterload, is_refresh){
+  			this._fn_dom_render();
+  			//check
+  			if(!hashs.shopIds){
+  				$.dialog.alert('参数错误!', function() {
+  					history.back();
+  				});
+  				return;
+  			}
+  			this._status_compare_ids = hashs.shopIds;
+  			this._fn_ctrl_load({shopIds: hashs.shopIds}, $.proxy(this._fn_dom_update, this));
+  
+  			afterload && afterload();
+  		},
+  		disabled: function(){
+  			if(this._elm_dom_container){
+  				this._status_monitor_list = [];
+  				this._status_compare_data = {};
+  				this._status_compare_ids = '';
+  			}
+  		},
+  		destroy: function(){
+  			if(this._elm_dom_container){
+  				this._fn_event_unbind();
+  				this._elm_dom_container.empty().remove();
+  				this._elm_dom_container = null;
+  				this._status_monitor_list = [];
+  				this._status_compare_data = {};
+  				this._status_compare_ids = '';
+  			}
+  		}
+  	};
+  
+  	RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+
+});

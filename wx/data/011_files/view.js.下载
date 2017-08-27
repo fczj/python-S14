@@ -1,0 +1,131 @@
+define('modules/shop/detail/title/optimize/view', function(require, exports, module) {
+
+  var $ = require('components/jquery/jquery'),
+      $html = $("<div class=\"modules-shop-title-optimize\">\r\n    <div class=\"J_info con index-info\"><div class=\"loading\"></div></div>\r\n    <div class=\"J_newtitle_con mt\"></div>\r\n    <div class=\"J_result_con mt\"></div>\r\n    <div class=\"con mt\">\r\n        <div class=\"J_tab\"></div>\r\n        <div class=\"J_subtab\"></div>\r\n        <div class=\"J_keyword\"></div>\r\n        <div class=\"J_table\"></div>\r\n        <div class=\"J_hottable\"></div>\r\n    </div>\r\n</div>\r\n<!-- @require 'modules/shop/detail/title/optimize/index.less' -->"),
+      $container = null,
+      modu = null;
+  
+  var newTitle = require('modules/shop/detail/title/optimize/new-title/index');
+  
+  var result = require('modules/shop/detail/title/optimize/result/index')($html.find('.J_result_con'));
+  
+  var tab = require('modules/shop/detail/title/optimize/tab/index');
+  var subtab = require('modules/shop/detail/title/optimize/subtab/index');
+  
+  var table = require('modules/shop/detail/title/optimize/table/index');
+  var hottable = require('modules/shop/detail/title/optimize/hottable/index');
+  
+  var info = require('modules/shop/detail/title/optimize/info/index');
+  
+  var keyword = require('modules/shop/detail/title/optimize/keyword/index');
+  
+  var currentData = {
+      type:1
+  }
+  
+  var conf = {
+      updateMap:{
+          updateHotTable:function (data,pageNo,isEnd) {
+              hottable.update(data,1,pageNo,isEnd);
+              hottable.show(true);
+              table.show(false);
+          },
+          updateTable:function(data){
+              table.update(data);
+              hottable.show(false);
+              table.show(true);
+          },
+          updateInfo:function(data){
+              info.mount($html.find('.J_info'),data);
+          },
+          updateSubtab:function (data) {
+              if(data&&data.length){
+                  subtab.mount($html.find('.J_subtab'),{list:data});
+                  subtab.onClick(function(word){
+                      modu.getTable(currentData.type,word);
+                      table.update(null,-1);
+                  });
+              }
+              subtab.show(false);
+          },
+          updateTitle:function (id,title) {
+              result.setData({id:id});
+              result.load(title);
+              newTitle.setText(title);
+          }
+      },
+      getEl:function(){
+          return $html;
+      },
+      methodMap:{
+  
+      },
+      render:function(container,content,hashs){
+          if(!$container){
+              modu = content;
+              $(container).append($html);
+              $container = container;
+  
+              keyword.mount($html.find('.J_keyword'));
+              keyword.show(false);
+              keyword.onSearch(function(str){
+                  table.show(true);
+                  table.update(null,-1);
+                  modu.getTable(5,str);
+              });
+  
+              tab.mount($html.find('.J_tab'));
+              tab.onClick(function(type){
+                  currentData.type = type;
+                  if(type==1){
+                      subtab.show(true);
+                  }else{
+                      subtab.show(false);
+                  }
+                  keyword.show(false);
+                  if(type==5){
+                      //关键词查询,搞一个输入框,不去查
+                      keyword.show(true);
+                      table.show(false);
+                      hottable.show(false);
+                  }else{
+                      if(type==6){
+                          table.show(false);
+                          hottable.show(true);
+                          modu.getTable(type);
+                          hottable.update(null,-1);
+                      }else{
+                          table.update(null,-1);
+                          hottable.show(false);
+                          table.show(true);
+                          keyword.show(false);
+                          modu.getTable(type);
+                      }
+                  }
+              });
+  
+              newTitle.mount($html.find('.J_newtitle_con'));
+              newTitle.onCheck(function(str){
+                  result.load(str);
+              });
+  
+              table.mount($html.find('.J_table'));
+  
+              hottable.mount($html.find('.J_hottable'));
+              hottable.show(false);
+              hottable.onPage(function(no){
+                  modu.getTable(6,null,no);
+              });
+  
+              table.onClick(function(str){
+                  newTitle.appendTitle(str);
+              });
+          }
+      },
+      destroy:function(){
+          $html.remove();
+      }
+  }
+  module.exports = conf;
+
+});

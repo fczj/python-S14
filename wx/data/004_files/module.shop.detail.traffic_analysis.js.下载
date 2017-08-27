@@ -1,0 +1,1041 @@
+define('modules/shop/detail/traffic_analysis_m/module.shop.detail.traffic_analysis', function(require, exports, module) {
+
+  /**
+      @author chenjiangming
+  */
+  ;(function($,RC){
+      var Shop = RC.controls.get('control.shop.model'),
+          querystring = RC.controls.get('control.querystring');
+  
+      var mdul = {
+          name: 'shop.detail.traffic_analysis_m',
+          depend: 'shop',
+          _elem_root: '#main',
+          _elem_template_name: 'template.shop.detail.traffic_analysis_m',
+          _elem_template_name_keyword_temp: 'template.shop.detail.traffic_analysis_m.keyword_temp',
+           _elem_template_name_data_list: 'template.shop.detail.traffic_analysis_m.data_list',
+          _elem_template_name_keyword_hide_block: 'template.shop.detail.traffic_analysis_m.keyword_hide_block',
+           _elem_template_name_rank_hide_block: 'template.shop.detail.traffic_analysis_m.rank_hide_block',
+          _data_lastest_hash: null,
+          _status_module_active: false,
+          _fn_dom_render: function(shopInfo){
+              shopInfo.shopId = shopInfo.id
+              if(this.$el){
+                   this.$el.html($(RC.template.get(this._elem_template_name_keyword_temp, shopInfo)));
+                  return;
+              }
+              this.$el = $(RC.template.get(this._elem_template_name, shopInfo)).appendTo(this._elem_root);
+              this.$el.html($(RC.template.get(this._elem_template_name_keyword_temp, shopInfo)));
+              this._fn_bind_common_event();
+          },
+          _fn_bind_common_event:function(){
+              this.$el.off('change', '.datePicker', this._fn_event_date_change_proxy); 
+              this.$el.on('change', '.datePicker', this._fn_event_date_change_proxy = $.proxy(this._fn_event_date_change, this)); 
+          },
+          _fn_event_date_change: function(e) {
+              var $target = $(e.target),
+                  date = $target.val(),
+                  hash = {};
+              hash['date'] = new Date(date).getTime();
+              RC.pages.modifyCurHash(hash);
+          },
+          _fn_shop_id:0,
+          _spcial_num:undefined,
+          init: function(){},
+          getContainer: function(){
+              return this.$el;
+          },
+          _f_shopInfo:undefined,
+          _f_hashs:undefined,
+          _fn_dom_update_list:function(hashs,shopInfo){
+              this._f_hashs = hashs;
+              var _this = this;
+              var ajax_spcial=true;
+              if(this._fn_shop_id==shopInfo.id){
+                  ajax_spcial = false;                
+              }else{
+                  this._fn_shop_id = shopInfo.id;
+              }
+              var lat_names = {"keyword":"关键词","item":"宝贝"};
+              if(hashs.lat=='item'){
+                   _this._fn_item_lab(hashs,shopInfo);
+              }else{
+                  _this._fn_keyword_lab(hashs,shopInfo);
+              }
+          },
+           _fn_common_evnet:function(){
+              this.$el.off('change', '.pageSize', this._fn_J_page_sevent_page_size_change_proxy );
+               this.$el.on('change', '.pageSize', this._fn_J_page_sevent_page_size_change_proxy = $.proxy(this._fn_event_page_size_change, this));
+          },
+          _fn_event_page_size_change: function(e) {
+              var hashs = this._f_hashs,
+                  $target = $(e.target);
+              RC.pages.modifyCurHash({pageSize: $target.val(),pageNo:1});
+          },
+          _fn_keyword_lab:function(hashs,shopInfo){
+              var _this = this;
+              var lat_names = {"keyword":"关键词","item":"宝贝"};
+               var _param_date = new Date(this.$el.find(".datePicker").val()).getTime();
+              Shop.getModel(shopInfo.id).data_shop_traffic_pc(
+                  {point:hashs.lat,range:hashs.range,
+              insertDate:_param_date,
+                      type:"mobile",
+                      shopId:shopInfo.id,pageNo:hashs.pageNo||1,pageSize:hashs.pageSize||10},
+                  function(data){
+                      if(data.__status!=3){
+                          var html =  '<div class="tip_div" style="border:1px solid #eee;height:300px;text-align:center;line-height:300px;">'+data.__status_html+'</div>'
+                          _this.$el.find(".data-container").html(html);
+                      }else if(!data.data.list||data.data.list.length==0){var html =  '<div class="tip_div" style="border:1px solid #eee;height:300px;text-align:center;line-height:300px;">无数据</div>'
+                          _this.$el.find(".data-container").html(html);
+                      }else{
+                          var renderData = {};
+                          renderData.__status=data.__status;
+                          var _param_date2 = new Date(_this.$el.find(".datePicker").val()).getTime();
+                          renderData.insertDate = _param_date2;
+                          renderData.shopId = shopInfo.id;
+                          renderData.range = hashs.range;
+                          renderData.hashs_pageSize = hashs.pageSize;
+                          renderData.lab_name = lat_names[hashs.lat];
+                          renderData.total = data.data.total;
+                          renderData.__level = data.__level; 
+                          renderData.list = data.data.list;
+                          $(renderData.list).each(function(index,item){
+                                item.viewId = (hashs.pageNo-1)*hashs.pageSize+index+1;
+                              item.spcial = item.isSpcialWord==1?"是":"否";
+                              if(hashs.range=='spcial'){
+                                  item.spcial = "是";
+                              }
+                          });
+                          
+                          if(hashs.range=='spcial'){
+                              renderData.spcialTotal = data.data.total;
+                          }
+  
+                           if((!_this._spcial_num||ajax_spcial)&&hashs.range!='spcial'){
+                               var _param_date = new Date(_this.$el.find(".datePicker").val()).getTime();
+                               Shop.getModel(shopInfo.id).data_shop_traffic_pc(
+                                  {point:hashs.lat,range:'spcial',
+                                      insertDate:_param_date,
+                                      type:"mobile",
+                                      noDetail:hashs.range=='all'?1:0,
+                                      shopId:shopInfo.id},
+                                  function(data){
+                                      renderData.spcialTotal = data.data.total;
+                                      $.each(renderData.list,function(){
+                                          this.showIndex = this.showIndex||'-';
+                                          this.color="#fd5155";
+                                          this.searchTrend = this.searchTrend||0;
+                                          this.searchTrend_pre = (this.searchTrend*100).toFixed(2);
+                                          if(this.searchTrend<0){
+                                              this.searchTrend = -this.searchTrend;
+                                              this.color="#3bac8a";
+                                          }
+                                          this.searchTrend_ = this.searchTrend*78;
+                                          this.searchTrend_ = this.searchTrend_>78?78:this.searchTrend_.toFixed(2);
+                                      });
+                                      var data_list_dom = $(RC.template.get(_this._elem_template_name_data_list, renderData));
+                                      _this.$el.find(".data-container").html(data_list_dom);
+                                      _this._fn_render_page_dom(hashs,renderData.total);
+  
+                                      if(hashs.range=='spcial'){
+                                          data_list_dom.find(".data-list-title input[type='checkbox']").attr("checked","checked");
+                                      }
+                                      _this._fn_add_data_list_tbody_event();
+                                      _this._fn_common_evnet();
+                                       _this.$el.find(".tab-lat-container .tab-lat").removeClass("current");
+                                       _this.$el.find(".tab-lat-container .tab-lat").eq(0).addClass("current");
+                                  },function(){
+  
+                                  });
+                          }else{
+                              renderData.spcialTotal = data.data.total;
+                                $.each(renderData.list,function(){
+                                          this.showIndex = this.showIndex||'-';
+                                          this.color="#fd5155";
+                                          this.searchTrend = this.searchTrend||0;
+                                          this.searchTrend_pre = (this.searchTrend*100).toFixed(2);
+                                          if(this.searchTrend<0){
+                                              this.searchTrend = -this.searchTrend;
+                                              this.color="#3bac8a";
+                                          }
+                                          this.searchTrend_ = this.searchTrend*78;
+                                          this.searchTrend_ = this.searchTrend_>78?78:this.searchTrend_.toFixed(2);
+                                      });
+                               var data_list_dom = $(RC.template.get(_this._elem_template_name_data_list, renderData));
+                              _this.$el.find(".data-container").html(data_list_dom);
+                              _this._fn_render_page_dom(hashs,renderData.total);
+  
+                              if(hashs.range=='spcial'){
+                                  data_list_dom.find(".data-list-title input[type='checkbox']").attr("checked","checked");
+                              }
+                              _this._fn_add_data_list_tbody_event();
+                              _this._fn_common_evnet();
+                              _this.$el.find(".tab-lat-container .tab-lat").removeClass("current");
+                                       _this.$el.find(".tab-lat-container .tab-lat").eq(0).addClass("current");
+                          }
+  
+                      }
+                  },
+                  function(data){
+  
+                  }
+              );
+          },
+          _fn_render_page_dom:function(hashs,total,selector){
+              //以下渲染分页
+              var pages = this.$el.find('.J_Pages_Container');
+              if(pages && pages.length){
+                  var pagesHtml = RC.controls.get('controls.shop.pagination').getHtml({
+                      lk: function(pageNo){ 
+                          hashs.pageNo = pageNo;
+                          return '#/shop/detail/traffic_analysis_m/?'+ querystring.stringify(hashs);
+                      },
+                      pageSize: hashs.pageSize -0,
+                      pageNo: hashs.pageNo - 0,
+                      maxNo: total,
+                      hasTotal: true,
+                      isEnd: true,
+                      goPage: false
+                  });
+                  // console.log('pagesHtml:'+pagesHtml.html());
+                  pages.html(pagesHtml);
+              }
+          },
+          _fn_show_or_keyword_block:function(e){
+              var _this = this,
+              dom = $(e.target),
+              checkbox = this.$el.find(".data-list input[type='checkbox']"),
+              tr_dom = dom.parent().parent().parent(),
+              hide_container = tr_dom.find(".J_keyword-data-list-tr-hide"),
+              hide_containersub = hide_container.find(".shop-traffic-drainage-keyword");
+              
+              if(dom.hasClass("button-item-open")){
+                  //收起
+                  hide_container.hide();
+                  dom.removeClass("button-item-open");
+                  dom.text("相关宝贝");
+                  hide_container.removeClass("show");
+              }else{
+                  dom.text("收起宝贝");
+                  hide_container.addClass("show");
+                  //展开
+                  dom.addClass("button-item-open");
+                  if(hide_containersub&&hide_containersub.length>0){
+                      hide_container.show();
+                  }else{
+                      if(tr_dom.attr("data-total")<=0){
+                           //无数据
+                          hide_container = tr_dom.find(".J_keyword-data-list-tr-hide");
+                         hide_container.html("<div style='border:1px solid #eee;height:150px;line-height:150px;text-align:center;'>无数据</div>");
+                          hide_container.show();
+                          return;
+                      }
+                      // 请求数据
+                      _this._fn_get_keyword_api(1,tr_dom);
+                  }
+              }
+          },
+          _fn_get_keyword_api:function(pageNo,tr_dom){
+              var _this = this,
+              hide_container = tr_dom.find(".J_keyword-data-list-tr-hide"),
+              hide_containersub = hide_container.find(".shop-traffic-drainage-keyword");
+               var _param_date = new Date(this.$el.find(".datePicker").val()).getTime();
+              API.data_shop_traffic_pc_detail(
+                  {
+              insertDate:_param_date,
+                      shopId:_this._fn_shop_id,
+                      pageNo:pageNo||1,
+                      pageSize:10,
+                      keyword:$.trim(tr_dom.find(".J_f_data-list-td-keyword").eq(0).find("span").text()),
+                      type:"mobile",
+                      point:"keyword",
+                      range:$.trim(tr_dom.find(".J_f_data-list-td-tofu").eq(0).text())=='是'?'spcial':'all',
+                  },
+                  function(data){
+                      if(!data.data.list || data.data.list.length==0){
+                          //无数据
+                          hide_container.html("<div style='border:1px solid #eee;height:150px;line-height:150px;text-align:center;'>无数据</div>");
+                      }else{
+                          var renderData = {};
+                          renderData.keyword=$.trim(tr_dom.find(".J_f_data-list-td-keyword").eq(0).find("span").text());
+                          renderData.list = data.data.list;
+                          renderData.total = tr_dom.attr("data-total");
+                          renderData.range = $.trim(tr_dom.find(".J_f_data-list-td-tofu").eq(0).text())=='是'?'spcial':'all';
+                          var keyword_hide_block = $(RC.template.get(_this._elem_template_name_keyword_hide_block, renderData));
+  
+                          hide_container.html(keyword_hide_block);
+                          _this._fn_render_page_keyword_dom(pageNo,tr_dom);
+                          _this._fn_add_rank_event();
+                      }
+                          hide_container.show();
+                  },
+                  function(data){
+                       hide_container.html("<div style='border:1px solid #eee;height:150px;line-height:150px;text-align:center;'>无数据</div>");
+                       hide_container.show();
+                  }
+              );
+          },
+          _fn_show_or_rank_block:function(e){
+              var itemid = $(e.target).attr("data-itemid");
+              var range = $(e.target).attr("data-range");
+              var keyword = $(e.target).attr("data-keyword");
+              var _this = this,
+              dom = $(e.target),
+              checkbox = this.$el.find(".data-list input[type='checkbox']"),
+              tr_dom = dom.parent().parent().parent(),
+              hide_container = tr_dom.find(".J_rank_data-list-tr-hide"),
+              hide_containersub = hide_container.find(".shop-traffic-keyword-rank");
+              
+              if(dom.hasClass("button-rank-open")){
+                  //收起
+                  hide_container.hide();
+                  dom.removeClass("button-rank-open");
+                  dom.text("历史排名");
+                  dom.parents(".data-list-tr-f").eq(0).removeClass("current");
+              }else if(hide_containersub&&hide_containersub.length>0){
+                  dom.addClass("button-rank-open");
+                  hide_container.show();
+                  dom.text("收起排名");
+                  dom.parents(".data-list-tr-f").eq(0).addClass("current");
+              }else{
+                  dom.addClass("button-rank-open");
+                  dom.text("收起排名");
+                  this._get_fn_show_or_rank_api(tr_dom,itemid,1,range,keyword);
+                  dom.parents(".data-list-tr-f").eq(0).addClass("current");
+              }
+          },
+          _get_fn_show_or_rank_api:function(tr_dom,itemId,dateType,range,keyword){
+              var _this = this;
+              var hide_container = tr_dom.find(".J_rank_data-list-tr-hide"),
+              hide_containersub = hide_container.find(".shop-traffic-keyword-rank");
+              var dateUtil = RC.util.date;
+              // dateUtil.getdiffdate(endDate, '7d', 'YY-MM-DD').replace(/-/g, '/');
+              // dateUtil.getdate(shopInfo.__updateTime, 'YY-MM-DD'),
+               var _param_date = new Date(this.$el.find(".datePicker").val()).getTime();
+               API.data_shop_traffic_pc_rank(
+                  {
+              insertDate:_param_date,
+                      shopId:this._fn_shop_id,
+                      itemId:itemId,
+                      dateType:dateType,
+                      keyword:keyword,
+                      type:"mobile",
+                      range:range
+                  },
+                  function(data){
+                      // data = {"data":{
+                      //          "list":[
+                      //          ],
+                      //          "total":200
+                      //         }};
+                      // for(var i=0;i<dateType*7;i++){
+                      //     var d = new Date();
+                      //    d =  dateUtil.getdiffdate(d, '-'+i+'d', 'YY-MM-DD').replace(/-/g, '/');
+                      //     data.data.list.push({date:new Date(d).getTime(),rank:12+i});
+                      // }
+                      if(!data.data.list||data.data.list.length==0){
+                          //无数据
+                          hide_container.html("<div style='border:1px solid #eee;height:150px;line-height:150px;text-align:center;'>无数据</div>");
+                      }else{
+                          data.data.list.sort(function(a,b){
+                              return a.date-b.date;
+                          });
+                          var renderData = {};
+                          renderData.itemid = itemId;
+                          renderData.range = range;
+                          renderData.keyword=keyword;
+                         var offsetD = 7;
+                          if(dateType==2){
+                              offsetD = 14;
+                          }else if(dateType==3){
+                              offsetD = 30;
+                          }
+                          var dateUtil_ = RC.util.date;
+  
+                          renderData.s_date = _this._fn_formate_rank_title_date(dateUtil.getdiffdate(data.data.list[data.data.list.length-1].date, "-"+(offsetD-1)+'d', 'YY-MM-DD').replace(/-/g, '/'));
+                          renderData.e_date = _this._fn_formate_rank_title_date(data.data.list[data.data.list.length-1].date);
+  
+                          var rank_hide_block = $(RC.template.get(_this._elem_template_name_rank_hide_block, renderData));
+  
+                          hide_container.html(rank_hide_block);
+  
+                          rank_hide_block.find(".keyword-rank-chart").highcharts(_this._fn_high_chart_opt(data.data.list,dateType));
+                          _this._fn_bind_rank_event(rank_hide_block);
+  
+  
+                          if(dateType==2){
+                              var tabs = rank_hide_block.find(".keyword-rank-date-tab-container .keyword-rank-date-tab");
+                              tabs.removeClass("current");
+                              tabs.eq(1).addClass("current");
+                          }else if(dateType==3){
+                              var tabs = rank_hide_block.find(".keyword-rank-date-tab-container .keyword-rank-date-tab");
+                              tabs.removeClass("current");
+                              tabs.eq(0).addClass("current");
+                          }
+                      }
+                      hide_container.show();
+                  },function(){
+  
+                  });
+          },
+          _fn_bind_rank_event:function(rank_hide_block){
+              var _this = this;
+              rank_hide_block.find(".keyword-rank-date-tab-container .keyword-rank-date-tab").off("click");
+              rank_hide_block.find(".keyword-rank-date-tab-container .keyword-rank-date-tab").on("click",function(e){
+                  var dom = $(e.target);
+                  if(dom.hasClass("current")){
+                      return;
+                  }else{
+                      rank_hide_block.find(".keyword-rank-date-tab-container .keyword-rank-date-tab").removeClass("current");
+                      dom.addClass("current");
+                      var parent = dom.parents(".shop-traffic-keyword-rank").eq(0),
+                      tr_dom = parent.parents(".data-list-tr-f").eq(0),
+                      itemId = parent.attr("data-itemid"),
+                      dateType = dom.attr("data-options"),
+                      keyword = parent.attr("data-keyword");
+                      range = parent.attr("data-range");
+                      _this._get_fn_show_or_rank_api(tr_dom,itemId,dateType,range,keyword);
+                  }
+              });
+          },
+          _fn_high_chart_opt:function(list,dateType){
+              var xlable = [];
+              var data = [];
+              var offsetD = 7;
+              if(dateType==2){
+                  offsetD = 14;
+              }else if(dateType==3){
+                  offsetD = 30;
+              }
+              var dateUtil = RC.util.date;
+              var date_formatter=function(date){
+                  var d = new Date(date);
+                  var m = d.getMonth()+1+"",
+                      d = d.getDate()+"";
+                  if(m.length<2){
+                      m = "0"+m;
+                  }
+                  if(d.length<2){
+                      d = "0"+d;
+                  }
+                  return m+"-"+d;
+              }
+              var max_Date = list[list.length-1].date;
+              for(var i=offsetD-1;i>=0;i--){
+                  xlable.push(date_formatter(dateUtil.getdiffdate(max_Date, "-"+i+'d', 'YY-MM-DD').replace(/-/g, '/')));
+              }
+              for(var i=0;i<xlable.length;i++){
+                  var have = false;
+                  $(list).each(function(index,item){
+                      if(date_formatter(item.date)==xlable[i]){
+                           if(item.rank==0){
+                              data.push(null);
+                          }else{
+                              data.push(item.rank);
+                          }
+                          have = true;
+                      }
+                  });
+                  if(!have){
+                      data.push(null);
+                  }
+              }
+              var opt = {
+                  chart: {
+                      // type: 'area'//类型,区域图
+                  },
+                  title: {
+                      text: null//不显示标题
+                  },
+                  plotOptions: {
+                      area: {
+                          marker: {
+                              // enabled: false,//false为隐藏不显示
+                              symbol: 'circle',
+                              radius: 2,//设置点大小
+                              states: {
+                                  hover: {
+                                      enabled: true//hover时值变化
+                                  }
+                              }
+                          }
+                      }
+                  },
+                  xAxis: {
+                       "labels": {
+                          "staggerLines": 1,
+                          "step": dateType
+                      },
+                      tickWidth:0,//刻度宽度
+                      lineWidth:1,//轴线的宽度
+                      gridLineWidth: 0,//网格线宽度,0为不显示
+                      categories: xlable
+                  },
+                  credits: {
+                       enabled: false//水印
+                  },
+                  yAxis: {
+                      floor:1,
+                      labels: {
+                          formatter:function(){
+                              return this.value+"名";
+                          }
+                      },
+                      reversed:true,
+                      gridLineWidth: 1,
+                      allowDecimals:false,
+                      lineWidth:1,//轴线的宽度
+                      title: {
+                          text: null
+                      }
+                  },
+                  tooltip: {
+                      // valueSuffix: '°C'//tip数值后面追加(单位)
+                  },
+                  legend: {
+                     enabled: false//不显示系列名
+                  },
+                  series: [{
+                      name:"排名",
+                      data:data
+                  }
+                  ]
+              }
+              // console.log('opt:'+JSON.stringify(opt));
+              return opt;
+          },
+          _fn_formate_rank_title_date:function(date){
+              var d = new Date(date);
+              var m = d.getMonth()+1+"",
+                  d = d.getDate()+"";
+              if(m.length<2){
+                  m = "0"+m;
+              }
+              if(d.length<2){
+                  d = "0"+d;
+              }
+              return m+"月"+d+"日";
+          },
+          _fn_add_rank_event:function(){
+              this.$el.find(".button-rank-close").off("click",this._fn_show_or_rank_block_proxy);
+  
+              this.$el.find(".button-rank-close").on("click",this._fn_show_or_rank_block_proxy = $.proxy(this._fn_show_or_rank_block,this));
+          },
+          _fn_render_page_keyword_page_jump:function(e){
+              var dom = $(e.target);
+              if(dom.hasClass("page-cur")){
+                  return;
+              }
+              this._fn_get_keyword_api(dom.attr("data-key"),dom.parents(".shop-traffic-drainage-keyword").eq(0).parents(".data-list-tr-f").eq(0));
+          },
+          _fn_render_page_keyword_dom:function(pageNo,tr_dom){
+               var _this = this;
+              //以下渲染分页
+              var pages = tr_dom.find(".J_keyword-data-list-tr-hide").find('.J_Pages_Container_keyword');
+              if(tr_dom.attr("data-total")<=10){
+                  return;
+                  pages.hide();
+              }
+              if(pages && pages.length){
+                  var pagesHtml = RC.controls.get('controls.shop.pagination').getHtml({
+                      lk: function(pageNo){ 
+                         // $.proxy(_this._fn_get_keyword_api,_this)(pageNo,tr_dom);
+                      },
+                      pageSize: 10,
+                      pageNo: pageNo - 0,
+                      maxNo: tr_dom.attr("data-total"),
+                      hasTotal: true,
+                      isEnd: true,
+                      goPage: false
+                  });
+  
+                  // console.log('pagesHtml:'+pagesHtml.html());
+                  pagesHtml.find(".J_page_jump").off("click",_this._fn_render_page_keyword_page_jump_proxy);
+                  pagesHtml.find(".J_page_jump").on("click",_this._fn_render_page_keyword_page_jump_proxy=$.proxy(_this._fn_render_page_keyword_page_jump,_this));
+                  pages.html(pagesHtml);
+              }
+          },
+          _fn_add_data_list_tbody_event:function(){
+              this.$el.find(".data-list-tbody .data-list-tr-f .button-item-close").off("click",this._fn_show_or_keyword_block_proxy);
+  
+              this.$el.find(".data-list-tbody .data-list-tr-f .button-item-close").on("click",this._fn_show_or_keyword_block_proxy = $.proxy(this._fn_show_or_keyword_block,this));
+  
+               this.$el.find(".data-list input[type='checkbox']").off("change",this._fn_checkbox_change_proxy);
+              this.$el.find(".data-list input[type='checkbox']").on("change",this.   _fn_checkbox_change_proxy = $.proxy(this._fn_checkbox_change,this));
+  
+          },
+          _fn_checkbox_change:function(e){
+              var dom = $(e.target);
+              if(dom[0].checked){
+                  RC.pages.modifyCurHash({range: "spcial",pageNo:1});
+                  // this._fn_keyword_lab(this._f_hashs,this._f_shopInfo,);
+              }else{
+                  // this._fn_keyword_lab(this._f_hashs,this._f_shopInfo,"all");
+                  RC.pages.modifyCurHash({range: "all",pageNo:1});
+              }
+          },
+          update: function(hashs, afterload, refresh){
+              var type = hashs.type,
+                  id = hashs.id,
+                  lats = ["keyword","item"];
+                  hashs.lat=hashs.lat||'keyword';
+                  hashs.pageNo = hashs.pageNo||1;
+                  hashs.pageSize = hashs.pageSize||10;
+                  hashs.range = hashs.range||"all";
+              var _this = this;
+              Shop.getModel(hashs.id).getData(_.bind(function(data){
+                   var dateUtil   = RC.util.date,
+                  updateTime = data.__updateTime,
+                  minDate,
+                  maxDate    = dateUtil.getdate(updateTime,'YY-MM-DD');
+                  // 一个月以31天计算
+                  switch(data.__level){
+                      case 'senior': 
+                          minDate = dateUtil.getdiffdate(maxDate, '-62d', 'YY-MM-DD');
+                          break;
+                      case 'primary': 
+                          minDate = dateUtil.getdiffdate(maxDate, '-62d', 'YY-MM-DD');
+                          break;
+                      default:
+                          minDate = dateUtil.getdiffdate(maxDate, '-30d', 'YY-MM-DD');
+                  }
+                  var __minDay = new Date("2015/11/06");
+                  var i = (new Date(maxDate).getTime()-__minDay.getTime())/3600/24/1000+1;
+                  if(i<62){
+                    minDate = dateUtil.getdate(__minDay,'YY-MM-DD');
+                  }
+                  data._maxDate = maxDate;
+                  data._minDate = minDate;
+                  var ___date = hashs.date||data.__updateTime;
+                  data.searchDate = dateUtil.getdate(new Date(parseInt(___date)),'YY-MM-DD').replace(/-/g,'/');
+                  data.searchDate_m = ___date
+                  this._fn_dom_render(data);
+                  afterload && afterload();
+                  _this.$el.find(".tab-lat-container .tab-lat").removeClass("current");
+                  if(hashs.lat=='item'){
+                      _this.$el.find(".tab-lat-container .tab-lat").eq(1).addClass("current");
+                  }else{
+                      _this.$el.find(".tab-lat-container .tab-lat").eq(0).addClass("current");
+                  }
+                  _this._f_shopInfo = data;
+                  _this._fn_dom_update_list(hashs,data);
+                  // afterload && afterload();
+                  _this._fn_common_chart(data);
+              },this));
+              
+          },
+          _fn_common_chart:function(shopInfo){
+              var _this = this;
+               Shop.getModel(shopInfo.id).data_shop_search_trend_list({
+                  shopId:shopInfo.id,
+                  type:"app"
+               },
+               function(data){
+                  if(data.__status!=3){
+                      var html =  '<div class="tip_div" style="font-size: 14px;font-family: \'Microsoft YaHei\',\'lucida grande\',tahoma,arial,sans-serif;height:300px;text-align:center;line-height:300px;">'+data.__status_html+'</div>'
+                          _this.$el.find('.chart').html(html);
+                  }else if(!data.list||data.list.length==0){
+                      var html =  '<div class="tip_div" style="font-size: 14px;font-family: \'Microsoft YaHei\',\'lucida grande\',tahoma,arial,sans-serif;height:300px;text-align:center;line-height:300px;">无数据</div>'
+                          _this.$el.find('.chart').html(html);
+                  }else{
+                      _this._fn_act_draw_chart(data.list,shopInfo.__updateTime);
+                  }
+               },function(){
+  
+               });
+          },
+          _fn_act_draw_chart: function(list,endDate) {
+              var dateRange = {}
+              dateRange.endDate = endDate;
+              $container = this.$el;
+             var chartInfo = [{name: '店铺曝光指数', item: 'displayRate'}, {name: '无线端搜索曝光趋势', item: 'searchDisplayRate'}];
+              chartInfo.width='940';
+              var chartColor = RC.controls.get('control.config').chartColor;
+              var dateObj = RC.util.date;
+                  
+              list.sort(function(a, b) {
+                  return a.date - b.date;
+              });
+             dateRange.startDate= dateObj.getdiffdate(endDate, '-29d', 'YY-MM-DD').replace(/-/g, '/');
+              dateRange.startDate = dateObj.tojsdate(dateRange.startDate).getTime();
+              dateRange.endDate = dateObj.tojsdate(dateRange.endDate).getTime();
+              dateRange.startDate = (list[0] && list[0].date < dateRange.startDate ? list[0].date:dateRange.startDate);
+              var data = this._fn_process_data_for_chart(list, chartInfo, dateRange);
+  
+              //10天一个单位
+              var step = Math.ceil((dateRange.endDate - dateRange.startDate)/(10 * 24 * 60 * 60 * 1000));
+              var opt = {
+                  chart: {
+                      width: chartInfo.width || 1042,
+                      height: 400,
+                      type: 'area'
+                  },
+                  exporting: {
+                      enabled: false
+                  },
+                  credits: {
+                      enabled: false
+                  },
+                  title: {
+                      text: ' '
+                  },
+                  rangeSelector: {
+                       enabled: false
+                   },
+                  legend: {
+                      align: 'center',      //水平居中
+                      verticalAlign: 'top', //在顶部
+                      margin: 35, 
+                      enabled: true,
+                      symbolWidth: 20,
+                      symbolHeight: 8
+                   },
+                   plotOptions: {
+                      area: {
+                          fillOpacity: 0.05,
+                          lineWidth: 1
+                      }
+                   },
+                  xAxis: {
+                      type: 'datetime',
+                      title: {text: null},
+                      labels: {
+                          formatter: function () {
+                              return dateObj.getdate(this.value,'MM-DD').replace(/-/g, '\/');
+                          },
+                          staggerLines: 1,  //水平轴label不会换行
+                          step: step,          //3天显示一次
+                      },
+                      gridLineWidth: 1,  //网格线
+                      tickLength: 0,     //伸出水平轴的长度
+                      lineWidth: 2,       //x轴的宽度
+                      tickInterval: 24 * 60 * 60 * 1000,
+                      startOnTick: true,
+                      endOnTick: true
+                  },
+                  
+                  tooltip: {
+                      shared: true,
+                      xDateFormat: '%Y-%m-%d'
+                  },
+                  yAxis: [{
+                       // min: 0,
+                       labels: {
+                           // y: 3,
+                           // x: -25,
+                           style: {
+                               color: chartColor[0]
+                           },
+                           opposite: false
+                       },
+                       // showLastLabel: true,
+                       title: {
+                          text: null
+                       },
+                       lineWidth: 2,
+                       opposite: false
+  
+                   }, {
+                      // min: 0,
+                      linkedTo: 0,
+                      labels: {
+                          // y: 3,
+                          // x: 20,
+                          opposite: true,
+                          style: {
+                              color: chartColor[1]
+                          }
+                      },
+                      opposite: true,
+                      // showLastLabel: true,
+                      title: {
+                         text: null
+                      },
+                      lineWidth: 2
+  
+                   }],
+                  series: [{
+                      name: chartInfo[0].name,
+                      data: data[0],
+                      color: chartColor[0]
+                  }, {
+                      name: chartInfo[1].name,
+                      data: data[1],
+                      color: chartColor[1]
+                  }]
+              };
+              $container.find('.chart').highcharts(opt);
+          },
+          //时间段为用户选择的时间段，非api返回的时间段，没有数据则用null断裂
+          _fn_process_data_for_chart: function(list, chartInfo, dateRange) {
+              var dateObj = RC.util.date;
+              var s = dateRange.startDate, 
+                  e = dateRange.endDate,
+                  t = s;
+              var i = 0, temp, l = list.length;
+              var data0 = [], data1 = [];
+              var item0 = chartInfo[0].item, item1 = chartInfo[1].item;
+  
+              temp = list[i];
+              temp.date = dateObj.tojsdate(dateObj.getdate(temp.date, 'YY-MM-DD')).getTime();
+              while(t <= e) {
+                  if (t == temp.date) {
+                      data0.push([t, temp[item0] === undefined ? null: temp[item0]]);
+                      data1.push([t, temp[item1] === undefined ? null: temp[item1]]);
+                      if (i < l - 1) {
+                          temp = list[++i];
+                          //去掉小时、分、秒
+                          temp.date = dateObj.tojsdate(dateObj.getdate(temp.date, 'YY-MM-DD')).getTime();
+                      }
+                  } else {
+                      data0.push([t, null]);
+                      data1.push([t, null]);
+                  }
+                  t = dateObj.tojsdate(dateObj.getdiffdate(t, '1d')).getTime();
+              }
+              return [data0, data1];
+          },
+          disabled: function(){ 
+          },
+          destroy: function(){
+              if(this.$el){
+                  this.$el.empty().remove();
+                  this.$el = null;
+              }
+          },
+            _elem_template_name_data_item_list: 'template.shop.detail.traffic_analysis_m.data_item_list',
+            _elem_template_name_item_hide_block: 'template.shop.detail.traffic_analysis_m.item_hide_block',
+            _fn_show_or_item_block:function(e){
+              var _this = this,
+              dom = $(e.target),
+              checkbox = this.$el.find(".data-list input[type='checkbox']"),
+              tr_dom = dom.parent().parent().parent(),
+              hide_container = tr_dom.find(".J_keyword-data-list-tr-hide"),
+              hide_containersub = hide_container.find(".shop-traffic-drainage-keyword");
+              
+              if(dom.hasClass("button-item-open-w")){
+                  //收起
+                  hide_container.hide();
+                  dom.removeClass("button-item-open-w");
+                  dom.text("相关关键词");
+                   hide_container.removeClass("show");
+              }else{
+                  //展开
+                  dom.addClass("button-item-open-w");
+                  dom.text("收起关键词");
+                   hide_container.addClass("show");
+                  if(hide_containersub&&hide_containersub.length>0){
+                      hide_container.show();
+                  }else{
+                      if(tr_dom.attr("data-total")<=0){
+                           //无数据
+                          hide_container = tr_dom.find(".J_keyword-data-list-tr-hide");
+                         hide_container.html("<div style='border:1px solid #eee;height:150px;line-height:150px;text-align:center;'>无数据</div>");
+                          hide_container.show();
+                          return;
+                      }
+                      // 请求数据
+                      _this._fn_get_item_api(1,tr_dom);
+                  }
+              }
+          },
+          _fn_render_page_item_dom:function(pageNo,pageSize,tr_dom){
+               var _this = this;
+              //以下渲染分页
+              var pages = tr_dom.find(".J_keyword-data-list-tr-hide").find('.J_Pages_Container_keyword');
+              if(tr_dom.attr("data-total")<=10){
+                  return;
+                  pages.hide();
+              }
+              if(pages && pages.length){
+                  var pagesHtml = RC.controls.get('controls.shop.pagination').getHtml({
+                      lk: function(pageNo){ 
+                         // $.proxy(_this._fn_get_keyword_api,_this)(pageNo,tr_dom);
+                      },
+                      pageSize: pageSize||10,
+                      pageNo: pageNo - 0,
+                      maxNo: tr_dom.attr("data-total"),
+                      hasTotal: true,
+                      isEnd: true,
+                      goPage: false
+                  });
+  
+                  // console.log('pagesHtml:'+pagesHtml.html());
+                  pagesHtml.find(".J_page_jump").off("click",_this._fn_render_page_item_page_jump_proxy);
+                  pagesHtml.find(".J_page_jump").on("click",_this._fn_render_page_item_page_jump_proxy=$.proxy(_this._fn_render_page_item_page_jump,_this));
+                  pages.html(pagesHtml);
+              }
+          },
+          _fn_render_page_item_page_jump:function(e){
+              var dom = $(e.target);
+              if(dom.hasClass("page-cur")){
+                  return;
+              }
+              this._fn_get_item_api(dom.attr("data-key"),dom.parents(".shop-traffic-drainage-keyword").eq(0).parents(".data-list-tr-f").eq(0));
+          },
+          _fn_get_item_api:function(pageNo,tr_dom){
+              var _this = this,
+              hide_container = tr_dom.find(".J_keyword-data-list-tr-hide"),
+              hide_containersub = hide_container.find(".shop-traffic-drainage-keyword");
+               var _param_date = new Date(this.$el.find(".datePicker").val()).getTime();
+              API.data_shop_traffic_pc_detail(
+                  {
+              insertDate:_param_date,
+                      shopId:_this._fn_shop_id,
+                      pageNo:pageNo||1,
+                      pageSize:10,
+                      itemId:tr_dom.attr("data-itemid"),
+                      type:"mobile",
+                      point:"item",
+                      range:"all"
+                  },
+                  function(data){
+                      // data = {data:{
+                      //      "list":[
+                      //     { "keyword":"小米手机","rank":12,"relatedSpcialKeywordCnt":1},
+                      //     { "keyword":"小米手机2","rank":12,"relatedSpcialKeywordCnt":1},
+                      //     { "keyword":"小米手机3","rank":12,"relatedSpcialKeywordCnt":1},
+                      //     { "keyword":"小米手机4","rank":12,"relatedSpcialKeywordCnt":1},
+                      //     { "keyword":"小米手机5","rank":12,"relatedSpcialKeywordCnt":1}
+                      //       ]
+                      //     }
+                      // };
+                      if(!data.data.list || data.data.list.length==0){
+                          //无数据
+                          hide_container.html("<div style='border:1px solid #eee;height:150px;line-height:150px;text-align:center;'>无数据</div>");
+                      }else{
+                          $(data.data.list).each(function(index,item){
+                              item.rank_page = item.rank;
+                              item.rank_num = item.rank;
+                              item.isSpcial = item.isSpcialWord==1?"是":"否";
+                          });
+                          var renderData = {};
+                          renderData.itemid=tr_dom.attr("data-itemid");
+                          renderData.list = data.data.list;
+                          renderData.total = tr_dom.attr("data-total");
+                          renderData.range = $.trim(tr_dom.find(".J_f_data-list-td-tofu").eq(0).text())=='是'?'spcial':'all';
+                          $.each(renderData.list,function(){
+                              this.showIndex = this.showIndex||'-';
+                              this.color="#fd5155";
+                              this.searchTrend = this.searchTrend||0;
+                              this.searchTrend_pre = (this.searchTrend*100).toFixed(2);
+                              if(this.searchTrend<0){
+                                  this.searchTrend = -this.searchTrend;
+                                  this.color="#3bac8a";
+                              }
+                              this.searchTrend_ = this.searchTrend*78;
+                              this.searchTrend_ = this.searchTrend_>78?78:this.searchTrend_.toFixed(2);
+                          });
+                          var keyword_hide_block = $(RC.template.get(_this._elem_template_name_item_hide_block, renderData));
+  
+                          hide_container.html(keyword_hide_block);
+                          _this._fn_render_page_item_dom(pageNo,10,tr_dom);
+                          _this._fn_add_rank_event();
+                      }
+                          hide_container.show();
+                  },
+                  function(data){
+                       hide_container.html("<div style='border:1px solid #eee;height:150px;line-height:150px;text-align:center;'>无数据</div>");
+                       hide_container.show();
+                  }
+              );
+          },
+          _fn_add_data_item_list_tbody_event:function(){
+              this.$el.find(".data-list-tbody .data-list-tr-f .button-item-close-w").off("click",this._fn_show_or_item_block_proxy);
+  
+              this.$el.find(".data-list-tbody .data-list-tr-f .button-item-close-w").on("click",this._fn_show_or_item_block_proxy = $.proxy(this._fn_show_or_item_block,this));
+  
+               this.$el.find(".data-list input[type='checkbox']").off("change",this._fn_checkbox_change_proxy);
+              this.$el.find(".data-list input[type='checkbox']").on("change",this.   _fn_checkbox_change_proxy = $.proxy(this._fn_checkbox_change,this));
+  
+          },
+          _fn_item_lab:function(hashs,shopInfo){
+              var _this = this;
+              var lat_names = {"keyword":"关键词","item":"宝贝"};
+               var _param_date = new Date(this.$el.find(".datePicker").val()).getTime();
+              Shop.getModel(shopInfo.id).data_shop_traffic_pc(
+                  {point:hashs.lat,range:hashs.range,
+              insertDate:_param_date,
+                      type:"mobile",
+                      shopId:shopInfo.id,pageNo:hashs.pageNo||1,pageSize:hashs.pageSize||10},
+                  function(data){
+                      if(data.__status!=3){
+                           var html =  '<div class="tip_div" style="border:1px solid #eee;height:300px;text-align:center;line-height:300px;">'+data.__status_html+'</div>'
+                          _this.$el.find(".data-container").html(html);
+                      }else if(!data.data.list||data.data.list.length==0){
+                            var html =  '<div class="tip_div" style="border:1px solid #eee;height:300px;text-align:center;line-height:300px;">无数据</div>'
+                          _this.$el.find(".data-container").html(html);
+                      }else{
+                          var renderData = {};
+                          renderData.range = hashs.range;
+                          var _param_date2 = new Date(_this.$el.find(".datePicker").val()).getTime();
+                          renderData.insertDate = _param_date2;
+                          renderData.__status=data.__status;
+                          renderData.shopId = shopInfo.id;
+                          renderData.lab_name = lat_names[hashs.lat];
+                          renderData.total = data.data.total;
+                          renderData.__level = data.__level; 
+                          renderData.hashs_pageSize = hashs.pageSize;
+                          renderData.list = data.data.list;
+                          $(renderData.list).each(function(index,item){
+                              item.viewId = (hashs.pageNo-1)*hashs.pageSize+index+1;
+                              item.isSpcial = item.isSpcialWord==1?"是":"否";
+                              item.relatedSpcialKeywordCnt = item.relatedSpcialKeywordCnt||"- ";
+                          });
+                          
+                          if(hashs.range=='spcial'){
+                              renderData.spcialTotal = data.data.total;
+                          }
+  
+                           if((!_this._spcial_num||ajax_spcial)&&hashs.range!='spcial'){
+                               var _param_date = new Date(_this.$el.find(".datePicker").val()).getTime();
+                               Shop.getModel(shopInfo.id).data_shop_traffic_pc(
+                                  {point:hashs.lat,range:'spcial',
+                                      insertDate:_param_date,
+                                      type:"mobile",
+                                       noDetail:hashs.range=='all'?1:0,
+                                      shopId:shopInfo.id},
+                                  function(data){
+                                      renderData.spcialTotal = data.data.total;
+                                       var data_list_dom = $(RC.template.get(_this._elem_template_name_data_item_list, renderData));
+                                      _this.$el.find(".data-container").html(data_list_dom);
+                                      _this._fn_render_page_dom(hashs,renderData.total);
+  
+                                      if(hashs.range=='spcial'){
+                                          data_list_dom.find(".data-list-title input[type='checkbox']").attr("checked","checked");
+                                      }
+                                      _this._fn_add_data_item_list_tbody_event();
+                                      _this._fn_common_evnet();
+                                      _this.$el.find(".tab-lat-container .tab-lat").removeClass("current");
+                                       _this.$el.find(".tab-lat-container .tab-lat").eq(1).addClass("current");
+                                  },function(){
+  
+                                  });
+                          }else{
+                              renderData.spcialTotal = data.data.total;
+                               var data_list_dom = $(RC.template.get(_this._elem_template_name_data_item_list, renderData));
+                              _this.$el.find(".data-container").html(data_list_dom);
+                              _this._fn_render_page_dom(hashs,renderData.total);
+  
+                              if(hashs.range=='spcial'){
+                                  data_list_dom.find(".data-list-title input[type='checkbox']").attr("checked","checked");
+                              }
+                               _this.$el.find(".tab-lat-container .tab-lat").removeClass("current");
+                                       _this.$el.find(".tab-lat-container .tab-lat").eq(1).addClass("current");
+                              _this._fn_add_data_item_list_tbody_event();
+                              _this._fn_common_evnet();
+                          }
+  
+                      }
+                  },
+                  function(data){
+  
+                  }
+              );
+          },
+      };
+  
+      RC.modules.define(mdul.name, mdul);
+  })(jQuery,RayCloud);
+
+});

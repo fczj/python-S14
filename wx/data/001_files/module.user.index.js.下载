@@ -1,0 +1,1089 @@
+define('modules/user/index/module.user.index', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  ;(function($,RC){
+  
+  	var compare_ctrl;
+  
+  
+  	var mdul = {
+  		name: 'user.index',
+  		depend: 'user',
+  		_elm_dom_root: '#main',
+  		_elm_template_name: 'template.user.index',
+  		_fn_dom_render: function(){
+  			if(this._elm_dom_container){
+  				return;
+  			}
+  			var $el = this._elm_dom_container = $(RC.template.get(this._elm_template_name)).appendTo(this._elm_dom_root);
+  			this._elm_dom_navs = $el.find('.ui-tab-nav');
+  			this._elm_dom_panels = $el.find('.ui-tab-panel');
+  			var $panel = this._elm_dom_panels.filter('[data-type="item"]');
+  			var $panel2 = this._elm_dom_panels.filter('[data-type="shop"]');
+  			var $panel3 = this._elm_dom_panels.filter('[data-type="industry"]');
+  			$panel.html("<div style='height: 150px;text-align: center;line-height: 150px;font-size: 14px;'>加载中...</div>");
+  			$panel2.html("<div style='height: 150px;text-align: center;line-height: 150px;font-size: 14px;'>加载中...</div>");
+  			$panel3.html("<div style='height: 150px;text-align: center;line-height: 150px;font-size: 14px;'>加载中...</div>");
+  			this._fn_event_bind();
+  		},
+  		_fn_dom_update_tab: function(type){
+  			var _this = this;
+  			_this._elm_dom_navs.removeClass('current')
+  				.filter('[data-type="' + type + '"]')
+  					.addClass('current');
+  			_this._elm_dom_panels.hide()
+  				.filter('[data-type="' + type + '"]')
+  				.show();
+  		},
+  		_fn_dom_update_panel: function(type, data){
+  			var _this = this;
+  
+  			// RC.user.get('info', function () {
+  				if(type === 'item'){
+  					_this._fn_dom_update_itemList(data);
+  				}else if(type === 'industry'){
+  					_this._fn_dom_update_industry(data,1);
+  				}else{
+  					_this._fn_dom_update_shopList(data,1);
+  				}
+  			// });
+  		},
+  		_fn_data_format_dsr: function(dsr){
+  			dsr = dsr || '';
+  			dsr = dsr.replace(/^\{/,'');
+  			dsr = dsr.split(';');
+  			var o = {};
+  
+  			$.each(dsr, function(idx, item){
+  				var x = item.split(':'),
+  					key = x[0],
+  					value = x[1];
+  
+  				key && (o[key] = value);
+  			});
+  
+  			o.sgr = (o.sgr && (o.sgr.replace(/\%$/,'') - 0));
+  			o.mg = (o.mg && (o.mg.replace(/\%$/,'') - 0));
+  			o.sg = (o.sg && (o.sg.replace(/\%$/,'') - 0));
+  			o.cg = (o.cg && (o.cg.replace(/\%$/,'') - 0));
+  
+  			return o;
+  		},
+  		_fn_data_format_shopList:function(pageNo,callback){
+  			var _level = RC.user.get('__level')||RC.user.get('level');
+  			if(!_level){
+  				API.get_user_info({},$.proxy(function(data){
+  					RC.user.set(data.data);
+  					this._fn_data_format_shopList2(pageNo,callback);
+  				},this));
+  			}else{
+  				this._fn_data_format_shopList2(pageNo,callback);
+  			}
+  		},
+  		_fn_data_format_shopList2: function (pageNo,callback) {
+  			var _this = this
+  				, local_data = $.extend(true, {}, _this._status_shopList_data);
+  
+  			/*
+  			普通版最多监控5个店铺
+  			标准版最多监控10个店铺
+  			高级版最多监控50个店铺
+  			*/
+  			local_data._level = RC.user.get('__level')||RC.user.get('level');
+  			if(RC.user.get('outOfSeven')){
+  				local_data._level = 'low';
+  			}
+  			local_data._max = {
+  				'low':1,
+  				'normal': 1
+  				, 'primary': 10
+  				, 'senior': 50
+  				, 'luxury': 200
+  			}[local_data._level];
+  
+  			// 重置总数. 因为 list 元素有可能会被 push 掉
+  			local_data.total = local_data.list.length;
+  			local_data._remain = Math.max(local_data._max - local_data.total, 0);
+  
+  			// 本地缓存变量
+  			RC.user.set({monitor_shop_num: local_data.total});
+  
+  			if (!local_data.total) {
+  				if(callback){
+  					callback.call(this,local_data);
+  				}else{
+  					return local_data;
+  				}
+  			}
+  
+  			var format_dsr = _this._fn_data_format_dsr
+  				, opt = {
+  					title: '-',
+  					image: '-',
+  					name: '-',
+  					sellerNick: '-',
+  					favor: '-',
+  					amount30: '-',
+  					price30: '-'
+  				};
+  
+  			$.each(local_data.list, function (i, item) {
+  				item = $.extend({}, opt, item);
+  				var dsr = format_dsr(item.dsr).sgr;
+  				item.dsr = dsr ? (dsr + '%') : '-';
+  
+  				// 格式化序号、及标识超出权限之外的店铺
+  				item._idx = i + 1;
+  				item._is_beyond = (i + 1) > local_data._max ? false : true;
+  
+  				local_data.list[i] = item;
+  			});
+  			// if(local_data.total>local_data._max){
+  			// 	local_data._is_beyond=true;
+  			// }else{
+  			// 	local_data._is_beyond=true;
+  			// }
+  			pageNo = Math.max(pageNo, 1) || 1;
+  			var pageSize = 10
+  				, start = (pageNo - 1) * pageSize
+  				, end = pageNo * pageSize;
+  
+  			// 返回内容
+  			local_data.pageNo = pageNo;
+  			local_data.list = local_data.list.slice(start, end);
+  			if(callback){
+  				callback.call(this,local_data);
+  			}else{
+  				return local_data;
+  			}
+  		},
+  		_fn_dom_update_shopList: function(data){
+  			data.outOfSeven_num = 0;
+  			if(typeof RC.user.get("outOfSeven_num") != 'undefined'){
+  				data.outOfSeven_num = (7-30+RC.user.get("outOfSeven_num"))>0?(7-30+RC.user.get("outOfSeven_num")):0;
+  			}
+  			var _this = this
+  				, $panel = _this._elm_dom_panels.filter('[data-type="shop"]')
+  				, html
+  				, tpl_html = RC.template.get('template.user.index.shop')
+  				, $chks;
+  
+  			if (!data.total) {
+  				data._total_empty = true;
+  			}
+  			else if (!data.list.length) {
+  				data._page_empty = true;
+  			}
+  			else {
+  				data._loop = true;
+  			}
+  
+  			html = RC.template.get('template.user.index.shop', data, true);
+  			$panel.html(html);
+  				// .find('[type="checkbox"]')
+  					// .iCheck();
+  
+  			// 控制分页
+  			var $pagination_wrap = $panel.find('.J_Pages');
+  			$pagination_wrap.hide();
+  
+  			if (data.total > 10) {
+                  if($pagination_wrap && $pagination_wrap.length){
+  	                var pagesHtml = RC.controls.get('controls.shop.pagination').getHtml({
+  	                    lk: function(pageNo){
+  	                        return '#/user/index/?type=shop&pageNo='+pageNo;
+  	                    },
+  	                    pageSize: 10,
+  	                    pageNo: data.pageNo,
+  	                    maxNo: data.total,
+  	                    hasTotal: true,
+  	                    isEnd: true,
+  	                    goPage: false
+  	                });
+  	                $pagination_wrap.html(pagesHtml);
+  	                $pagination_wrap.show();
+  	            }
+  			}
+  		},
+  		_fn_dom_update_industry:function(data,type){
+  			var _level = RC.user.get('__level')||RC.user.get('level');
+  			if(!_level){
+  				API.get_user_info({},$.proxy(function(user_info){
+  					RC.user.set(user_info.data);
+  					this._fn_dom_update_industry2(data,type);
+  				},this));
+  			}else{
+  				this._fn_dom_update_industry2(data,type);
+  			}
+  		},
+  		_fn_dom_update_industry2:function(data,type){
+  			data.type = type;
+  			data._empty = !data.list.length;
+  			data._level = RC.user.get('__level')||RC.user.get('level');
+  			data._remain = Math.max(data.max - data.total, 0);
+  			if(type==1){
+  				if(data.total==0){
+  					data.__haveDate=2;
+  				}else{
+  					data.__haveDate=1;
+  				}
+  				// this._elm_dom_panels.filter('[data-type="industry"]')
+  				// 	.html(RC.template.get('template.user.index.industry', data));
+  			}else{
+  				if(data._total==0){
+  					data.__haveDate=2;
+  				}else{
+  					data.__haveDate=1;
+  				}
+  			}
+  			this._elm_dom_panels.filter('[data-type="industry"]')
+  					.html(RC.template.get('template.user.index.industry', data));
+  		},
+  		_fn_dom_update_itemList:function(data){
+  			var _level = RC.user.get('__level')||RC.user.get('level');
+  			if(!_level){
+  				API.get_user_info({},$.proxy(function(user_info){
+  					RC.user.set(user_info.data);
+  					this._fn_dom_update_itemList2(data);
+  				},this))
+  			}else{
+  				this._fn_dom_update_itemList2(data);
+  			}
+  		},
+  		_fn_dom_update_itemList2: function(data){
+  			data._empty = !data.list.length;
+  			var pageno = this._status_hashs.pageNo||1;
+  			// data.pageNo = pageno;
+  			// alert(JSON.stringify(data));
+  			/*
+  			普通版最多监控10
+  			标准版最多监控50
+  			高级版最多监控100
+  			*/
+  			data._level = RC.user.get('__level')||RC.user.get('level');
+  			data._max = {
+  				'normal': 5
+  				, 'primary': 50
+  				, 'senior': 100
+  				, 'luxury': 500
+  			}[data._level];
+  			//data.list = data.list.slice(0, data._max);
+  			data._remain = Math.max(data._max - data.list.length, 0);
+  			data.list = data.list.slice((pageno-1)*10,pageno*10);
+  			$.each(data.list, function(idx, item){
+  				if(item.shopRank=='-1'){
+  					item.shopRank = 'B';
+  				}
+  				if(!item.itemTitle){
+  					item.itemTitle='-';
+  				}
+  				if(idx%2==0){
+  					item.bakcground = 'background-color:#fff;';
+  				}else{
+  					item.bakcground = 'background-color:#fbfbfb;';
+  				}
+  				item.warnWay_text = '';
+  				var mod = item.warnType%10;
+  				if(mod==0){
+  					item.warnWay_text = '短信';
+  				}else if(mod==1){
+  					item.warnWay_text = '邮件';
+  				}else if(mod==2){
+  					item.warnWay_text = '短信+邮件';
+  				}
+  				if(item.warnType>=10){
+  					item.warnWay_text += '+站内信';
+  				}
+  				if(item.warnType==3){
+  					item.warnWay_text = '站内信';
+  				}
+  				item.warnWay_text+="<br/>"
+  				//报警规则数据处理
+  				var rules = item.warnRule.split(',');
+  				var i=0;
+  				item.warnRule_text = '';
+  				for(;i<rules.length;i++){
+  					var per_rule = rules[i].split('-');
+  					if(per_rule[0]=='lt'){
+  						item.warnRule_text +='小于<span class="fm-arial ft-normal">￥</span>'+per_rule[1]+"<br/>";
+  					}else if(per_rule[0]=='gt'){
+  						item.warnRule_text +='大于<span class="fm-arial ft-normal">￥</span>'+per_rule[1]+"<br/>";
+  					}
+  				}
+  
+  				//报警时间处理
+  				var dateUtil = RC.util.date;
+  				// item.warningDatetime = new Date();
+  				if(!item.lastWarningDatetime){
+  					item.warningDatetime_date = '&nbsp;&nbsp;&nbsp;无';
+  				}else{
+  					item.warningDatetime_date = dateUtil.getdate(item.lastWarningDatetime, 'YY-MM-DD');
+  					item.warningDatetime_time = dateUtil.getdate(item.lastWarningDatetime, 'YY-MM-DD hh:mm:ss').split(' ')[1];
+  				}
+  				//创建时间处理
+  				// item.warningDatetime = new Date();
+  				// if(!item.created){
+  				// 	item.warningDatetime_date = '&nbsp;&nbsp;&nbsp;无';
+  				// }else{
+  					item.add_date = dateUtil.getdate(item.created, 'YY-MM-DD');
+  					item.add_time = dateUtil.getdate(item.created, 'YY-MM-DD hh:mm:ss').split(' ')[1];
+  				// }
+  				// data.list[idx]._idx = idx+1;
+  				// data.list[idx].channelCount = item.channelCount || '-';
+  				// data.list[idx]._is_beyond = (idx + 1) > data._max ? false : true;
+  			});
+  			this._elm_dom_panels.filter('[data-type="item"]')
+  					.html(RC.template.get('template.user.index.item', data));
+  					// 控制分页
+  			var pages = this._elm_dom_container.find('.J_item_Pages');
+              if(data.total<=10){
+                  pages.hide();
+                  return;
+              }
+              if(pages && pages.length){
+                  var pagesHtml = RC.controls.get('controls.shop.pagination').getHtml({
+                      lk: function(pageNo){
+                          return '#/user/index/?type=item&pageNo='+pageNo;
+                      },
+                      pageSize: 10,
+                      pageNo: pageno,
+                      maxNo: data.total,
+                      hasTotal: true,
+                      isEnd: true,
+                      goPage: false
+                  });
+                  pages.html(pagesHtml);
+              }
+  		},
+  		_fn_event_bind: function(){
+  			this._elm_dom_navs.on('click', this._fn_event_handler_click_tab_proxy = $.proxy(this._fn_event_handler_click_tab,this));
+  			this._elm_dom_container.on('ifClicked', '.J_AddCompare', this._fn_event_handler_addCompare_proxy = $.proxy(this._fn_event_handler_addCompare,this));
+  			this._elm_dom_panels.on('click', '.J_RemoveMonitor', this._fn_event_handler_removeMonitor_proxy = $.proxy(this._fn_event_handler_removeMonitor, this));
+  			this._elm_dom_panels.on('click', '.J_Add_ItemGroup', this._fn_event_handler_addItemGroup_proxy = $.proxy(this._fn_event_handler_addItemGroup,this));
+  			this._elm_dom_panels.on('click', '.J_Add_Item_Group_Submit', this._fn_event_handler_submitItemGroup_proxy = $.proxy(this._fn_event_handler_submitItemGroup,this));
+  
+  			this._elm_dom_container.on('click','.my_shop_div_lable .my_shop_div',$.proxy(this._fn_label_hide_shop_history,this));
+  			this._elm_dom_container.on('click','.my_shop_div_lable .history_shop_div',$.proxy(this._fn_label_show_shop_history,this));
+  
+  			this._elm_dom_container.off("click",".J_cancel_monitor_industry",this._fn_cancel_monitor_industry_proxy);
+  			this._elm_dom_container.on("click",".J_cancel_monitor_industry",this._fn_cancel_monitor_industry_proxy = $.proxy(this._fn_cancel_monitor_industry,this));
+  
+  			this._elm_dom_container.off('click','.my_industry_div_lable .my_industry_div');
+  			this._elm_dom_container.on('click','.my_industry_div_lable .my_industry_div',$.proxy(this._fn_label_hide_industry_history,this));
+  
+  			this._elm_dom_container.off('click','.my_industry_div_lable .history_industry_div');
+  			this._elm_dom_container.on('click','.my_industry_div_lable .history_industry_div',$.proxy(this._fn_label_show_industry_history,this));
+  
+  			RC.sub('global.add.monitor', this._bind_add_monitor_proxy = $.proxy(this._bind_add_monitor,this));
+  
+  			this._elm_dom_container.off('click','.J_OpenItem');
+  			this._elm_dom_container.on('click','.J_OpenItem',$.proxy(this._fn_label_show_item_warn_list,this));
+  			this._elm_dom_container.off('click','.J_ModItem');
+  			this._elm_dom_container.on('click','.J_ModItem',$.proxy(this._fn_label_mod_item_warn_list,this));
+  
+  			this._elm_dom_container.off('click','.J_RemoveItem');
+  			this._elm_dom_container.on('click','.J_RemoveItem',$.proxy(this._fn_label_remove_item_warn_list,this));
+  
+  			this._elm_dom_container.off('click','.J_item_record_more');
+  			this._elm_dom_container.on('click','.J_item_record_more',$.proxy(this._fn_label_record_item_warn_list_more,this));
+  		},
+  		_fn_label_record_item_warn_list_more:function(e){
+  			var $dom = $(e.target)
+  			this._fn_render_item_warn_list_more($dom.attr("data-itemId"),$dom.attr("data-page"));
+  			$dom.remove();
+  		},
+  		_fn_render_item_warn_list_more:function(itemid,pageno){
+  			this._elm_dom_container.find('.warn_record_thead_tr').show();
+  			pageno = pageno||1;
+  			API.user_item_warnlog_list({itemId:itemid,pageNo:pageno||1,pageSize:10},$.proxy(function(data){
+  					$(data.data.list).each(function(idx,item){
+  						var dateUtil = RC.util.date;
+  						item.warningDatetime_date = dateUtil.getdate(item.warningDatetime, 'YY-MM-DD');
+  					});
+  					if(data.data.total>(pageno*10)){
+  						data.data.hasnext = 1;
+  					}
+  					data.data.pageno = parseInt(pageno)+1;
+  					data.data.itemId = itemid;
+  					if(!data.data){
+  						data.data = {};
+  					}
+  					if(!data.data.total||data.data.total==0){
+  						data.data._empty = 1;
+  						this._elm_dom_container.find('.warn_record_thead_tr').hide();
+  					}
+  					this._elm_dom_container.find('.J_record_container').append(RC.template.get('template.user.index.item_record_tr', data.data));
+  			},this))
+  		},
+  		_fn_label_remove_item_warn_list:function(e){
+  			var $dom = $(e.target);
+  			var itemId = $dom.attr("data-itemId");
+  			var id = $dom.attr("data-id");
+  			$.wDialog({ title: "宝贝监控",
+  					 content: "<div style=\"display:table;\"><img style=\"margin-top:12px;margin-right:20px;height:50px;width:50px;\" src=\"http://cdn.maijia.com/www/www-old/resources/css/build/images/wDialog-warn.png\"><div style=\"display:table-cell; vertical-align:middle;margin-top:12px;width: 460px;\">确定取消宝贝监控?</div></div>",
+  	                width: "",
+  	                height: "",
+  	                okVal: "确定",
+  	                cancelVal: "取消",
+  	                ok:$.proxy(function(){
+  	                	API.del_mointor_item({
+  							id:id,
+  							itemId:itemId
+  						},$.proxy(function(data){
+  							this._fn_ctrl_load({
+  								type: 'item'
+  								, pageNo: 1
+  							}, $.proxy(function(data){
+  								this._fn_dom_update_panel('item', data);
+  							},this));
+  						},this));
+  	                },this),
+  	                cancel:function(){
+  	                	RC.clearShow();
+  	                }
+  	            });
+  		},
+  		_fn_label_mod_item_warn_list:function(e){
+  			var $dom = $(e.target);
+  			var _mointor = RC.controls.get('controls.mointor_price_pop'),
+  				title = data.title,
+  				itemPrice = data.price,
+  				itemId = $dom.attr("data-itemId"),
+  				Item = RC.controls.get('control.item.model'),
+  				warnType = $dom.attr('data-type'),
+  				itemImage = data.image;
+  				API.get_item_info({
+  					id:itemId
+  				},$.proxy(function(data){
+  					data = data.data;
+  					var _mointor = RC.controls.get('controls.mointor_price_pop'),
+  						title = data.title,
+  						itemPrice = data.price,
+  						itemImage = data.image;
+  						_mointor.show({
+  							id:$dom.attr("data-id"),
+  							itemId: itemId,
+  							title: title,
+  							itemPrice: itemPrice,
+  							itemImage: itemImage,
+  							warnType : warnType,
+  							type:'modify',
+  							success: $.proxy(function () {
+  									this._fn_ctrl_load({
+  										type: 'item'
+  										, pageNo: 1
+  									}, $.proxy(function(data){
+  										this._fn_dom_update_panel('item', data);
+  									},this));
+  								},this)
+  						});
+  				},this))
+  		},
+  		_fn_label_show_item_warn_list:function(e){
+  			var $dom = $(e.target);
+  			//收起
+  			this._elm_dom_container.find(".J_item_record_tr").remove();
+  			var tr_container = $dom.parent().parent();
+  			var i =0;
+  			// alert($dom.attr("data-id"));
+  			//user_item_warnlog_list报警记录
+  			if($dom.hasClass('open')){
+  				this._elm_dom_container.find(".btn-normal-close").removeClass('open');
+  				this._elm_dom_container.find(".btn-normal-close").text('报警记录');
+  				return;
+  			}else{
+  				this._elm_dom_container.find(".btn-normal-close").removeClass('open');
+  				this._elm_dom_container.find(".btn-normal-close").text('报警记录');
+  				$dom.text('收起记录');
+  				$dom.addClass("open");
+  			}
+  			var background = tr_container.attr("data-back");
+  			tr_container.after(RC.template.get('template.user.index.item_record', {background:background}));
+  			this._fn_render_item_warn_list_more($dom.attr("data-itemId"));
+  		},
+  		_bind_add_monitor:function(id){
+  		var _this = this,
+  			user_level;
+  		API.get_user_info({},function(user_info){
+  			API.user_monitor_industry_list({},function(data){
+  			data = data.data;
+  			// if(data.max==1){
+  			// 	user_level="normal";
+  			// }else if(data.max==2){
+  			// 	user_level="primary";
+  			// }else if(data.max==3){
+  			// 	user_level="senior";
+  			// }else{
+  			// 	user_level= 'other';
+  			// }
+  			user_level = user_info.data.level;
+  			if(data.total<data.max){
+  				//添加
+  				_this._fn_allow_add_monitor(id,user_level,data.total,data.max);
+  			}else{
+  				//不允许
+  				_this._fn_forbid_mointor(user_level,data.total,data.max);
+  			}
+  		});
+  		});
+  
+  	},
+  	_fn_allow_add_monitor:function(id,user_level,total,max){
+  		var _this = this;
+  		var tips = {
+  					'normal': '您是免费用户，只能监控 <span style="color:#f5374d;">1</span>个行业，满30天后可修改替换。'
+  					, 'primary': '您是标准版用户，只能监控 <span style="color:#f5374d;">' + max + '</span>个行业，满30天后可修改替换。'
+  					, 'senior': '您是高级版用户，只能监控 <span style="color:#f5374d;">' + max + '</span>个行业，满30天后可修改替换。'
+  					, 'other': '您是高级版用户，无监控数量限制，满30天后可修改替换。'
+  					, 'luxury': '您是豪华版用户，无监控数量限制，满30天后可修改替换。'
+                  }[user_level];
+  				RC.clearShow();
+  				$.wDialog({ title: "添加监控",
+  					content: "<div style=\"display:table;\"><img style=\"margin-top:12px;margin-right:20px;height:50px;width:50px;\" src=\"http://cdn.maijia.com/www/www-old/resources/css/build/images/wDialog-warn.png\"><div style=\"display:table-cell; vertical-align:middle;margin-top:12px;width: 460px;\">"+tips+"</div></div>",
+  	                width: "",
+  	                height: "",
+  	                okVal: "添加监控",
+  	                cancelVal: "取消",
+  	                ok:$.proxy(function(){
+  						API.user_monitor_industry_add({id: id}, $.proxy(function(){
+  							RC.showSuccess('添加监控成功！',1,function(){window.location.reload();});
+  						}, _this), function () {
+  							forbid_mointor();
+  						}, false, false, false);
+  					}, _this),
+  	                cancel:function(){
+  	                	RC.clearShow();
+  	                }
+              	});
+  	},
+  	_fn_forbid_mointor:function(user_level,total,max){
+  		var _this = this;
+  			var tips = {
+  					// 'low':""
+  					'normal': '因账户权限不足或已到期，当前账户可监控 <span style="color:#f5374d;">' + max + '</span>个行业，已达到上限。'
+  					, 'primary': '您是标准版用户，只能监控 <span style="color:#f5374d;">' + max+ '</span>个行业，目前已达到上限。'
+  					, 'senior': '您是高级版用户，只能监控 <span style="color:#f5374d;">' + max + '</span>个行业，目前已达到上限。'
+  				}[user_level];
+  				RC.clearShow();
+  				$.wDialog({ title: "添加失败",
+  					content: "<div style=\"display:table;\"><img style=\"margin-top:12px;margin-right:20px;height:50px;width:50px;\" src=\"http://cdn.maijia.com/www/www-old/resources/css/build/images/wDialog-error.png\"><div style=\"display:table-cell; vertical-align:middle;margin-top:12px;width: 460px;\">"+tips+"</div></div>",
+  	                width: "",
+  	                height: "",
+  	                okVal: "确定",
+  	                // cancelVal: "取消",
+  	                ok:function(){
+  	                	// $.wDialog.close();
+  	                	// RC.pages.goPage("/index.html#/user/index/?type=industry");
+  	                }
+              	});
+  	},
+  		_fn_cancel_monitor_industry:function(e){
+  			var $dom = $(e.target),id = $dom.attr("data-options");
+  
+  			API.industry_monitor_delete({id: id}, $.proxy(function(){
+  				this._fn_refresh_industry();
+  			},this),$.proxy(function(){
+  				this._fn_refresh_industry();
+  			},this));
+  		},
+  		_fn_get_test_industry_data:function(){
+  			var data = {
+  						        "list": [
+  						        ],
+  						        "total": 1,
+  						        "max":3
+  							}
+  						for(var iii=0;iii<12;iii++){
+  							data.list.push( {
+  						                "industryId": iii+1,
+  						                "leftDays": 0,
+  						                "image":"//g-search1.alicdn.com/img/bao/uploaded/i4/5d/be/2TB1pkxeHVXXXXa.XVXXtKXbFXXX.gif",
+  						                "industryName": "手机数码"
+  						            });
+  						}
+  						data.max = 3;
+  						return data;
+  		},
+  		_fn_refresh_industry:function(){
+  			this._fn_ctrl_load({
+  						type: 'industry'
+  					}, $.proxy(function(data){
+  						this._fn_dom_update_panel('industry', data);
+  					},this));
+  			// ,$.proxy(function(data){
+  			// 			data = this._fn_get_test_industry_data();
+  			// 			data._level = RC.user.get('level');
+  			// 			this._fn_dom_update_panel('industry', data);
+  			// 		},this)
+  		},
+  		_fn_get_my_shop_history_data:function(pageNo,callback){
+  			pageNo = pageNo||1;
+  			API._fn_my_history_shop({
+  				pageNo:1,
+  				pageSize:10
+  			},function(data){
+  				if(data.result!=1){
+  					//错误
+  				}
+  				callback(pageNo,data.data);
+  			},
+  			function(){
+  				//fail
+  			});
+  		},
+  		_fn_label_show_shop_history:function(){
+  			this._fn_get_my_shop_history_data(null,$.proxy(this._fn_get_my_shop_history,this));
+  		},
+  		_fn_label_hide_shop_history:function(){
+  			this._elm_dom_container.find('.my_shop_data_list_table').show();
+  			if(this._elm_dom_container.find('.J_Pages').find('a').size()>0){
+  				this._elm_dom_container.find('.J_Pages').show();
+  			}
+  			this._elm_dom_container.find('.J_Pages2').hide();
+  			$('.my_history_shop_data_list_table').hide();
+  
+  			this._elm_dom_container.find('.my_shop_div_lable .my_shop_div').addClass("current");
+  			this._elm_dom_container.find('.my_shop_div_lable .history_shop_div').removeClass("current");
+  		},
+  		_fn_label_hide_industry_history:function(){
+  			this._fn_ctrl_load({
+  				type: 'industry'
+  				, pageNo: 1
+  			}, $.proxy(function(data){
+  				this._fn_dom_update_panel('industry', data);
+  			},this));
+  		},
+  		_fn_label_show_industry_history:function(){
+  			var _this = this;
+  
+  			this._fn_ctrl_load({
+  				type: 'industry'
+  				, pageNo: 1
+  			}, $.proxy(function(datalist){
+  				API.user_monitor_industry_clist({},function(data){
+  					data.data.max = datalist.max;
+  					data.data._total = data.data.total;
+  					data.data.total = datalist.total;
+  					_this._fn_dom_update_industry(data.data,2);
+  					_this._elm_dom_container.off("click",".J_add_monitor_industry");
+  					_this._elm_dom_container.on("click",".J_add_monitor_industry",function(){
+  						RC.pub('global.add.monitor', $(this).attr("data-options"));
+  					});
+  			});
+  			},this));
+  
+  
+  		},
+  		_fn_get_my_shop_history:function(pageNo,data){
+  			if(!data.list || data.list.length==0){
+  				// 无数据
+  				$('.my_history_shop_data_list_table tbody').html("<tr><td style='height:80px;line-height:80px;' colspan='7' align='center'>无数据</td></tr>");
+  				$('.my_history_shop_data_list_table').show();
+  				this._elm_dom_container.find('.my_shop_data_list_table').hide();
+  				// if(this._elm_dom_container.find('.J_Pages').find('a').size()>0){
+  
+  				// }else{
+  					this._elm_dom_container.find('.J_Pages').hide();
+  				// }
+  				// this._elm_dom_container.find('.J_Pages2').show();
+  				this._elm_dom_container.find('.my_shop_div_lable .my_shop_div').removeClass("current");
+  				this._elm_dom_container.find('.my_shop_div_lable .history_shop_div').addClass("current");
+  				return;
+  			}
+  			var pre_shop_html=[
+  						'<tr><td><div class="cell-box ft-center">{{viewid}}</div></td><td>',
+  								'<div class="cell-box">',
+  									'<a href="#/shop/detail/?id={{id}}">',
+  										'<img src="{{imgurl}}_80x80.jpg" width="80" height="80">',
+  									'</a>',
+  								'</div>',
+  							'</td>',
+  							'<td valign="top">',
+  								'<div class="cell-box">',
+  									'<div class="ellipsis" title="{{titleshopname}}">店铺：<a href="#/shop/detail/?id={{id}}">{{shopname}}</a></div><div class="ellipsis">掌柜：{{sellerNick}}</div><div><span class="rank seller-rank-{{rank}} seller-rank-"></span></div>',
+  								'</div>',
+  							'</td>',
+  							'<td colspan="3">',
+  								'<div class="cell-box fc-gray ml_40 ft-center">[<a class="fc-red J_addMonitor_btn" data-id="{{id}}">添加监控</a>]查看更多信息</div>',
+  								'</td><td><span class="btn-new btn-success-new J_addMonitor_btn" data-id="{{id}}">添加监控</span></td>',
+  						'</tr>'
+  			];
+  
+  			var html = '';
+  			for(var i=(pageNo-1)*10,length=data.list.length;i<length&&i<pageNo*10;i++){
+  				html+=pre_shop_html.join('').replace("{{viewid}}", i+1).replace("{{titleshopname}}", data.list[i].name?data.list[i].name:'-').replace('{{shopname}}', data.list[i].name?data.list[i].name:'-').replace('{{imgurl}}', data.list[i].image).replace('{{imgurl}}', data.list[i].image).replace(/\{\{id\}\}/g, data.list[i].id).replace('{{sellerNick}}', data.list[i].sellerNick?data.list[i].sellerNick:'-').replace('{{rank}}', data.list[i].rank?data.list[i].rank:'-');
+  			}
+  			$('.my_history_shop_data_list_table tbody').html(html);
+  
+  			$('.my_history_shop_data_list_table').show();
+  			this._elm_dom_container.find('.my_shop_data_list_table').hide();
+  			this._elm_dom_container.find('.J_Pages').hide();
+  
+  			this._elm_dom_container.find('.my_shop_div_lable .my_shop_div').removeClass("current");
+  			this._elm_dom_container.find('.my_shop_div_lable .history_shop_div').addClass("current");
+  			// J_Pages2
+  
+  			// 控制分页
+  			var $pagination_wrap = this._elm_dom_container.find('.J_Pages2');
+  			$pagination_wrap.hide();
+  
+  			if (data.total > 10) {
+  				var paging_ctrl = RC.controls.get('controls.calc_pages_html')
+  					, page_html = paging_ctrl.get_html('', function (num) {
+                  // var href = 'javascript:this._fn_get_my_shop_history_data('+num+',this._fn_get_my_shop_history(data));'
+  						return 'javascript:;';
+                  }, Math.ceil(data.total / 10), pageNo * 1);
+  
+  			$pagination_wrap.find('.pagination-page')
+  					.html(page_html);
+  			$pagination_wrap.show();
+  			$pagination_wrap.off('click', 'a');
+  			$pagination_wrap.on('click', 'a',$.proxy(this._fn_jump_page2,this));
+  			}
+  			this._elm_dom_container.on('click', '.J_addMonitor_btn', this._fn_event_handler_click_monitor_proxy = $.proxy(this._fn_event_handler_click_monitor,this));
+  		},
+  		_fn_jump_page2:function(e){
+  			var $target = $(e.target);
+  			if($target.hasClass('disable')){
+  			}else{
+  				this._fn_get_my_shop_history_data($target.attr("data-key"),$.proxy(this._fn_get_my_shop_history,this));
+  			}
+  		},
+  		_fn_event_handler_click_monitor: function(e){
+  			var _this = this
+  				, $target = $(e.target)
+  				//, id = _this._status_shop_info.id
+  				//, shopName = _this._status_shop_info.name
+  				, id = $target.attr("data-id")
+  				// , shopName = shopInfo.name
+                  , viplevel = RC.user.get('__level')||RC.user.get('level')
+  				, monitor_shop_num = RC.user.get('monitor_shop_num')
+  				, mointor_num_map = {
+  					'normal': 1
+  					, 'primary': 10
+  					, 'senior': 50
+  					, 'luxury': 200
+  				}
+  				, max_num = mointor_num_map[viplevel];
+  
+  			if ($target.hasClass('disabled')) {
+  				return;
+  			}
+  
+  			// todo: user数据同步
+  			if (!RC.user.get('_login_status')) {
+  				RC.pub('global.login.pop');
+  				return;
+  			}
+  
+  			var allow_mointor = function () {
+  				var tips = {
+  					'normal': '您是免费版版用户，只能监控 <span style="color:#f5374d;">1</span> 家店铺，7天后到期。'
+  					, 'primary': '您是标准版用户，只能监控 <span style="color:#f5374d;">' + mointor_num_map['primary'] + '</span>家店铺，满30天后可修改替换。'
+  					, 'senior': '您是高级版用户，只能监控 <span style="color:#f5374d;">' + mointor_num_map['senior'] + '</span>家店铺，满30天后可修改替换。'
+  					, 'luxury': '您是豪华版用户，只能监控 <span style="color:#f5374d;">' + mointor_num_map['luxury'] + '</span>家店铺，满30天后可修改替换。'
+                  }[viplevel];
+  				RC.clearShow();
+  				$.wDialog({ title: "添加监控",
+  					content: "<div style=\"display:table;\"><img style=\"margin-top:12px;margin-right:20px;height:50px;width:50px;\" src=\"http://cdn.maijia.com/www/www-old/resources/css/build/images/wDialog-warn.png\"><div style=\"margin-top:12px;display:table-cell; vertical-align:middle;width: 460px;\">"+tips+"</div></div>",
+  	                width: "",
+  	                height: "",
+  	                okVal: "添加监控",
+  	                cancelVal: "取消",
+  	                ok:$.proxy(function(){
+  						API.shop_monitor_add({id: id}, $.proxy(function(){
+  							RC.user.set({monitor_shop_num: RC.user.get('monitor_shop_num') + 1});
+  							_this.shopModel && this.shopModel.save({isMonitor: 1});
+  							RC.showSuccess('添加监控成功！',1,function(){
+  								// _this._status_shopList_data = null;
+  								window.location.href = '#/user/index/?type=shop&pageNo=1';
+  								setTimeout(function(){
+  									location.reload();
+  								},300);
+  							});
+  						}, _this), function () {
+  							forbid_mointor();
+  						}, false, false, false);
+  					}, _this),
+  	                cancel:function(){
+  	                	RC.clearShow();
+  	                }
+              	});
+  			};
+  			var forbid_mointor = function () {
+  				if(RC.user.get('outOfSeven')){
+  					viplevel = 'low';
+  				}
+  				var tips = {
+  					'low': '对不起，您的账号7天试用时间已到期，请购买套餐监控更多店铺',
+  					'normal': '您是免费版用户，当前账户可监控 <span style="color:#f5374d;">' + mointor_num_map['normal'] + '</span>家店铺，已达到上限。<br/><a onclick="javascript:$.wDialog.close();" style="color:#ff6600;display: inline-block;margin-top:5px;" href="/index.html#/user/index/">[查看已监控的店铺]</a>'
+  					, 'primary': '您是标准版用户，只能监控 <span style="color:#f5374d;">' + mointor_num_map['primary'] + '</span>家店铺，目前已达到上限。<br/><a onclick="javascript:$.wDialog.close();" style="color:#ff6600;display: inline-block;margin-top:5px;" href="/index.html#/user/index/">[查看已监控的店铺]</a>'
+  					, 'senior': '您是高级版用户，只能监控 <span style="color:#f5374d;">' + mointor_num_map['senior'] + '</span>家店铺，目前已达到上限。<br/><a onclick="javascript:$.wDialog.close();" style="color:#ff6600;display: inline-block;margin-top:5px;" href="/index.html#/user/index/">[查看已监控的店铺]</a>'
+  					, 'luxury': '您是豪华版用户，只能监控 <span style="color:#f5374d;">' + mointor_num_map['luxury'] + '</span>家店铺，目前已达到上限。<br/><a onclick="javascript:$.wDialog.close();" style="color:#ff6600;display: inline-block;margin-top:5px;" href="/index.html#/user/index/">[查看已监控的店铺]</a>'
+  				}[viplevel];
+  				RC.user.set({monitor_shop_num: max_num});
+  
+  				RC.clearShow();
+  				var okFunc = undefined;
+  				if(viplevel=='low'||viplevel=='normal'){
+  					okFunc = function(){}
+  				}
+  				$.wDialog({ title: "添加失败",
+  					content: "<div style=\"display:table;\"><img style=\"margin-top:12px;margin-right:20px;height:50px;width:50px;\" src=\"http://cdn.maijia.com/www/www-old/resources/css/build/images/wDialog-error.png\"><div style=\"margin-top:12px;display:table-cell; vertical-align:middle;width: 460px;\">"+tips+"</div></div>",
+  	                width: "",
+  	                height: "",
+  	                okVal:'<a target="_blank" style="top: 0;line-height: 38px;position:absolute;left:0;display:block;height:100%;width:100%;color:#fff!important;text-decoration: none!important;" href="/events/meal.html">定购套餐</a>',
+  	                ok:function(){
+  
+  	                }
+              	});
+  			};
+  
+  			if (monitor_shop_num >= max_num) {
+  				forbid_mointor();
+  				return;
+  			}
+  
+  			if (!monitor_shop_num) {
+  				// 获取已监控店铺数
+  				RC.showLoading('正在添加监控，请稍等...');
+  				API.user_monitor_shop_list({}, function (json) {
+  					RC.user.set({monitor_shop_num: json.data.total});
+  
+  					if (json.data.total >= max_num) {
+  						forbid_mointor();
+  					}
+  					else {
+  						allow_mointor();
+  					}
+  				}, function () {
+  					RC.showWarn('添加监控失败，请重试！');
+  				}, false, false, false);
+  			}
+  			else {
+  				allow_mointor();
+  			}
+  		},
+  		_fn_event_unbind: function(){
+  			this._elm_dom_navs.off('click', this._fn_event_handler_click_tab_proxy);
+  			this._elm_dom_container.off('ifClicked', '.J_AddCompare', this._fn_event_handler_addCompare_proxy);
+  			this._elm_dom_panels.off('click', '.J_RemoveMonitor', this._fn_event_handler_removeMonitor_proxy);
+  			this._elm_dom_panels.off('click', '.J_Add_ItemGroup', this._fn_event_handler_addItemGroup_proxy);
+  			this._elm_dom_panels.off('click', '.J_Add_Item_Group_Submit', this._fn_event_handler_submitItemGroup_proxy);
+  
+  			this._elm_dom_container.off('click','.my_shop_div_lable .my_shop_div');
+  			this._elm_dom_container.off('click','.my_shop_div_lable .history_shop_div');
+  
+  			this._elm_dom_container.off('click', '.J_addMonitor_btn');
+  
+  			RC.removeSub('global.add.monitor', this._bind_add_monitor_proxy);
+  		},
+  		_fn_event_handler_click_tab: function(e){
+  			var $target = $(e.currentTarget)
+  				, type = $target.attr('data-type');
+  
+  			if($target.hasClass('current')){
+  				return;
+  			}
+  
+  			if (this._status_last_hash && this._status_last_hash[type]) {
+  				location.hash = this._status_last_hash[type];
+  			}
+  			else {
+  				RC.pages.setCurHash({
+  					type: type
+  				});
+  			}
+  		},
+  		_fn_event_handler_addCompare: function(e){
+  			var id = $(e.target).val(),
+  				name = $(e.target).attr('data-name');
+  				checked = e.target.checked;
+  			if(!checked){
+  				if (compare_ctrl.get().length === 5) {
+  					RC.showWarn('最多只能添加5个店铺');
+  					setTimeout(function () {$(e.target).iCheck('uncheck')}, 0);
+  					return;
+  				}
+  				compare_ctrl.add({id: id, name: name});
+  			}else{
+  				compare_ctrl.remove(id);
+  			}
+  		},
+  		_fn_event_handler_removeMonitor: function(e){
+  			var _this = this
+  				, id = $(e.currentTarget).attr('data-id');
+  
+  			API.shop_monitor_delete({id: id}, $.proxy(function(){
+  				// compare_ctrl.remove(id);
+  
+  				$.each(_this._status_shopList_data.list, function (i, o) {
+  					if (o.id == id) {
+  						_this._status_shopList_data.list.splice(i, 1);
+  						return false;
+  					}
+  				});
+  
+  				var match = location.hash.match(/pageNo=(\d+)/)
+  					, pageNo = match ? match[1] : 1
+  					, _data = _this._fn_data_format_shopList(pageNo,_this._fn_dom_update_shopList);
+  
+  				// (_data);
+  
+  				/*
+  				API.user_monitor_shop_list({}, $.proxy(function(json){this._fn_dom_update_shopList(json.data);},this));
+  				*/
+  			},this));
+  		},
+  		_fn_event_handler_addItemGroup: function(){
+  			this._elm_dom_panels.find('.J_Add_Item_Group_Container').show();
+  		},
+  		_fn_event_handler_submitItemGroup: function(){
+  			var value = $.trim(this._elm_dom_panels.find('.J_Add_Item_Group_Name').val());
+  			if(value === ''){
+  				return;
+  			}
+  			if(value.replace(/[^\x00-\xff]/g, "--").length>20){
+  				RC.showWarn('监控组名称必须在20个字符内!', 0.5);
+                  return;
+  			}
+  			var _this = this;
+  			//判断是否重名,重复
+  			API['user_monitor_item_group_list']({
+  			}, function(json){
+  				var _data = json.data;
+  				for(var i=0,length=_data.list?_data.list.length:0;i<length;i++){
+  					if(value==_data.list[i].name){
+  							RC.showWarn('监控组名称重复!', 0.5);
+  			                return;
+  					}
+  				}
+  
+  				API.add_mointor_group({name: value}, $.proxy(function(){
+  				_this._fn_ctrl_load({
+  					type: 'item'
+  					, pageNo: 1
+  				}, $.proxy(function(data){
+  					_this._fn_dom_update_panel('item', data);
+  				},_this));
+  			},_this));
+  			}, function(json){RC.showWarn(json.message, 0.5);
+  			                return;});
+  
+  
+  		},
+  
+  		_fn_ctrl_load: function(cfg, success, fail){
+  			var _this = this
+  				, apiName = cfg.type === 'item' ? 'user_item_all_list' : 'user_monitor_shop_list';
+  			apiName = cfg.type === 'industry' ? 'user_monitor_industry_list' : apiName;
+  			API[apiName]({
+  				pageNo: cfg.pageNo
+  			}, function(json){
+  				var _data = json.data;
+  				// if(cfg.type === 'industry'){
+  				// 	_data = _this._fn_get_test_industry_data();
+  				// }
+  				if(json.data.list&&json.data.list[0]){
+  							RC.user.set({outOfSeven:json.data.list[0].outOfSeven});
+  							RC.user.set({outOfSeven_num:json.data.list[0].leftDays});
+  						// }else{
+  						// 	RC.user.set({outOfSeven_num:0});
+  						// }
+  				}else{
+  					RC.user.set({outOfSeven_num:30});
+  				}
+  				if (cfg.type == 'shop') {
+  					_this._status_shopList_data = _data;
+  					_data = _this._fn_data_format_shopList(cfg.pageNo,success);
+  					return;
+  				}
+  
+  				success(_data);
+  			}, fail);
+  		},
+  
+  		init: function(){},
+  		getContainer: function(){
+  			return this._elm_dom_container;
+  		},
+  		update: function(hashs, afterload, is_refresh){
+  			//user_item_warnlog_list报警记录
+  			var type = hashs.type;
+  			this._status_hashs = JSON.parse(JSON.stringify(hashs));
+  			if(-1 === $.inArray(type, ['shop','industry', 'item'])){
+  				type = hashs.type = 'shop';
+  			}
+  			// if(type=='shop'){
+  			// 	$('personal-center-menu first dd').removeClass('active').filter(function(idx,item){
+  			// 		var name = $(item).attr('data-appName');
+  			// 		return  name.indexOf(appName) !== -1;
+  			// 	}).addClass('active');
+  			// }else if(type=='item'){
+  				$('.personal-center-menu *').removeClass('active');
+  			$('.personal-center-menu .first dd').removeClass('active').filter(function(idx,item){
+  					var name = $(item).attr('data-appName');
+  					return  name==type;
+  			}).addClass('active');
+  			// }
+  			this._fn_dom_render();
+  			this._fn_dom_update_tab(type);
+  
+  			this._status_last_hash = this._status_last_hash || {};
+  
+  			if (this._status_last_hash[type] != location.hash) {
+  				if (type == 'shop' && this._status_shopList_data) {
+  					this._fn_data_format_shopList(hashs.pageNo,$.proxy(function(_data){
+  						this._fn_dom_update_panel('shop', _data);
+  					},this));
+  				}
+  				else {
+  					this._fn_ctrl_load({
+  						type: type
+  						, pageNo: Math.max(hashs.pageNo, 1) || 1
+  					}, $.proxy(function(data){
+  						this._fn_dom_update_panel(type, data);
+  					},this));
+  					// ,$.proxy(function(data){
+  					// 	if(type === 'industry'){
+  					// 		data = this._fn_get_test_industry_data();
+  					// 	}
+  					// 	data.max = 3;
+  					// 	data._level = RC.user.get('level');
+  					// 	this._fn_dom_update_panel(type, data);
+  					// },this)
+  				}
+  			}
+  
+  			this._status_last_hash[type] = location.hash;
+  
+  			//登录送红包活动
+  			// this._fn_show_hongbao();
+  
+  			afterload && afterload();
+  		},
+  		disabled: function(){
+  			this._status_last_hash = null;
+  			this._status_shopList_data = null;
+  		},
+  		destroy: function(){
+  			if(this._elm_dom_container){
+  				this.disabled();
+  				compare_ctrl && compare_ctrl.destroy();
+  				this._fn_event_unbind();
+  				this._elm_dom_navs = null;
+  				this._elm_dom_panels = null;
+  				this._elm_dom_container.empty().remove();
+  				this._elm_dom_container = null;
+  			}
+  		}
+  	};
+  
+  	RC.modules.define(mdul.name, mdul);
+  
+  })(jQuery,RayCloud);
+  
+
+});

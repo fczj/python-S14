@@ -1,0 +1,37 @@
+define('controls/control.activity', function(require, exports, module) {
+
+  /**
+  	@author xukang
+  */
+  (function($,RC){
+  	var temp = [
+  				'<a class="menu-hd" href="index.html#/user/message/"><span class="message-icon {{dark}}">{{total}}<b></b></span>消息<b class="triangle"></b></a>',
+  				'<div class="menu-bd">',
+  					'<ul>',
+  						'<li><a href="#/user/message/?msgType=1">站内消息<span class="ml_5 fc-orange">{{totalInnerSite}}</span></a></li>',
+  						'<li><a href="#/user/message/?msgType=0">系统消息<span class="ml_5 fc-orange">{{totalSystem}}</span></a></li>',
+  					'</ul>',
+  				'</div>'
+  			];
+  	RC.template.addTemp('template.control.activity',temp);
+  	var activity = {
+  		render: function(){
+  			//判断cookie有没有,没有展示,有不展示
+  			if(document.cookie.indexOf("__activity=1")==-1){
+  				//展示
+  				document.cookie = "__activity=1;domain=maijia.com";
+  			}
+  		},
+  		update: function(msgType){
+  
+  		}
+  	};
+  
+  	RC.controls.define('activity',{
+  		init: function(){
+  			return activity;
+  		}
+  	});
+  })(jQuery,RayCloud);
+
+});
