@@ -1,5 +1,7 @@
 #!/bin/bash
 
+
+
 usage()
 {
     echo "usage:${0} (python-project-name)"
@@ -23,7 +25,7 @@ touch ${1}/conf/__init__.py
 touch ${1}/${pro_name}/__init__.py
 touch ${1}/setup.py
 touch ${1}/requirements.txt
-touch ${1}/README
+touch ${1}/README.md
 
 
 this_year=`date +%Y`
