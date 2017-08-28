@@ -3,7 +3,7 @@
 # @Time    : 17-8-25 下午5:04
 # @Author  : xiongzhibiao
 # @Email   : 158349411@qq.com
-# @File    : 多线程修改数据.py
+# @File    : 多线程修改数据+加锁.py
 # @Software: PyCharm
 
 

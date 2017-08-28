@@ -2,5 +2,6 @@ local:
     - localhost
     - 192.168.1.166
 remote:
-    - ceshi-99
-    - ceshi-75
+    - ceshi-201
+    - ceshi-202
+    - ceshi-203

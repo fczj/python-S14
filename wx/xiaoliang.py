@@ -5,3 +5,12 @@
 # @Email   : 158349411@qq.com
 # @File    : xiaoliang.py
 # @Software: PyCharm
+
+import re
+import requests
+
+
+
+def zong(key,url):
+    text = requests.get(url).text
+    xiao = re.compile('{}')

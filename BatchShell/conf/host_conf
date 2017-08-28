@@ -7,11 +7,21 @@ localhost:
 192.168.1.166:
     user: xiongzhibiao
     password: cdlanjing
-    host: 127.0.0.1
+    host: 192.168.1.166
     port: 22
 
-ceshi-59:
+ceshi-201:
     user: lanjing
     password: cdlanjing
-    host: 192.168.1.59
+    host: 192.168.1.201
+    port: 22
+ceshi-202:
+    user: lanjing
+    password: cdlanjing
+    host: 192.168.1.202
+    port: 22
+ceshi-203:
+    user: lanjing
+    password: cdlanjing
+    host: 192.168.1.203
     port: 22
