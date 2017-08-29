@@ -67,6 +67,8 @@ class RunCmd():
         pass
 
     def get(self,remote,local):
+        pass
+
 
 
 def parse():
@@ -144,6 +146,6 @@ if __name__ == "__main__":
     all_host = list(set(all_host))
     cmd = args.cmd
     #serial(all_host,cmd)            #三台主机-1.1秒
-    #thread(all_host,cmd)           #三台主机-0.4秒
-    process(all_host,cmd)           #多线程和多进程时间差不多
+    thread(all_host,cmd)           #三台主机-0.4秒
+    # process(all_host,cmd)           #多线程和多进程时间差不多
 
