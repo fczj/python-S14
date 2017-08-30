@@ -3,7 +3,7 @@
 # @Time    : 17-8-30 上午9:53
 # @Author  : xiongzhibiao
 # @Email   : 158349411@qq.com
-# @File    : 消费者.py
+# @File    : 消费者-基础使用.py
 # @Software: PyCharm
 
 

@@ -3,7 +3,7 @@
 # @Time    : 17-8-30 上午9:25
 # @Author  : xiongzhibiao
 # @Email   : 158349411@qq.com
-# @File    : 生产者.py
+# @File    : 生产者-基础使用.py
 # @Software: PyCharm
 
 
@@ -20,3 +20,5 @@ channel.basic_publish(exchange='',
                       body='Hello World!')
 print(" [x] Sent 'Hello World!'")
 connection.close()
+
+

@@ -28,7 +28,6 @@ pip install pika
 ```
 
 ![tup](https://www.rabbitmq.com/img/tutorials/receiving.png)
-Format: ![Alt Text](url)
 
 
 
