@@ -3,7 +3,7 @@
 # @Time    : 17-9-1 下午3:17
 # @Author  : xiongzhibiao
 # @Email   : 158349411@qq.com
-# @File    : 操作mysql.py
+# @File    : python-执行sql.py
 # @Software: PyCharm
 
 

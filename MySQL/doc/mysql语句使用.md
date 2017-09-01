@@ -1,5 +1,6 @@
 [参考](http://www.cnblogs.com/alex3714/articles/5950372.html)
 [mysql-学习系列](http://www.zsythink.net/archives/category/%E5%AD%98%E5%82%A8/mariadb/page/4/)
+[w3c](http://www.w3school.com.cn/sql/index.asp)
 
 
 ## 查看帮助
@@ -59,14 +60,6 @@ select *from student where name like binary "%Li" order by stu_id desc;
 ```
 使用 WITH ROLLUP
 mysql> SELECT name, SUM(singin) as singin_count FROM  employee_tbl GROUP BY name WITH ROLLUP;
-+--------+--------------+
-| name   | singin_count |
-+--------+--------------+
-| 小丽    |            2 |
-| 小明    |            7 |
-| 小王    |            7 |
-| NULL    |           16 |
-+--------+--------------+
 ```
 
 
@@ -95,7 +88,41 @@ ALTER TABLE testalter_tbl RENAME TO alter_tbl;
 
 
 ### mysql外键约束和级联
-[参考](http://www.cnblogs.com/programmer-tlh/p/5782451.html)
+[w3c](http://www.w3school.com.cn/sql/index.asp)
 
+1.创建外建依赖的两个表
+```
+create table dage(
+id int(4) not null auto_increment,
+name varchar(11) not null,
+primary key (id)
+);
 
+create table xiaodi(
+id int(4) not null auto_increment,
+dage_id int(4) not null,
+name varchar(11),
+primary key(id),
+FOREIGN KEY (dage_id) REFERENCES dage(id)                                                                                
+);
 
+```
+
+2.插入-大哥没有的时候不能创建小弟
+```
+mysql> insert into dage values(1,'laoda');
+Query OK, 1 row affected (0.04 sec)
+
+mysql> insert into xiaodi values(1,2,'xiaodi');
+ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (`school`.`xiaodi`, CONSTRAINT `xiaodi_ibfk_1` FOREIGN KEY (`dage_id`) REFERENCES `dage` (`id`))
+mysql> 
+mysql> insert into xiaodi values(1,1,'xiaodi');
+Query OK, 1 row affected (0.02 sec)
+
+```
+
+3.小弟还在大哥不能随便删除
+```
+mysql> delete from dage;
+ERROR 1451 (23000): Cannot delete or update a parent row: a foreign key constraint fails (`school`.`xiaodi`, CONSTRAINT `xiaodi_ibfk_1` FOREIGN KEY (`dage_id`) REFERENCES `dage` (`id`))
+```
