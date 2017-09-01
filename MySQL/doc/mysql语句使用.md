@@ -1,7 +1,6 @@
-
 [参考](http://www.cnblogs.com/alex3714/articles/5950372.html)
+[mysql-学习系列](http://www.zsythink.net/archives/category/%E5%AD%98%E5%82%A8/mariadb/page/4/)
 
-[toc]
 
 ## 查看帮助
 
@@ -93,5 +92,10 @@ ALTER TABLE testalter_tbl MODIFY j BIGINT NOT NULL DEFAULT 100;
 ```
 ALTER TABLE testalter_tbl RENAME TO alter_tbl;
 ```
+
+
+### mysql外键约束和级联
+[参考](http://www.cnblogs.com/programmer-tlh/p/5782451.html)
+
 
 
