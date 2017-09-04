@@ -53,12 +53,19 @@ def check_task(id):
     else:
         return b'task is running'
 
+def list():
+    for task_id in response_dict.keys():
+        print (task_id)
+
 while True:
     cmd = input('>>')
     if 'check' in cmd:
         id = cmd.split(' ')[1]
         ret = check_task(id)
         print (ret.decode())
+        continue
+    if 'list' in cmd:
+        list()
         continue
     fibonacci_rpc = FibonacciRpcClient()
     fibonacci_rpc.call(cmd)
