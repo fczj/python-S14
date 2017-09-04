@@ -1,34 +1,28 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# @Time    : 17-8-30 下午5:33
-# @Author  : xiongzhibiao
-# @Email   : 158349411@qq.com
-# @File    : rpc-server.py
-# @Software: PyCharm
-
 import pika
+import sys
+import os
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(
         host='localhost'))
 
 channel = connection.channel()
 
-channel.queue_declare(queue='rpc_queue')
 
-def fib(n):
-    if n == 0:
-        return 0
-    elif n == 1:
-        return 1
-    else:
-        return fib(n-1) + fib(n-2)
+routing_key = sys.argv[1]
+channel.exchange_declare(exchange='run_cmd',
+                         exchange_type='direct')
+
+channel.queue_bind(exchange='run_cmd',
+                   queue='rpc_queue',
+                   routing_key=routing_key)
+
+def run_cmd(cmd):
+    result = os.popen(cmd)
+    return result.read()
 
 def on_request(ch, method, props, body):
-    n = int(body)
-
-    print (" [.] fib(%s)"  % (n,))
-    response = fib(n)
-
+    cmd = str(body.decode())
+    response = run_cmd(cmd)
     ch.basic_publish(exchange='',
                      routing_key=props.reply_to,
                      properties=pika.BasicProperties(correlation_id = \

@@ -5,18 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="68c43db2-0a7e-4ea1-8c8a-c234c93eba05" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/RabbitMQ/doc/rabbit使用.md" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/RabbitMQ/rabbitmq/rpc-client.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/RabbitMQ/rabbitmq/广播-消费者.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/RabbitMQ/rabbitmq/广播-生产者.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/RabbitMQ/rabbitmq/过滤-消费者.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/RabbitMQ/rabbitmq/过滤-生产者.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Redis/doc/安装使用.md" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Redis/redis/连接和连接池.py" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/RabbitMQ/rabbitmq/消费者.py" afterPath="$PROJECT_DIR$/RabbitMQ/rabbitmq/消费者-基础使用.py" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/RabbitMQ/rabbitmq/生产者.py" afterPath="$PROJECT_DIR$/RabbitMQ/rabbitmq/生产者-基础使用.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/RabbitMQ/doc/rabbitmq安装.md" afterPath="$PROJECT_DIR$/RabbitMQ/doc/rabbitmq安装.md" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MySQL/data/auto.cnf" afterPath="$PROJECT_DIR$/MySQL/data/auto.cnf" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MySQL/data/ca-key.pem" afterPath="$PROJECT_DIR$/MySQL/data/ca-key.pem" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MySQL/data/client-key.pem" afterPath="$PROJECT_DIR$/MySQL/data/client-key.pem" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MySQL/data/ib_buffer_pool" afterPath="$PROJECT_DIR$/MySQL/data/ib_buffer_pool" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MySQL/data/ib_logfile0" afterPath="$PROJECT_DIR$/MySQL/data/ib_logfile0" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MySQL/data/ib_logfile1" afterPath="$PROJECT_DIR$/MySQL/data/ib_logfile1" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MySQL/data/ibdata1" afterPath="$PROJECT_DIR$/MySQL/data/ibdata1" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MySQL/data/ibtmp1" afterPath="$PROJECT_DIR$/MySQL/data/ibtmp1" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MySQL/data/private_key.pem" afterPath="$PROJECT_DIR$/MySQL/data/private_key.pem" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MySQL/data/server-key.pem" afterPath="$PROJECT_DIR$/MySQL/data/server-key.pem" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -26,16 +24,22 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
-    <SUITE FILE_PATH="coverage/python-S14$rpc_client.coverage" NAME="rpc-client Coverage Results" MODIFIED="1504087163020" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RabbitMQ/rabbitmq" />
-    <SUITE FILE_PATH="coverage/python-S14$gevent.coverage" NAME="gevent协程 Coverage Results" MODIFIED="1503904358758" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Coroutine/coroutine" />
-    <SUITE FILE_PATH="coverage/python-S14$a.coverage" NAME="a Coverage Results" MODIFIED="1503816278587" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/wx/wx" />
+    <SUITE FILE_PATH="coverage/python-S14$rpc_client__1_.coverage" NAME="rpc-client (1) Coverage Results" MODIFIED="1504147626507" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RabbitMQ/作业" />
+    <SUITE FILE_PATH="coverage/python-S14$rpc_cmd_client.coverage" NAME="rpc-cmd-client Coverage Results" MODIFIED="1504140804547" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RabbitMQ/rabbitmq" />
     <SUITE FILE_PATH="coverage/python-S14$.coverage" NAME="连接和连接池 Coverage Results" MODIFIED="1504083462998" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Redis/redis" />
     <SUITE FILE_PATH="coverage/python-S14$grennlet.coverage" NAME="grennlet协程 Coverage Results" MODIFIED="1503903351833" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Coroutine/coroutine" />
-    <SUITE FILE_PATH="coverage/python-S14$pasrsconf.coverage" NAME="pasrsconf Coverage Results" MODIFIED="1503825308887" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/BatchShell/batchshell" />
     <SUITE FILE_PATH="coverage/python-S14$select.coverage" NAME="select并发客户端 Coverage Results" MODIFIED="1503989769517" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Select/select" />
-    <SUITE FILE_PATH="coverage/python-S14$rpc_server.coverage" NAME="rpc-server Coverage Results" MODIFIED="1504087085587" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RabbitMQ/rabbitmq" />
     <SUITE FILE_PATH="coverage/python-S14$selector_.coverage" NAME="selector_服务端 Coverage Results" MODIFIED="1503989691754" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Select/select" />
     <SUITE FILE_PATH="coverage/python-S14$_.coverage" NAME="过滤-生产者 Coverage Results" MODIFIED="1504082193883" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RabbitMQ/rabbitmq" />
+    <SUITE FILE_PATH="coverage/python-S14$rpc_client.coverage" NAME="rpc-client Coverage Results" MODIFIED="1504143993698" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RabbitMQ/rabbitmq" />
+    <SUITE FILE_PATH="coverage/python-S14$gevent.coverage" NAME="gevent协程 Coverage Results" MODIFIED="1503904358758" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Coroutine/coroutine" />
+    <SUITE FILE_PATH="coverage/python-S14$_rpc_server.coverage" NAME="路由-rpc-server Coverage Results" MODIFIED="1504146740663" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RabbitMQ/rabbitmq" />
+    <SUITE FILE_PATH="coverage/python-S14$a.coverage" NAME="a Coverage Results" MODIFIED="1503816278587" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/wx/wx" />
+    <SUITE FILE_PATH="coverage/python-S14$rpc_server2.coverage" NAME="rpc-server2 Coverage Results" MODIFIED="1504144056725" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RabbitMQ/rabbitmq" />
+    <SUITE FILE_PATH="coverage/python-S14$rpc_server__1_.coverage" NAME="rpc-server (1) Coverage Results" MODIFIED="1504146787298" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RabbitMQ/作业" />
+    <SUITE FILE_PATH="coverage/python-S14$rpc_cmd_server.coverage" NAME="rpc-cmd-server Coverage Results" MODIFIED="1504140800291" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RabbitMQ/rabbitmq" />
+    <SUITE FILE_PATH="coverage/python-S14$pasrsconf.coverage" NAME="pasrsconf Coverage Results" MODIFIED="1503825308887" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/BatchShell/batchshell" />
+    <SUITE FILE_PATH="coverage/python-S14$rpc_server.coverage" NAME="rpc-server Coverage Results" MODIFIED="1504143985854" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RabbitMQ/rabbitmq" />
     <SUITE FILE_PATH="coverage/python-S14$batchrun.coverage" NAME="batchrun Coverage Results" MODIFIED="1503831818738" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/BatchShell/batchshell" />
   </component>
   <component name="CreatePatchCommitExecutor">
@@ -44,36 +48,87 @@
   <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="rpc-client.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/rpc-client.py">
+      <file leaf-file-name="rpc-client.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/RabbitMQ/作业/rpc-client.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="416">
-              <caret line="45" column="32" lean-forward="false" selection-start-line="45" selection-start-column="32" selection-end-line="45" selection-end-column="32" />
+            <state relative-caret-position="42">
+              <caret line="2" column="0" lean-forward="false" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
               <folding>
-                <element signature="e#180#191#0" expanded="true" />
+                <element signature="e#0#11#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="广播-生产者.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/广播-生产者.py">
+      <file leaf-file-name="docker-mysql.md" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/MySQL/doc/docker-mysql.md">
+          <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+            <state split_layout="SPLIT">
+              <first_editor relative-caret-position="462">
+                <caret line="22" column="25" lean-forward="false" selection-start-line="22" selection-start-column="25" selection-end-line="22" selection-end-column="25" />
+                <folding />
+              </first_editor>
+              <second_editor />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="mysql语句使用.md" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/MySQL/doc/mysql语句使用.md">
+          <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+            <state split_layout="SPLIT">
+              <first_editor relative-caret-position="0">
+                <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+                <folding />
+              </first_editor>
+              <second_editor />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="作业.md" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/RabbitMQ/doc/作业.md">
+          <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+            <state split_layout="SPLIT">
+              <first_editor relative-caret-position="252">
+                <caret line="12" column="3" lean-forward="false" selection-start-line="12" selection-start-column="3" selection-end-line="12" selection-end-column="3" />
+                <folding />
+              </first_editor>
+              <second_editor />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="rpc-server2.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/RabbitMQ/作业/rpc-server2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="206">
-              <caret line="13" column="0" lean-forward="true" selection-start-line="13" selection-start-column="0" selection-end-line="13" selection-end-column="0" />
-              <folding>
-                <element signature="e#178#189#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="189">
+              <caret line="10" column="0" lean-forward="false" selection-start-line="10" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
+              <folding />
             </state>
           </provider>
         </entry>
       </file>
       <file leaf-file-name="rpc-server.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/rpc-server.py">
+        <entry file="file://$PROJECT_DIR$/RabbitMQ/作业/rpc-server.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="458">
-              <caret line="41" column="35" lean-forward="false" selection-start-line="41" selection-start-column="35" selection-end-line="41" selection-end-column="35" />
-              <folding />
+            <state relative-caret-position="185">
+              <caret line="22" column="23" lean-forward="false" selection-start-line="22" selection-start-column="23" selection-end-line="22" selection-end-column="23" />
+              <folding>
+                <element signature="e#0#11#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="路由-rpc-server.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/路由-rpc-server.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="395">
+              <caret line="34" column="36" lean-forward="false" selection-start-line="34" selection-start-column="36" selection-end-line="34" selection-end-column="36" />
+              <folding>
+                <element signature="e#182#193#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -86,6 +141,12 @@
         <option value="Python Script" />
       </list>
     </option>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>print</find>
+      <find>exchange_declare</find>
+    </findStrings>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -114,13 +175,23 @@
         <option value="$PROJECT_DIR$/RabbitMQ/rabbitmq/广播-消费者.py" />
         <option value="$PROJECT_DIR$/RabbitMQ/rabbitmq/过滤-消费者.py" />
         <option value="$PROJECT_DIR$/RabbitMQ/rabbitmq/过滤-生产者.py" />
-        <option value="$PROJECT_DIR$/RabbitMQ/doc/rabbit使用.md" />
         <option value="$PROJECT_DIR$/Redis/doc/安装使用.py" />
         <option value="$PROJECT_DIR$/Redis/doc/安装使用.md.py" />
         <option value="$PROJECT_DIR$/Redis/doc/安装使用.md" />
         <option value="$PROJECT_DIR$/Redis/redis/连接和连接池.py" />
+        <option value="$PROJECT_DIR$/RabbitMQ/doc/rabbit使用.md" />
+        <option value="$PROJECT_DIR$/RabbitMQ/doc/作业.md" />
+        <option value="$PROJECT_DIR$/RabbitMQ/rabbitmq/路由-rpc-服务端.py" />
+        <option value="$PROJECT_DIR$/RabbitMQ/rabbitmq/路由-rpc-客户端.py" />
+        <option value="$PROJECT_DIR$/RabbitMQ/rabbitmq/路由-rpc-server.py" />
         <option value="$PROJECT_DIR$/RabbitMQ/rabbitmq/rpc-server.py" />
+        <option value="$PROJECT_DIR$/RabbitMQ/rabbitmq/rpc-server2.py" />
         <option value="$PROJECT_DIR$/RabbitMQ/rabbitmq/rpc-client.py" />
+        <option value="$PROJECT_DIR$/RabbitMQ/rabbitmq/rpc-cmd-server.py" />
+        <option value="$PROJECT_DIR$/RabbitMQ/rabbitmq/rpc-cmd-client.py" />
+        <option value="$PROJECT_DIR$/RabbitMQ/作业/rpc-server.py" />
+        <option value="$PROJECT_DIR$/RabbitMQ/作业/rpc-client.py" />
+        <option value="$PROJECT_DIR$/MySQL/doc/docker-mysql.md" />
       </list>
     </option>
   </component>
@@ -174,7 +245,7 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="SelectFtp" />
+              <option name="myItemId" value="wx" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -188,11 +259,7 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="SelectFtp" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="selectftp" />
+              <option name="myItemId" value="MySQL" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -206,57 +273,7 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="RabbitMQ" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="python-S14" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="python-S14" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="RabbitMQ" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="rabbitmq" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="python-S14" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="python-S14" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="RabbitMQ" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="lib" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="python-S14" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="python-S14" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="RabbitMQ" />
+              <option name="myItemId" value="MySQL" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
@@ -272,67 +289,15 @@
   <component name="PropertiesComponent">
     <property name="js.eslint.eslintPackage" value="" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/RabbitMQ/rabbitmq" />
       <recent name="$PROJECT_DIR$/Select/select" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.rpc-client">
-    <configuration default="false" name="广播-生产者" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/RabbitMQ/rabbitmq" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="python-S14" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RabbitMQ/rabbitmq/广播-生产者.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <method />
-    </configuration>
-    <configuration default="false" name="过滤-生产者" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/RabbitMQ/rabbitmq" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="python-S14" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RabbitMQ/rabbitmq/过滤-生产者.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <method />
-    </configuration>
-    <configuration default="false" name="连接和连接池" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Redis/redis" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="python-S14" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Redis/redis/连接和连接池.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <method />
-    </configuration>
+  <component name="RunManager" selected="Python.rpc-client (1)">
     <configuration default="false" name="rpc-client" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -351,7 +316,7 @@
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
     </configuration>
-    <configuration default="false" name="rpc-server" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration default="false" name="rpc-server2" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
@@ -364,7 +329,61 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="python-S14" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RabbitMQ/rabbitmq/rpc-server.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RabbitMQ/rabbitmq/rpc-server2.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="路由-rpc-server" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/RabbitMQ/rabbitmq" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="python-S14" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RabbitMQ/rabbitmq/路由-rpc-server.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="rpc-server (1)" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/RabbitMQ/作业" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="python-S14" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RabbitMQ/作业/rpc-server.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="rpc-client (1)" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/RabbitMQ/作业" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="python-S14" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RabbitMQ/作业/rpc-client.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
@@ -587,19 +606,19 @@
       <method />
     </configuration>
     <list size="5">
-      <item index="0" class="java.lang.String" itemvalue="Python.广播-生产者" />
-      <item index="1" class="java.lang.String" itemvalue="Python.过滤-生产者" />
-      <item index="2" class="java.lang.String" itemvalue="Python.连接和连接池" />
-      <item index="3" class="java.lang.String" itemvalue="Python.rpc-client" />
-      <item index="4" class="java.lang.String" itemvalue="Python.rpc-server" />
+      <item index="0" class="java.lang.String" itemvalue="Python.rpc-client" />
+      <item index="1" class="java.lang.String" itemvalue="Python.rpc-server2" />
+      <item index="2" class="java.lang.String" itemvalue="Python.路由-rpc-server" />
+      <item index="3" class="java.lang.String" itemvalue="Python.rpc-server (1)" />
+      <item index="4" class="java.lang.String" itemvalue="Python.rpc-client (1)" />
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.rpc-client" />
-        <item index="1" class="java.lang.String" itemvalue="Python.rpc-server" />
-        <item index="2" class="java.lang.String" itemvalue="Python.连接和连接池" />
-        <item index="3" class="java.lang.String" itemvalue="Python.过滤-生产者" />
-        <item index="4" class="java.lang.String" itemvalue="Python.广播-生产者" />
+        <item index="0" class="java.lang.String" itemvalue="Python.rpc-client (1)" />
+        <item index="1" class="java.lang.String" itemvalue="Python.rpc-server (1)" />
+        <item index="2" class="java.lang.String" itemvalue="Python.路由-rpc-server" />
+        <item index="3" class="java.lang.String" itemvalue="Python.rpc-server2" />
+        <item index="4" class="java.lang.String" itemvalue="Python.rpc-client" />
       </list>
     </recent_temporary>
   </component>
@@ -618,7 +637,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="65" y="24" width="1855" height="1056" extended-state="6" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Debug Logs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -628,8 +647,9 @@
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32947367" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Execute Anonymous" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32947367" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2698061" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2698061" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32947367" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -639,7 +659,6 @@
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32947367" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
@@ -662,90 +681,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/BatchShell/conf/host_conf">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="504">
-          <caret line="24" column="22" lean-forward="false" selection-start-line="24" selection-start-column="22" selection-end-line="24" selection-end-column="22" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Day010/day010/进程基础使用.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="399">
-          <caret line="19" column="0" lean-forward="true" selection-start-line="19" selection-start-column="0" selection-end-line="19" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Day010/day010/进程修改数据.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="378">
-          <caret line="18" column="29" lean-forward="false" selection-start-line="18" selection-start-column="29" selection-end-line="18" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Day010/day010/进程池.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="399">
-          <caret line="19" column="13" lean-forward="false" selection-start-line="19" selection-start-column="13" selection-end-line="19" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Day010/day010/进程通信1.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="399">
-          <caret line="19" column="11" lean-forward="false" selection-start-line="19" selection-start-column="11" selection-end-line="19" selection-end-column="11" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Day010/day010/进程锁.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="168">
-          <caret line="8" column="0" lean-forward="false" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Day009/day009/多个锁.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Day009/day009/同时启动多线程.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="294">
-          <caret line="15" column="0" lean-forward="false" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Day009/day009/多线程实现方式2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="189">
-          <caret line="9" column="10" lean-forward="false" selection-start-line="9" selection-start-column="10" selection-end-line="9" selection-end-column="10" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Day009/day009/线程间通信.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Day009/day009/多线程实现方式1.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="168">
-          <caret line="9" column="16" lean-forward="false" selection-start-line="9" selection-start-column="16" selection-end-line="9" selection-end-column="16" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Day009/day009/多线程修改数据+加锁.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="168">
-          <caret line="8" column="0" lean-forward="false" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Coroutine/coroutine/yield协程.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="399">
@@ -899,24 +834,6 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/工作队列-消费者.py" />
     <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/工作队列-生产者.py" />
-    <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/广播-消费者.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="164">
-          <caret line="11" column="24" lean-forward="false" selection-start-line="11" selection-start-column="24" selection-end-line="11" selection-end-column="24" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/过滤-消费者.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="416">
-          <caret line="29" column="19" lean-forward="false" selection-start-line="29" selection-start-column="19" selection-end-line="29" selection-end-column="19" />
-          <folding>
-            <element signature="e#177#188#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Redis/doc/安装使用.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="126">
@@ -949,7 +866,7 @@
         <state relative-caret-position="273">
           <caret line="13" column="30" lean-forward="false" selection-start-line="13" selection-start-column="30" selection-end-line="13" selection-end-column="30" />
           <folding>
-            <element signature="e#175#186#0" expanded="true" />
+            <element signature="e#175#186#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -970,19 +887,13 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/生产者-基础使用.py">
+    <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/广播-生产者.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="357">
-          <caret line="17" column="17" lean-forward="false" selection-start-line="17" selection-start-column="17" selection-end-line="17" selection-end-column="17" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/消费者-基础使用.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="378">
-          <caret line="18" column="2" lean-forward="false" selection-start-line="18" selection-start-column="2" selection-end-line="18" selection-end-column="2" />
-          <folding />
+        <state relative-caret-position="206">
+          <caret line="13" column="0" lean-forward="false" selection-start-line="13" selection-start-column="0" selection-end-line="13" selection-end-column="0" />
+          <folding>
+            <element signature="e#178#189#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -1001,38 +912,175 @@
       <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
         <state split_layout="SPLIT">
           <first_editor relative-caret-position="105">
-            <caret line="5" column="0" lean-forward="true" selection-start-line="5" selection-start-column="0" selection-end-line="5" selection-end-column="0" />
+            <caret line="5" column="0" lean-forward="false" selection-start-line="5" selection-start-column="0" selection-end-line="5" selection-end-column="0" />
             <folding />
           </first_editor>
           <second_editor />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/广播-生产者.py">
+    <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/广播-消费者.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="206">
-          <caret line="13" column="0" lean-forward="true" selection-start-line="13" selection-start-column="0" selection-end-line="13" selection-end-column="0" />
+        <state relative-caret-position="231">
+          <caret line="11" column="24" lean-forward="false" selection-start-line="11" selection-start-column="24" selection-end-line="11" selection-end-column="24" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="168">
+          <caret line="9" column="20" lean-forward="false" selection-start-line="9" selection-start-column="20" selection-end-line="9" selection-end-column="20" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/消费者-基础使用.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="378">
+          <caret line="18" column="2" lean-forward="false" selection-start-line="18" selection-start-column="2" selection-end-line="18" selection-end-column="2" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/生产者-基础使用.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="357">
+          <caret line="17" column="17" lean-forward="false" selection-start-line="17" selection-start-column="17" selection-end-line="17" selection-end-column="17" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/过滤-消费者.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="477">
+          <caret line="29" column="19" lean-forward="false" selection-start-line="29" selection-start-column="19" selection-end-line="29" selection-end-column="19" />
           <folding>
-            <element signature="e#178#189#0" expanded="true" />
+            <element signature="e#177#188#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/rpc-server.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="458">
-          <caret line="41" column="35" lean-forward="false" selection-start-line="41" selection-start-column="35" selection-end-line="41" selection-end-column="35" />
+        <state relative-caret-position="63">
+          <caret line="12" column="26" lean-forward="true" selection-start-line="12" selection-start-column="26" selection-end-line="12" selection-end-column="26" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/rpc-server2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="189">
+          <caret line="16" column="23" lean-forward="true" selection-start-line="16" selection-start-column="23" selection-end-line="16" selection-end-column="23" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/rpc-client.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="416">
-          <caret line="45" column="32" lean-forward="false" selection-start-line="45" selection-start-column="32" selection-end-line="45" selection-end-column="32" />
+        <state relative-caret-position="399">
+          <caret line="22" column="21" lean-forward="false" selection-start-line="22" selection-start-column="21" selection-end-line="22" selection-end-column="21" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/路由-rpc-client.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="269">
+          <caret line="16" column="0" lean-forward="true" selection-start-line="16" selection-start-column="0" selection-end-line="16" selection-end-column="0" />
           <folding>
-            <element signature="e#180#191#0" expanded="true" />
+            <element signature="e#183#194#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/rpc-cmd-server.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="273">
+          <caret line="14" column="37" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="34" selection-end-column="25" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/rpc-cmd-client.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="357">
+          <caret line="27" column="22" lean-forward="true" selection-start-line="27" selection-start-column="22" selection-end-line="27" selection-end-column="22" />
+          <folding>
+            <element signature="e#182#193#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RabbitMQ/rabbitmq/路由-rpc-server.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="395">
+          <caret line="34" column="36" lean-forward="false" selection-start-line="34" selection-start-column="36" selection-end-line="34" selection-end-column="36" />
+          <folding>
+            <element signature="e#182#193#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RabbitMQ/doc/作业.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="252">
+            <caret line="12" column="3" lean-forward="false" selection-start-line="12" selection-start-column="3" selection-end-line="12" selection-end-column="3" />
+            <folding />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RabbitMQ/作业/rpc-server2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="189">
+          <caret line="10" column="0" lean-forward="false" selection-start-line="10" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RabbitMQ/作业/rpc-server.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="185">
+          <caret line="22" column="23" lean-forward="false" selection-start-line="22" selection-start-column="23" selection-end-line="22" selection-end-column="23" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RabbitMQ/作业/rpc-client.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="42">
+          <caret line="2" column="0" lean-forward="false" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/MySQL/doc/docker-mysql.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="462">
+            <caret line="22" column="25" lean-forward="false" selection-start-line="22" selection-start-column="25" selection-end-line="22" selection-end-column="25" />
+            <folding />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/MySQL/doc/mysql语句使用.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="0">
+            <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+            <folding />
+          </first_editor>
+          <second_editor />
         </state>
       </provider>
     </entry>

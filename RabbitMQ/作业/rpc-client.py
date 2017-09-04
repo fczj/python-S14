@@ -1,21 +1,15 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# @Time    : 17-8-30 下午5:33
-# @Author  : xiongzhibiao
-# @Email   : 158349411@qq.com
-# @File    : rpc-client.py
-# @Software: PyCharm
-
-
 import pika
 import uuid
 
-class FibonacciRpcClient(object):
+
+class RpcCmd(object):
     def __init__(self):
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(
                 host='localhost'))
 
         self.channel = self.connection.channel()
+        self.channel.exchange_declare(exchange='run_cmd',
+                                 exchange_type='direct')
 
         result = self.channel.queue_declare(exclusive=True)
         self.callback_queue = result.method.queue
@@ -27,11 +21,11 @@ class FibonacciRpcClient(object):
         if self.corr_id == props.correlation_id:
             self.response = body
 
-    def call(self, n):
+    def call(self, n,host):
         self.response = None
         self.corr_id = str(uuid.uuid4())
-        self.channel.basic_publish(exchange='',
-                                   routing_key='rpc_queue',
+        self.channel.basic_publish(exchange='run_cmd',
+                                   routing_key=str(host),
                                    properties=pika.BasicProperties(
                                          reply_to = self.callback_queue,
                                          correlation_id = self.corr_id,
@@ -39,11 +33,12 @@ class FibonacciRpcClient(object):
                                    body=str(n))
         while self.response is None:
             self.connection.process_data_events()
-        return int(self.response)
+        return self.response
 
-fibonacci_rpc = FibonacciRpcClient()
 
-print (" [x] Requesting fib(30)")
-response = fibonacci_rpc.call(30)
-print (fibonacci_rpc.corr_id)
-print (" [.] Got %r" % (response,))
+
+while True:
+    host,cmd = input(">>").split(' ')
+    rpc = RpcCmd()
+    response = rpc.call(cmd,host)
+    print (" [.] Got %r" % (response.decode()))
