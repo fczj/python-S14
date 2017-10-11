@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>后台管理</title>
+    <link rel="stylesheet" href="font-awesome-4.7.0/css/font-awesome.css">
+    <style>
+        body {
+            margin: 0;
+        }
+        .left {
+            float: left;
+        }
+        .right {
+            float: right;
+        }
+
+        .pg-header {
+            height: 48px;
+            background-color: #00a2e6;
+        }
+
+        .pg-header .logo {
+            width: 200px;
+            background-color: #1CB408;
+            text-align: center;
+            line-height: 48px;
+        }
+
+        .pg-header .icons {
+            padding: 0 20px;
+            margin-right: 50px;
+        }
+
+        .pg-header .icons img{
+            height: 40px;
+            width: 40px;
+            border-radius: 50%;
+            margin-top: 4px;
+        }
+        .pg-header .icons:hover {
+            background-color: #002a80;
+        }
+        .pg-header .icons:hover .list{
+            display: block;
+        }
+
+        /*需要用postion否则会把上一层撑大*/
+        .pg-header .icons .list {
+            z-index: 20;
+            position: absolute;
+            top: 48px;
+            right: 20px;
+            background-color: #2dd1e6;
+            color: black;
+            width: 160px;
+            display: none;
+            font-size: 15px;
+            line-height: 30px;
+        }
+
+        .pg-header .icons .list .item {
+            text-align: center;
+        }
+
+
+        .pg-content .menu{
+            width: 200px;
+            /*绝对定位*/
+            position: absolute;
+            /*离上面48像素*/
+            top: 48px;
+            /*贴左侧*/
+            left: 0px;
+            /*离下面的边距为0,高度就到页面底部*/
+            bottom: 0px;
+            background-color: #5bc0de;
+            /*overflow: auto;*/
+        }
+
+        .pg-content .content{
+            position: absolute;
+            top: 48px;
+            left: 200px;
+            right: 0px;
+            bottom: 0px;
+            background-color: #a7e669;
+            /*overflow: auto;*/
+        }
+
+    </style>
+</head>
+<body>
+    <div class="pg-header">
+        <div class="logo left">
+            后台管理
+        </div>
+        <div class="pg-header icons right">
+            <img src="./user.jpg">
+            <div class="list">
+                <div class="item">
+                    <!--去掉a标签的下划线-->
+                    <a href="http://www.baidu.com" style="text-decoration: none;">百度</a>
+                </div>
+                <div class="item">
+                    <a href="https://www.jd.com/" style="text-decoration: none;">京东</a>
+                </div>
+            </div>
+        </div>
+        <div class="right" style="line-height: 48px;">
+            <i class="fa fa-envelope" aria-hidden="true" style="font-size: 18px;">信息</i>
+        </div>
+
+    </div>
+
+    <div class="pg-content">
+        <div class="menu left">
+            <p style="line-height: 2000px">左侧菜单</p>
+        </div>
+        <div class="content right">
+            <!--p标签已经超过了父亲标签，所以背景色和父亲标签保持一致-->
+            <p style="line-height: 3000px; background-color: #a7e669;">内容</p>
+        </div>
+    </div>
+
+
+</body>
+</html>
