@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>后台管理</title>
+    <style>
+        .hide {
+            display: none;
+        }
+        .menu {
+        }
+        .mask {
+            background-color: black;
+            opacity: 0.5;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+        .content {
+            background-color: #999999;
+            position: absolute;
+            height: 400px;
+            width: 30%;
+            top: 200px;
+            left: 600px;
+        }
+    </style>
+</head>
+<body>
+    <div class="menu">
+        <table border="1px">
+            <tr>
+                <th>id</th>
+                <th>hostname</th>
+                <th>ip</th>
+                <th>ostype</th>
+                <th>detail</th>
+                <th>delete</th>
+            </tr>
+            {% for row in info_list%}
+            <tr>
+                <td>{{row.id}}</td>
+                <td>{{row.hostname}}</td>
+                <td>{{row.ip}}</td>
+                <td>{{row.ostype}}</td>
+                <td>detail</td>
+                <td>delete</td>
+            </tr>
+            {% endfor %}
+        </table>
+        <input type="button" value="add">
+    </div>
+    <div class="mask hide"></div>
+    <div class="content hide">
+        <form action="http://192.168.1.166:8090/add" method="post">
+            <p>
+                <label for="id">id:</label>
+                <input name="id" id="id" type="text">
+            </p>
+            <p>
+                <label for="hostname">hostname:</label>
+                <input name="hostname" id="hostname" type="text">
+            </p>
+            <p>
+                <label for="ip">ip:</label>
+                <input name="ip" id="ip" type="text">
+            </p>
+            <p>
+                <label for="des">des:</label>
+                <input name="des" id="des" type="text">
+            </p>
+            <p>
+                <label for="ostype">ostype:</label>
+                <input name="ostype" id="ostype" type="text">
+            </p>
+            <input type="button" value="cancel">
+            <input type="submit" value="confirm">
+        </form>
+    </div>
+
+
+    <script src="http://cdn.static.runoob.com/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script>
+        //查看详情
+        $("td").filter(function () {
+                return $(this).text() === "detail";
+            }
+        ).each(function () {
+            $(this).click(function () {
+                    var the_id=$(this).siblings()[0];
+                    console.log($(the_id).text());
+                    window.open('http://192.168.1.166:8090/detail'+'?'+'detail_id='+$(the_id).text(),'_blank');
+                }
+            )
+        })
+
+        //删除
+        $("td").filter(function () {
+                return $(this).text() === "delete";
+            }
+        ).each(function () {
+            $(this).click(function () {
+                    var the_id=$(this).siblings()[0];
+                    console.log($(the_id).text());
+                    window.open('http://192.168.1.166:8090/delete'+'?'+'delete_id='+$(the_id).text(),'_blank');
+                }
+            )
+        })
+
+        //增加主机
+        $("input").each(function () {
+                if ($(this).attr('value') == "add"){
+                    $(this).click(function () {
+                            $(".content").css('display','block');
+                            $(".mask").css('display','block');
+                        }
+                    )
+                }
+                //取消
+                if ($(this).attr('value') == "cancel"){
+                    $(this).click(function () {
+                            $(".content").css('display','none');
+                            $(".mask").css('display','none');
+                        }
+                    )
+                }
+                //确认提交
+//                if ($(this).attr('value') == "confirm"){
+//                    $(this).click(function () {
+//                            $(".content").css('display','none');
+//                        }
+//                    )
+//                }
+            }
+        )
+    </script>
+</body>
+</html>

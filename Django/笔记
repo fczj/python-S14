@@ -1,0 +1,35 @@
+
+
+
+选择td标签，且text等于编辑
+$('#MasterListDVWP tr td').filter(function(){
+  return $(this).text() === currentSchool;
+}).siblings('td').filter(function(){
+  return $(this).text() === 'CD' || $(this).text() === 'Other1';
+}).each(function(){
+  // do something
+});
+
+https://stackoverflow.com/questions/11165618/jquery-selector-td-with-specific-text
+
+
+https://stackoverflow.com/questions/921940/jquery-to-find-all-exact-td-matches
+
+        $("input").each(function () {
+                //不是text是使用value获取
+                if ($(this).attr('value') == "cancel"){
+                    $(this).click(function () {
+                            $(".content").css('display','none');
+                        }
+                    )
+                }
+                if ($(this).attr('value') == "confirm"){
+                    $(this).click(function () {
+                            $(".content").css('display','none');
+                        }
+                    )
+                }
+            }
+
+当前窗口打开页面，详情页面
+https://stackoverflow.com/questions/32482432/jquery-how-to-open-external-link-in-same-window
