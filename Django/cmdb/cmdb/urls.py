@@ -1,4 +1,4 @@
-"""mysite URL Configuration
+"""cmdb URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/1.11/topics/http/urls/
@@ -13,12 +13,16 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from django.conf.urls import url,include
+from django.conf.urls import url
 from django.contrib import admin
-from user import views
+from user.views import login,database,add_user,user_info,home,user_detail,add_user
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^login', views.login),
-    url(r'^home', views.home),
+    url(r'^login', add_user),
+    url(r'^database', database),
+    url(r'^user_info', user_info),
+    url(r'^home', home),
+    url(r'^user-detail-(?P<uid>\d+)', user_detail),
+    url(r'^add-user', add_user),
 ]

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>用户信息</title>
+</head>
+<body>
+    {% for row in user_list %}
+    <p>
+        <a href="/user-detail-{{row.id}}">{{row.username}}</a>
+    </p>
+    {% endfor %}
+</body>
+</html>

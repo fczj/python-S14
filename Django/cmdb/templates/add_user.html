@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>添加用户</title>
+</head>
+<body>
+    <form action="/add-user" method="post">
+        <label >用户组</label>
+        <select name="group_id">
+            {% for k,v in group_dict.items %}
+                <option value="{{k}}">{{v}}</option>
+            {% endfor %}
+        </select>
+        <br>
+        <label >用户名</label>
+        <input type="text" name="username" >
+        <br>
+        <label >密码</label>
+        <input type="text" name="password" >
+        <br>
+
+        <input type="submit" name="提交">
+    </form>
+    {% for item in group_list %}
+        <h1>{{item.id}}</h1>
+    {% endfor %}
+</body>
+</html>

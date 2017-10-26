@@ -5,7 +5,11 @@ from django.shortcuts import render
 from django.shortcuts import HttpResponse
 from django.shortcuts import render
 from django.shortcuts import redirect
+from django.db import models
 
+class UserInfo(models.Model):
+    username = models.CharField(max_length=32)
+    password = models.CharField(max_length=64)
 
 INFO = [
     {'id':1,'hostname':'lanjing-hadoop-s01','ip':'192.168.1.51','des':'hadoop','ostype':'ubuntu'},
@@ -14,6 +18,12 @@ INFO = [
 ]
 
 def login(request):
+    #UserInfo.objects.create(username='boob',password='new')
+    a = UserInfo.objects.get(id=2)
+    a.username='fdd'
+    a.save()
+
+
     if request.method == "POST":
         print (request.POST.get('user'))
         print (request.POST.get('pwd'))
