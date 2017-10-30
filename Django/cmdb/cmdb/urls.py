@@ -15,14 +15,21 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
-from user.views import login,database,add_user,user_info,home,user_detail,add_user
+#from user.views import login,database,add_user,user_info,home,user_detail,add_user
+from hostapp import views
 
 urlpatterns = [
-    url(r'^admin/', admin.site.urls),
-    url(r'^login', add_user),
-    url(r'^database', database),
-    url(r'^user_info', user_info),
-    url(r'^home', home),
-    url(r'^user-detail-(?P<uid>\d+)', user_detail),
-    url(r'^add-user', add_user),
+    #url(r'^admin/', admin.site.urls),
+    #url(r'^login', add_user),
+    #url(r'^database', database),
+    #url(r'^user_info', user_info),
+    #url(r'^home', home),
+    #url(r'^user-detail-(?P<uid>\d+)', user_detail),
+    #url(r'^add-user', add_user),
+    url(r'^app',views.app),
+    url(r'^business',views.business),
+    url(r'^host',views.host),
+    url(r'^test_ajax',views.test_ajax),
+    url(r'^edit_host',views.edit_host),
+    url(r'^del_host',views.del_host),
 ]

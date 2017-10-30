@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>主机</title>
+    <style>
+        .hide {
+            display: none;
+        }
+        .content {
+            background-color: #2a85a0;
+        }
+        .shade {
+            background-color: #6A6A6A;
+            opacity: 0.5;
+            z-index: 10;
+            position: fixed;
+            top: 0px;
+            bottom: 0px;
+            left: 0px;
+            right: 0px;
+        }
+        .dis_form {
+            position: absolute;
+            background-color: #2a72b7;
+            width: 400px;
+            height: 300px;
+            top: 200px;
+            left: 50%;
+            margin-left: -200px;
+            z-index: 11;
+        }
+        .add_host {
+        }
+        .edit_host {
+        }
+        .delete {}
+
+    </style>
+</head>
+<body>
+    <input id="add_host" type="button" value="增加">
+    <div >
+        <table border="1px">
+            <thead>
+                <th>序号</th>
+                <th>主机名</th>
+                <th>ip</th>
+                <th>端口</th>
+                <th>业务线</th>
+                <th>编辑</th>
+                <th>删除</th>
+            </thead>
+            <tbody>
+                {% for row in h_list %}
+                <tr bid="{{row.b.id}}" hid="{{row.nid}}">
+                    <td>{{forloop.counter}}</td>
+                    <td>{{row.hostname}}</td>
+                    <td>{{row.ip}}</td>
+                    <td>{{row.port}}</td>
+                    <td>{{row.b.caption}}</td>
+                    <td class="edit">
+                        编辑
+                    </td>
+                    <td class="delete">
+                        删除
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+    <div class="hide shade"></div>
+    <div class="dis_form hide add_host">
+        <form id="add_form" method="post" action="/host">
+            <input name="b_host" type="text" placeholder="主机名">
+            <br>
+            <input name="b_ip" type="text" placeholder="IP">
+            <br>
+            <input name="b_port" type="text" placeholder="端口">
+            <br>
+            <select name="b_bus">
+                {% for row in b_list%}
+                    <option value="{{row.id}}">{{row.caption}}</option>
+                {% endfor %}
+            </select>
+            <br>
+            <input id="ajax_add_host" type="button" value="提交">
+
+        </form>
+        <input id="cancel" type="button" value="取消">
+    </div>
+
+    <div class="hide dis_form edit_host">
+        <form id="edit_form" method="post" action="/host">
+            <input name="hid" type="text" style="display: none">
+            <input name="b_host" type="text" placeholder="主机名">
+            <br>
+            <input name="b_ip" type="text" placeholder="IP">
+            <br>
+            <input name="b_port" type="text" placeholder="端口">
+            <br>
+            <select name="b_bus">
+                {% for row in b_list%}
+                <option value="{{row.id}}">{{row.caption}}</option>
+                {% endfor %}
+            </select>
+            <br>
+            <input id="ajax_edit_host" type="button" value="提交">
+
+        </form>
+        <input id="edit_cancel" type="button" value="取消">
+    </div>
+
+
+    <script src="/static/jquery-1.12.4.js"></script>
+    <script>
+        $(function () {
+            $('#add_host').click(function () {
+                $('.add_host').removeClass('hide');
+                $('.shade').removeClass('hide');
+            });
+
+            $('#cancel').click(function () {
+                $('.add_host').addClass('hide');
+                $('.shade').addClass('hide');
+            });
+            $('#ajax_add_host').click(function(){
+                console.log('ckixck');
+                $.ajax({
+                    url: "/test_ajax",
+                    type: 'POST',
+                    data: $('#add_form').serialize(),
+                    success: function(data){
+                        console.log('运行成功');
+                        var obj = JSON.parse(data);
+                        if (obj.status){
+                            location.reload();
+                        }else {
+                            alert(obj.error);
+                        }
+                    }
+                })
+            });
+            $('.edit').click(function () {
+                var bid = $(this).parent().attr('bid');
+                var hid= $(this).parent().attr('hid');
+                $('.edit_host').removeClass('hide');
+                $('.shade').removeClass('hide');
+                var b_host = $(this).siblings(":eq(1)").text();
+                var b_ip= $(this).siblings(":eq(2)").text();
+                var b_port= $(this).siblings(":eq(3)").text();
+                $("#edit_form input[name='hid']").val(hid);
+                $("#edit_form input[name='b_host']").val(b_host);
+                $("#edit_form input[name='b_ip']").val(b_ip);
+                $("#edit_form input[name='b_port']").val(b_port);
+//                $('#edit_form input').eq(1).val(b_ip);
+//                $('#edit_form input').eq(2).val(b_port);
+                $('#edit_form').find('select').val(bid);
+
+            })
+            $('#edit_cancel').click(function () {
+                $('.edit_host').addClass('hide');
+                $('.shade').addClass('hide');
+            });
+            $('#ajax_edit_host').click(function(){
+                $.ajax({
+                    url: "/edit_host",
+                    type: 'POST',
+                    data: $('#edit_form').serialize(),
+                    success: function(data){
+                        console.log('运行成功');
+                        var obj = JSON.parse(data);
+                        if (obj.status){
+                            location.reload();
+                        }else {
+                            alert(obj.error);
+                        }
+                    }
+                })
+            });
+            $('.delete').click(function () {
+                var hid= $(this).parent().attr('hid');
+                console.log('删除主机'+hid);
+                $.ajax({
+                    url: "/del_host",
+                    type: 'POST',
+                    data: {'hid':hid},
+                    success: function(data){
+                        console.log('运行成功');
+                        var obj = JSON.parse(data);
+                        if (obj.status){
+                            location.reload();
+                        }else {
+                            alert(obj.error);
+                        }
+                    }
+                })
+            })
+        });
+    </script>
+</body>
+</html>
